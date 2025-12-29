@@ -1,0 +1,3 @@
+import BangTongHopLoaiHangHoaSelection from "./BangTongHopLoaiHangHoaSelection";
+
+export default BangTongHopLoaiHangHoaSelection

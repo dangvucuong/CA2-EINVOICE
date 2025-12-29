@@ -1,0 +1,8 @@
+.labelTd{
+    width: 100px;
+    font-size: 12px;
+    vertical-align: baseline;
+}
+.tr td{
+    padding-bottom: 8px;
+}

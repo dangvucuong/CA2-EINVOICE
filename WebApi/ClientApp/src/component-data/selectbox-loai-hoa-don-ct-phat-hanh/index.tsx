@@ -1,0 +1,3 @@
+import SelectBoxLoaiHoaDonCTPhatHanh from "./SelectBoxLoaiHoaDonCTPhatHanh";
+
+export default SelectBoxLoaiHoaDonCTPhatHanh

@@ -1,0 +1,10 @@
+.user_btn:hover{
+    background-color: var(--background-default);
+}
+.user_btn {
+    border-width: 2px;
+    /* border-color: var(--secondary); */
+    border-color: #fff;
+    border-style: solid;
+    background-color: #fff;
+}

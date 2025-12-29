@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DLHDon>
+    <HDon>
+        <DLHDon Id="_349536">
+            <TTChung>
+                <PBan>2.0.1</PBan>
+                <THDon>Hóa đơn bán hàng</THDon>
+                <KHMSHDon>2</KHMSHDon>
+                <KHHDon>C25MQD</KHHDon>
+                <SHDon>2861</SHDon>
+                <NLap>2025-07-10</NLap>
+                <DVTTe>VND</DVTTe>
+                <HTTToan>Tiền mặt</HTTToan>
+                <MSTTCGP>0103930279</MSTTCGP>
+                <TTKhac>
+                    <TTin>
+                        <TTruong>MTCuu</TTruong>
+                        <KDLieu>string</KDLieu>
+                        <DLieu>HD101978402</DLieu>
+                    </TTin>
+                </TTKhac>
+                <HDDCKPTQuan>0</HDDCKPTQuan>
+            </TTChung>
+            <NDHDon>
+                <NBan>
+                    <Ten>HỘ KINH DOANH LƯU HOÀNG LONG</Ten>
+                    <MST>2400901475-002</MST>
+                    <DChi>Số 340 đường Nguyễn Trãi, phường Thanh Xuân, TP Hà Nội, Việt Nam</DChi>
+                    <STKNHang />
+                    <DCTDTu />
+                    <TNHang />
+                    <SDThoai />
+                </NBan>
+                <NMua>
+                    <HVTNMHang>Khách hàng không lấy hóa đơn</HVTNMHang>
+                    <Ten>Khách hàng không lấy hóa đơn</Ten>
+                    <TTKhac>
+                        <TTin>
+                            <TTruong>TenNMHCNHan</TTruong>
+                            <KDLieu>string</KDLieu>
+                            <DLieu>Khách hàng không lấy hóa đơn</DLieu>
+                        </TTin>
+                    </TTKhac>
+                </NMua>
+                <DSHHDVu>
+                    <HHDVu>
+                        <TChat>1</TChat>
+                        <STT>1</STT>
+                        <MHHDVu>VN0020003-2NV</MHHDVu>
+                        <THHDVu>Kem Sundae chocolate (Nguyên vị)</THHDVu>
+                        <DVTinh>Cốc</DVTinh>
+                        <SLuong>1</SLuong>
+                        <DGia>25000</DGia>
+                        <TLCKhau>0</TLCKhau>
+                        <STCKhau>0</STCKhau>
+                        <ThTien>25000</ThTien>
+                        <TSuat>0%</TSuat>
+                    </HHDVu>
+                </DSHHDVu>
+                <TToan>
+                    <THTTLTSuat>
+                        <LTSuat>
+                            <TSuat>0%</TSuat>
+                            <ThTien>15000</ThTien>
+                            <TThue>0</TThue>
+                        </LTSuat>
+                    </THTTLTSuat>
+                    <TgTCThue>15000</TgTCThue>
+                    <TgTThue>0</TgTThue>
+                    <TTCKTMai>0</TTCKTMai>
+                    <TgTTTBSo>15000.000000</TgTTTBSo>
+                    <TgTTTBChu>Mười lăm nghìn  đồng</TgTTTBChu>
+                </TToan>
+            </NDHDon>
+        </DLHDon>
+        <MCCQT>M2-25-27EXW-00000002861</MCCQT>
+        <DLQRCode>00020199950032065130CAFC0244549B6B5211CDD7AFE101132400901475002020120306C25MQD0442861050820250710065150006304383C</DLQRCode>
+        <DSCKS>
+            <NBan />
+            <NMua />
+        </DSCKS>
+    </HDon>
+    <Signature Id="CKSNNT-67AE357711F5412DAC9283EFB39EE2A2" xmlns="http://www.w3.org/2000/09/xmldsig#">
+        <SignedInfo>
+            <CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315" />
+            <SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256" />
+            <Reference URI="#_67AE357711F5412DAC9283EFB39EE2A2">
+                <Transforms>
+                    <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" />
+                </Transforms>
+                <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256" />
+                <DigestValue>dS8lEDTNHV+WbpP1mEM30h6SxdTjjwUeKXOxbGg3XlA=</DigestValue>
+            </Reference>
+            <Reference URI="#Obj-CKSNNT-67AE357711F5412DAC9283EFB39EE2A2">
+                <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256" />
+                <DigestValue>waYDssIRl/0/6OmwemOCMtRW5oaJbg1dxEBPMLFNJZk=</DigestValue>
+            </Reference>
+        </SignedInfo>
+        <SignatureValue>Er1HRhO/JDmknMt2tpjXVXh7NNQS2vVsGt3nU/GN6dw5hFo4Zku0/Gx+CC+X2pE5cbQu0Tp+1FHIEs59403hbMlLqQ361ff8Vaw9gCvCcxork2BfzRdWm4fDXJCU9Ovjlv0BO+aP/zkLnddh7PTqdPglcudTuI48mnyQR12nCOnPvLgZSVHk+WIW/ZsThMFuVzqHIM7iIVHwI05DhQJhggYl2mpiO7B3gdt6LNpvukwmv4DOECMpU46cIW/6KzOFYxgw3jNGa/q7VZKCJO5KTtglmPe/qVjoxLnS8l6+rDv0/2KjRPCaMELPGsk/N3wtza6ALJXUsJrQpWhptcHpuQ==</SignatureValue>
+        <KeyInfo>
+            <X509Data>
+                <X509SubjectName>CN=HỘ KINH DOANH LƯU HOÀNG LONG, E=nguyengiahung2024x@gmail.com, O=HỘ KINH DOANH LƯU HOÀNG LONG, OU=HỘ KINH DOANH LƯU HOÀNG LONG, OID.0.9.2342.19200300.100.1.1=MST:2400901475-002, L="Số 340 đường Nguyễn Trãi, Phường Thanh Xuân Trung, Quận Thanh Xuân, Thành phố Hà Nội, Việt Nam", S=Thành phố Hà Nội, C=VN</X509SubjectName>
+                <X509Certificate>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</X509Certificate>
+            </X509Data>
+        </KeyInfo>
+        <Object Id="Obj-CKSNNT-67AE357711F5412DAC9283EFB39EE2A2">
+            <SignatureProperties xmlns="">
+                <SignatureProperty Target="#CKSNNT-67AE357711F5412DAC9283EFB39EE2A2">
+                    <SigningTime>2025-07-10T21:01:40</SigningTime>
+                </SignatureProperty>
+            </SignatureProperties>
+        </Object>
+    </Signature>
+</DLHDon>

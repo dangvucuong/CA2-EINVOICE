@@ -1,0 +1,25 @@
+.footer {
+    background-color: var(--bg-emphasis);
+    height: 72px;
+    color: #fff;
+    display: flex;
+}
+
+.footer .block {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+}
+
+.footer .block .info {
+    display: flex;
+}
+
+.loginFormContent {
+    background-color: #fff;
+    border-top-left-radius: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

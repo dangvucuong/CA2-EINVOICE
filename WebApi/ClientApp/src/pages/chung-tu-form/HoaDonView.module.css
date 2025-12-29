@@ -1,0 +1,14 @@
+.pagingContainer nav {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.pagingContainer nav a{
+    padding-top: 10px;
+}
+.pagingContainer nav a[rel="prev"]{
+    padding-top: 8px;
+}
+.pagingContainer nav a[rel="next"]{
+    padding-top: 8px;
+}

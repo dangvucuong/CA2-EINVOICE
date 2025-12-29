@@ -1,0 +1,510 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TDiep>
+	<TTChung>
+		<PBan>
+			2.1.0
+		</PBan>
+		<MNGui>
+			0103930279
+		</MNGui>
+		<MNNhan>
+			0103930279
+		</MNNhan>
+		<MLTDiep>
+			210
+		</MLTDiep>
+		<MTDiep>
+			01039302790830DBA66B354B82BDCB9E21E86C3129
+		</MTDiep>
+		<MTDTChieu>
+		</MTDTChieu>
+		<MST>
+			0103930279-999
+		</MST>
+		<SLuong>
+			1
+		</SLuong>
+	</TTChung>
+	<DLieu>
+		<HDon>
+			<DLHDon Id="_12260711">
+				<TTChung>
+					<PBan>
+						2.1.0
+					</PBan>
+					<THDon>
+						Hóa đơn giá trị gia tăng
+					</THDon>
+					<KHMSHDon>
+						1
+					</KHMSHDon>
+					<KHHDon>
+						K25TCM
+					</KHHDon>
+					<SHDon>
+						99
+					</SHDon>
+					<NLap>
+						2025-08-10
+					</NLap>
+					<HDCTTChinh>
+						0
+					</HDCTTChinh>
+					<DVTTe>
+						VND
+					</DVTTe>
+					<HTTToan>
+						Tiền mặt/Chuyển khoản
+					</HTTToan>
+					<MSTTCGP>
+						0103930279
+					</MSTTCGP>
+					<TTKhac>
+						<TTin>
+							<TTruong>
+								MTCuu
+							</TTruong>
+							<KDLieu>
+								string
+							</KDLieu>
+							<DLieu>
+								YWDQX5O81
+							</DLieu>
+						</TTin>
+					</TTKhac>
+				</TTChung>
+				<NDHDon>
+					<NBan>
+						<Ten>
+							Công ty cổ phần công nghệ thẻ NACENCOMM
+						</Ten>
+						<MST>
+							0103930279-999
+						</MST>
+						<DChi>
+							Tòa nhà BOHEMIA số 25, Lê Văn Thiêm, Thanh Xuân, Hà Nội, Việt Nam
+						</DChi>
+						<SDThoai>
+							1900.54.54.07
+						</SDThoai>
+						<DCTDTu>
+							oanh@cavn.vn
+						</DCTDTu>
+						<STKNHang>
+							22222222341
+						</STKNHang>
+						<TNHang>
+							Ngân hàng Tiên phong bank- chi nhánh hà thành
+						</TNHang>
+						<Fax>
+							0368994240
+						</Fax>
+						<Website>
+							https://hoadon781.nacencomm.vn/
+						</Website>
+					</NBan>
+					<NMua>
+						<Ten>
+							Nacencomm
+						</Ten>
+						<MST>
+							0103930279-998
+						</MST>
+						<DChi>
+							Số 2 Lê Văn Thiêm, Thanh Xuân, Hà Nội
+						</DChi>
+						<DCTDTu>
+							oanh@cavn.vn
+						</DCTDTu>
+						<HVTNMHang>
+							Nguyễn Văn A
+						</HVTNMHang>
+						<STKNHang>
+							00112607001
+						</STKNHang>
+					</NMua>
+					<DSHHDVu>
+						<HHDVu>
+							<TChat>
+								1
+							</TChat>
+							<STT>
+								1
+							</STT>
+							<MHHDVu>
+								VID03
+							</MHHDVu>
+							<THHDVu>
+								Dịch vụ chứng thư số VID Stamp 03 năm
+							</THHDVu>
+							<DVTinh>
+								Kg
+							</DVTinh>
+							<SLuong>
+								1
+							</SLuong>
+							<DGia>
+								0
+							</DGia>
+							<ThTien>
+								0
+							</ThTien>
+							<TSuat>
+								KCT
+							</TSuat>
+						</HHDVu>
+					</DSHHDVu>
+					<TToan>
+						<THTTLTSuat>
+							<LTSuat>
+								<TSuat>
+									KCT
+								</TSuat>
+								<ThTien>
+									0
+								</ThTien>
+								<TThue>
+									0
+								</TThue>
+							</LTSuat>
+						</THTTLTSuat>
+						<TgTCThue>
+							0
+						</TgTCThue>
+						<TgTThue>
+							0
+						</TgTThue>
+						<TgTTTBSo>
+							0
+						</TgTTTBSo>
+						<TgTTTBChu>
+							Không đồng
+						</TgTTTBChu>
+					</TToan>
+				</NDHDon>
+			</DLHDon>
+			<DLQRCode>
+				00020199890032E193E2B202024DDA83BF8D8C51BF71D001130103930279999020110306C25TTT0429905082025080706106304383C
+			</DLQRCode>
+			<DSCKS>
+				<NBan>
+					<Signature Id="NBan-12260711" xmlns="http://www.w3.org/2000/09/xmldsig#">
+						<SignedInfo>
+							<CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315" />
+							<SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256" />
+							<Reference URI="#_12260711">
+								<Transforms>
+									<Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" />
+								</Transforms>
+								<DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256" />
+								<DigestValue>
+									RUyi+WEWrg7VBCxqshrrB2ULbOVIMGz+VGCO6tRkERg=
+								</DigestValue>
+							</Reference>
+							<Reference URI="#Obj-NBan-12260711">
+								<DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256" />
+								<DigestValue>
+									0b7IGuZb+9u70GIE8NVyLQ/xF0THrlyPDaQwKulGVCc=
+								</DigestValue>
+							</Reference>
+						</SignedInfo>
+						<SignatureValue>
+							SQhJYIgMF1Flju8BLln9Y3xejjCaNYxcKMdThZNhHeLNqTf9SpKhKARuDqB0AICoJ96PCckO8jEjjtTqhurGO+Py5v3dabjxobJV8xLN1ZaBTBLalKQd5qF7zcAgOm0U3YvZxeioeAJe7s02xNlYrIA49sgNoSpLSvmoHLT8wn5GItkhXYsCjEYP8aofU4t1rzV9BozJHSrHFps39vwtHlAJP4Mb/1RR7MXt57D6jXb/xRlhatVcAWU7jHZlx0xfW6FWGZT9sL2IeW1xHgUTfpRUb4IesIMQLUwZle8NxOxfMoJhoyYCRnfQGE1nanYzWtpmPtHGVjnwrypHNXpC6Q==
+						</SignatureValue>
+						<KeyInfo>
+							<X509Data>
+								<X509SubjectName>
+									CN=Công ty cổ phần công nghệ thẻ NACENCOMM, O=Công ty cổ phần công nghệ thẻ NACENCOMM, L=25 Nguyễn Huy Tưởng - Thanh Xuân - Hà Nội, OID.0.9.2342.19200300.100.1.1=MST:0103930279-999, C=VN
+								</X509SubjectName>
+								<X509Certificate>
+									MIIFYzCCBEugAwIBAgIQVAK8XKzOZpwgJAACAAfpsTANBgkqhkiG9w0BAQsFADAzMQswCQYDVQQGEwJWTjEWMBQGA1UECgwNTkFDRU5DT01NIFNDVDEMMAoGA1UEAwwDQ0EyMB4XDTI0MTAzMDEwMTY0NloXDTI3MTEwMzEwMTY0NlowgeYxCzAJBgNVBAYTAlZOMSIwIAYKCZImiZPyLGQBAQwSTVNUOjAxMDM5MzAyNzktOTk5MTswOQYDVQQHDDIyNSBOZ3V54buFbiBIdXkgVMaw4bufbmcgLSBUaGFuaCBYdcOibiAtIEjDoCBO4buZaTE6MDgGA1UECgwxQ8O0bmcgdHkgY+G7lSBwaOG6p24gY8O0bmcgbmdo4buHIHRo4bq7IE5BQ0VOQ09NTTE6MDgGA1UEAwwxQ8O0bmcgdHkgY+G7lSBwaOG6p24gY8O0bmcgbmdo4buHIHRo4bq7IE5BQ0VOQ09NTTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAJKOfB+ek+x3lcGXX/zawPsaLhurR3YIEXFHi/32y0KrvI5m1yv3kcq+qGVpksPL4KI6jfPv0rRqvXuLvfuBMAegkNGlQGmUE/zgg/kfn8wKkqRwnuUWyRgWB2ntoeHsqfhqnI/ZqX9jVumCc8RkXs5PUc8iCzSylmp/CO5WNQh5KHyckrfaP2iNiAGGIm8hmVf1RxoqNZ0VslVopk+dtTh9g682JrgFLQFBceZglVSMbw4LE3enHs9SYKDsvj+I/KFauCGpdi7J5mHBDOtPCpzWRc3T9pzSTdsBRlBre/IYLUvALYse4RNB05mzDsnxQusoZTTH9f+XCGxloX8XmesCAwEAAaOCAb0wggG5MB0GA1UdDgQWBBRe/4R2ZNf6KDAuEh9ciqAshDwUAzAfBgNVHSMEGDAWgBRN0eTUQrgmidk3J4ABlTF81RpEXzArBgNVHR8EJDAiMCCgHqAchhpodHRwOi8vY2F2bi52bi9uZXcvQ0EyLmNybDBpBggrBgEFBQcBAQRdMFswKQYIKwYBBQUHMAGGHWh0dHA6Ly9vY3NwLmNhdm4udm4vb2NzcC9vY3NwMC4GCCsGAQUFBzAChiJodHRwOi8vY2F2bi52bi9zaGEyNTYvQ0EyXzIwMjQuY3J0MA4GA1UdDwEB/wQEAwIF4DA9BgkrBgEEAYI3FQcEMDAuBiYrBgEEAYI3FQiFj88QgYOfI4e5hTKHisJQp/9/gXuGwpc5g6DFQgIBZAIBBTAfBgNVHSUEGDAWBgorBgEEAYI3CgMMBggrBgEFBQcDBDApBgkrBgEEAYI3FQoEHDAaMAwGCisGAQQBgjcKAwwwCgYIKwYBBQUHAwQwRAYJKoZIhvcNAQkPBDcwNTAOBggqhkiG9w0DAgICAIAwDgYIKoZIhvcNAwQCAgCAMAcGBSsOAwIHMAoGCCqGSIb3DQMHMA0GCSqGSIb3DQEBCwUAA4IBAQADe5R89p6C/VrCfvrsyq5Y/OqzNL5BrRaM7mdRQEhgdDtgYLG9DnaAugwDSwmzCioe1XBh1XGGv7Dz3hIIdS9a5AUeCKdaE7DdduoTa1Ep1FB/+liGDODWka++DRnHmwWyPo9sQ7CedloqCBd7XI0dhZgD5hlOiUjmhWPRd4u5x8orX7H4Prfcp2EouceWSwZM1wqE6DTzdFNsHlUMkpeSrklRLF/hxMAS3JtCEm+N2epIT22/B/Wkrxx0+AgZ+3f5ez7VHAaOaS/GWncucUm0KIoAaQislhlsmR5UzXouwtOFhhL7z6RwNabHKtpRKaDUblVPRD577Ut41NzYMds3
+								</X509Certificate>
+							</X509Data>
+						</KeyInfo>
+						<Object Id="Obj-NBan-12260711">
+							<SignatureProperties xmlns="">
+								<SignatureProperty Target="#NBan-12260711">
+									<SigningTime>
+										2025-08-07T13:53:19
+									</SigningTime>
+								</SignatureProperty>
+							</SignatureProperties>
+						</Object>
+					</Signature>
+				</NBan>
+				<NMua />
+			</DSCKS>
+		</HDon>
+		<BKe>
+			<NDBKe>
+				<TTChung>
+					<PBan>
+						2.1.0
+					</PBan>
+					<TBKe>
+						BẢNG KÊ CÁC HÓA ĐƠN ĐIỆN TỬ ĐÃ LẬP SAI
+					</TBKe>
+					<KHMBKe>
+						01/BK-ĐCTT
+					</KHMBKe>
+					<SBKe>
+						NCM-BKSS01
+					</SBKe>
+					<NBKe>
+						2025-08-1O
+					</NBKe>
+					<TCHDon>
+						2
+					</TCHDon>
+					<NBan>
+						Công ty cổ phần công nghệ thẻ Nacencomm - Bộ test có mã
+					</NBan>
+					<MSTNBan>
+						0103930279-999
+					</MSTNBan>
+					<DCNBan>
+						Thanh xuân - Hà Nội
+					</DCNBan>
+					<NMua>
+						Công ty A
+					</NMua>
+					<MSTNMua>
+						12222222222
+					</MSTNMua>
+					<DCNMua>
+						Cầu Giấy - Hà Nội
+					</DCNMua>
+					<DSLDTDoi>
+						<LDo>
+							Lý do điều chỉnh / thay thế do người dùng nhập
+						</LDo>
+						<LDo>
+							Lý do điều chỉnh / thay thế do người dùng nhập
+						</LDo>
+					</DSLDTDoi>
+				</TTChung>
+				<DSHHDVu>
+					<HHDVu>
+						<!-- Thông tin trước điều chỉnh/thay thế -->
+						<TTTDChinh>
+							<STT>
+								1
+							</STT>
+							<KHMSHDon>
+								1
+							</KHMSHDon>
+							<KHHDon>
+								K25TCM
+							</KHHDon>
+							<SHDon>
+								1
+							</SHDon>
+							<THHDVGoc>
+								Tên hàng hóa gốc
+							</THHDVGoc>
+							<SLGoc>
+								10
+							</SLGoc>
+							<DGGoc>
+								20000
+							</DGGoc>
+							<ThTGoc>
+								200000
+							</ThTGoc>
+							<TSGoc>
+								10%
+							</TSGoc>
+							<TTGoc>
+								20000
+							</TTGoc>
+							<TgTKGoc>
+								0
+							</TgTKGoc>
+							<TgTSTGoc>
+								220000
+							</TgTSTGoc>
+						</TTTDChinh>
+						<!-- Thông tin sau điều chỉnh/thay thế -->
+						<TTSDChinh>
+							<THHDVTDoi>
+								Tên hàng hóa thay thế
+							</THHDVTDoi>
+							<SLTDoi>
+								12
+							</SLTDoi>
+							<DGTDoi>
+								18000
+							</DGTDoi>
+							<ThTTDoi>
+								216000
+							</ThTTDoi>
+							<TSTDoi>
+								10%
+							</TSTDoi>
+							<TTTDoi>
+								21600
+							</TTTDoi>
+							<TgTTDoi>
+								0
+							</TgTTDoi>
+							<TgTSTTDoi>
+								237600
+							</TgTSTTDoi>
+						</TTSDChinh>
+						<!-- Chênh lệch -->
+						<CLech>
+							<TgTCTCLech>
+								16000
+							</TgTCTCLech>
+							<TgTTCLech>
+								1600
+							</TgTTCLech>
+							<TgTKCLech>
+								0
+							</TgTKCLech>
+							<TgTTTCLech>
+								17600
+							</TgTTTCLech>
+						</CLech>
+						<!-- Thông tin khác nếu có -->
+						<TTKhac>
+							...
+						</TTKhac>
+					</HHDVu>
+					<HHDVu>
+						<!-- Thông tin trước điều chỉnh/thay thế -->
+						<TTTDChinh>
+							<STT>
+								2
+							</STT>
+							<KHMSHDon>
+								1
+							</KHMSHDon>
+							<KHHDon>
+								K25TCM
+							</KHHDon>
+							<SHDon>
+								2
+							</SHDon>
+							<THHDVGoc>
+								Tên hàng hóa gốc
+							</THHDVGoc>
+							<SLGoc>
+								10
+							</SLGoc>
+							<DGGoc>
+								20000
+							</DGGoc>
+							<ThTGoc>
+								200000
+							</ThTGoc>
+							<TSGoc>
+								10%
+							</TSGoc>
+							<TTGoc>
+								20000
+							</TTGoc>
+							<TgTKGoc>
+								0
+							</TgTKGoc>
+							<TgTSTGoc>
+								220000
+							</TgTSTGoc>
+						</TTTDChinh>
+						<!-- Thông tin sau điều chỉnh/thay thế -->
+						<TTSDChinh>
+							<THHDVTDoi>
+								Tên hàng hóa thay thế
+							</THHDVTDoi>
+							<SLTDoi>
+								12
+							</SLTDoi>
+							<DGTDoi>
+								18000
+							</DGTDoi>
+							<ThTTDoi>
+								216000
+							</ThTTDoi>
+							<TSTDoi>
+								10%
+							</TSTDoi>
+							<TTTDoi>
+								21600
+							</TTTDoi>
+							<TgTTDoi>
+								0
+							</TgTTDoi>
+							<TgTSTTDoi>
+								237600
+							</TgTSTTDoi>
+						</TTSDChinh>
+						<!-- Chênh lệch -->
+						<CLech>
+							<TgTCTCLech>
+								16000
+							</TgTCTCLech>
+							<TgTTCLech>
+								1600
+							</TgTTCLech>
+							<TgTKCLech>
+								0
+							</TgTKCLech>
+							<TgTTTCLech>
+								17600
+							</TgTTTCLech>
+						</CLech>
+					</HHDVu>
+				</DSHHDVu>
+			</NDBKe>
+			<DSCKS>
+				<NBan>
+					<Signature Id="NBan-12260711" xmlns="http://www.w3.org/2000/09/xmldsig#">
+						<SignedInfo>
+							<CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315" />
+							<SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256" />
+							<Reference URI="#_12260711">
+								<Transforms>
+									<Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" />
+								</Transforms>
+								<DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256" />
+								<DigestValue>
+									RUyi+WEWrg7VBCxqshrrB2ULbOVIMGz+VGCO6tRkERg=
+								</DigestValue>
+							</Reference>
+							<Reference URI="#Obj-NBan-12260711">
+								<DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256" />
+								<DigestValue>
+									0b7IGuZb+9u70GIE8NVyLQ/xF0THrlyPDaQwKulGVCc=
+								</DigestValue>
+							</Reference>
+						</SignedInfo>
+						<SignatureValue>
+							SQhJYIgMF1Flju8BLln9Y3xejjCaNYxcKMdThZNhHeLNqTf9SpKhKARuDqB0AICoJ96PCckO8jEjjtTqhurGO+Py5v3dabjxobJV8xLN1ZaBTBLalKQd5qF7zcAgOm0U3YvZxeioeAJe7s02xNlYrIA49sgNoSpLSvmoHLT8wn5GItkhXYsCjEYP8aofU4t1rzV9BozJHSrHFps39vwtHlAJP4Mb/1RR7MXt57D6jXb/xRlhatVcAWU7jHZlx0xfW6FWGZT9sL2IeW1xHgUTfpRUb4IesIMQLUwZle8NxOxfMoJhoyYCRnfQGE1nanYzWtpmPtHGVjnwrypHNXpC6Q==
+						</SignatureValue>
+						<KeyInfo>
+							<X509Data>
+								<X509SubjectName>
+									CN=Công ty cổ phần công nghệ thẻ NACENCOMM, O=Công ty cổ phần công nghệ thẻ NACENCOMM, L=25 Nguyễn Huy Tưởng - Thanh Xuân - Hà Nội, OID.0.9.2342.19200300.100.1.1=MST:0103930279-999, C=VN
+								</X509SubjectName>
+								<X509Certificate>
+									MIIFYzCCBEugAwIBAgIQVAK8XKzOZpwgJAACAAfpsTANBgkqhkiG9w0BAQsFADAzMQswCQYDVQQGEwJWTjEWMBQGA1UECgwNTkFDRU5DT01NIFNDVDEMMAoGA1UEAwwDQ0EyMB4XDTI0MTAzMDEwMTY0NloXDTI3MTEwMzEwMTY0NlowgeYxCzAJBgNVBAYTAlZOMSIwIAYKCZImiZPyLGQBAQwSTVNUOjAxMDM5MzAyNzktOTk5MTswOQYDVQQHDDIyNSBOZ3V54buFbiBIdXkgVMaw4bufbmcgLSBUaGFuaCBYdcOibiAtIEjDoCBO4buZaTE6MDgGA1UECgwxQ8O0bmcgdHkgY+G7lSBwaOG6p24gY8O0bmcgbmdo4buHIHRo4bq7IE5BQ0VOQ09NTTE6MDgGA1UEAwwxQ8O0bmcgdHkgY+G7lSBwaOG6p24gY8O0bmcgbmdo4buHIHRo4bq7IE5BQ0VOQ09NTTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAJKOfB+ek+x3lcGXX/zawPsaLhurR3YIEXFHi/32y0KrvI5m1yv3kcq+qGVpksPL4KI6jfPv0rRqvXuLvfuBMAegkNGlQGmUE/zgg/kfn8wKkqRwnuUWyRgWB2ntoeHsqfhqnI/ZqX9jVumCc8RkXs5PUc8iCzSylmp/CO5WNQh5KHyckrfaP2iNiAGGIm8hmVf1RxoqNZ0VslVopk+dtTh9g682JrgFLQFBceZglVSMbw4LE3enHs9SYKDsvj+I/KFauCGpdi7J5mHBDOtPCpzWRc3T9pzSTdsBRlBre/IYLUvALYse4RNB05mzDsnxQusoZTTH9f+XCGxloX8XmesCAwEAAaOCAb0wggG5MB0GA1UdDgQWBBRe/4R2ZNf6KDAuEh9ciqAshDwUAzAfBgNVHSMEGDAWgBRN0eTUQrgmidk3J4ABlTF81RpEXzArBgNVHR8EJDAiMCCgHqAchhpodHRwOi8vY2F2bi52bi9uZXcvQ0EyLmNybDBpBggrBgEFBQcBAQRdMFswKQYIKwYBBQUHMAGGHWh0dHA6Ly9vY3NwLmNhdm4udm4vb2NzcC9vY3NwMC4GCCsGAQUFBzAChiJodHRwOi8vY2F2bi52bi9zaGEyNTYvQ0EyXzIwMjQuY3J0MA4GA1UdDwEB/wQEAwIF4DA9BgkrBgEEAYI3FQcEMDAuBiYrBgEEAYI3FQiFj88QgYOfI4e5hTKHisJQp/9/gXuGwpc5g6DFQgIBZAIBBTAfBgNVHSUEGDAWBgorBgEEAYI3CgMMBggrBgEFBQcDBDApBgkrBgEEAYI3FQoEHDAaMAwGCisGAQQBgjcKAwwwCgYIKwYBBQUHAwQwRAYJKoZIhvcNAQkPBDcwNTAOBggqhkiG9w0DAgICAIAwDgYIKoZIhvcNAwQCAgCAMAcGBSsOAwIHMAoGCCqGSIb3DQMHMA0GCSqGSIb3DQEBCwUAA4IBAQADe5R89p6C/VrCfvrsyq5Y/OqzNL5BrRaM7mdRQEhgdDtgYLG9DnaAugwDSwmzCioe1XBh1XGGv7Dz3hIIdS9a5AUeCKdaE7DdduoTa1Ep1FB/+liGDODWka++DRnHmwWyPo9sQ7CedloqCBd7XI0dhZgD5hlOiUjmhWPRd4u5x8orX7H4Prfcp2EouceWSwZM1wqE6DTzdFNsHlUMkpeSrklRLF/hxMAS3JtCEm+N2epIT22/B/Wkrxx0+AgZ+3f5ez7VHAaOaS/GWncucUm0KIoAaQislhlsmR5UzXouwtOFhhL7z6RwNabHKtpRKaDUblVPRD577Ut41NzYMds3
+								</X509Certificate>
+							</X509Data>
+						</KeyInfo>
+						<Object Id="Obj-NBan-12260711">
+							<SignatureProperties xmlns="">
+								<SignatureProperty Target="#NBan-12260711">
+									<SigningTime>
+										2025-08-07T13:53:19
+									</SigningTime>
+								</SignatureProperty>
+							</SignatureProperties>
+						</Object>
+					</Signature>
+				</NBan>
+				<NMua />
+				<CCKSKhac />
+			</DSCKS>
+		</BKe>
+	</DLieu>
+</TDiep>

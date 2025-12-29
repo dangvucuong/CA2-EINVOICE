@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Repository\" />
+    <None Remove="Service\" />
+    <None Remove="Service\Base\" />
+    <None Remove="Repository\Core\" />
+    <None Remove="Service\Core\" />
+    <None Remove="Repository\User\" />
+    <None Remove="Service\User\" />
+    <None Remove="Repository\Category\" />
+    <None Remove="Service\Category\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Repository\" />
+    <Folder Include="Service\Base\" />
+    <Folder Include="Repository\Core\" />
+    <Folder Include="Service\Core\" />
+    <Folder Include="Repository\User\" />
+    <Folder Include="Service\CQT\" />
+    <Folder Include="Service\User\" />
+    <Folder Include="Repository\Category\" />
+    <Folder Include="Service\Category\" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Dapper" Version="2.1.4" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Model\Model.csproj" />
+    <ProjectReference Include="..\Common\Common.csproj" />
+  </ItemGroup>
+</Project>

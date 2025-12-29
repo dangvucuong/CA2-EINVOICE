@@ -1,0 +1,174 @@
+import { TriangleDownIcon, XCircleFillIcon } from "@primer/octicons-react";
+
+import { Box, Button, Label, SelectPanel } from "@primer/react";
+import { useEffect, useMemo, useState } from "react";
+import { useDispatch } from "react-redux";
+import { useAppSelector } from "../../hooks/useAppSelector";
+import {
+  LeadingVisual,
+  TrailingVisual,
+} from "@primer/react/lib/ActionList/Visuals";
+import { useLocation } from "react-router-dom";
+interface ISelectBoxKyHieuPhatHanhProps {
+  onValueChanged: (id: string) => void;
+  value: string;
+  maxWidth?: any;
+  loai_hoa_don_ct_id: number;
+  mau_so: string;
+  isAutoSelectIfHasOneItem: boolean;
+  isShowClearBtn?: boolean;
+  isShowKyHieuTheoNam?: boolean;
+}
+const isMayTinhTien = (ky_hieu: string) => {
+  if (ky_hieu && ky_hieu.length >= 4) {
+    return ky_hieu.substring(3, 4) === "M";
+  }
+  return false;
+};
+const getLeadingVisual = (isMTT: boolean) => {
+  return (
+    <>
+      {isMTT && (
+        <Label size="small" variant="attention">
+          Máy tính tiền
+        </Label>
+      )}
+    </>
+  );
+};
+
+const SelectBoxKyHieuPhatHanh = (props: ISelectBoxKyHieuPhatHanhProps) => {
+  const { isShowKyHieuTheoNam = false } = props;
+  const [open, setOpen] = useState(false);
+  const location = useLocation();
+
+  const { hoaDonDangKyPhatHanhs, status } = useAppSelector(
+    (x) => x.hoaDon.hoaDonDangKyPhatHanhReducer
+  );
+  const [filter, setFilter] = useState("");
+  const dispatch = useDispatch();
+  const dataSource = useMemo(() => {
+    var uniqueData = new Set();
+    hoaDonDangKyPhatHanhs
+      .sort((a, b) => b.id - a.id)
+      .filter(
+        (x) =>
+          // x.hoa_don_dang_ky_phat_hanh_trang_thai_id === 1 &&
+          x.loai_hoa_don_ct_id === props.loai_hoa_don_ct_id &&
+          x.mau_so === props.mau_so
+      )
+      .map((x) => ({ id: x.ky_hieu, text: x.ky_hieu }))
+      .forEach((item) => {
+        uniqueData.add(JSON.stringify(item));
+      });
+    var result = Array.from(uniqueData).map((item: any) => JSON.parse(item));
+
+    //location.state?.is_may_tinh_tien === true thì chỉ lấy ký hiệu máy tính tiền
+    if (location.state?.is_may_tinh_tien === true) {
+      result = result.filter((x) => isMayTinhTien(x.text));
+    }
+
+    return result.map((x) => {
+      return {
+        ...x,
+        trailingVisual: getLeadingVisual(isMayTinhTien(x.text)),
+      };
+    });
+  }, [hoaDonDangKyPhatHanhs, props.loai_hoa_don_ct_id, props.mau_so]);
+  const filterdData = useMemo(() => {
+    const data = dataSource.filter((item) =>
+      item.text.toLowerCase().includes(filter.toLowerCase())
+    );
+
+    if (!isShowKyHieuTheoNam) return data;
+
+    // ký hiệu có giá trị như C25THH, C25THM, C24THH,... 25 với 24 là năm, nếu là năm hiện tại thì bỏ qua các ký hiệu của năm trước
+    return data.filter((item) => {
+      if (item.text.length >= 4) {
+        const year = item.text.substring(1, 3);
+
+        const currentYear = new Date().getFullYear() % 100;
+        if (parseInt(year) < currentYear) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [dataSource, filter, isShowKyHieuTheoNam]);
+  const _selectedData = useMemo(() => {
+    return dataSource.find((item) => item.id === props.value);
+  }, [props.value, dataSource]);
+  useEffect(() => {
+    if (props.value === "") {
+      if (dataSource.length === 1) {
+        props.onValueChanged(dataSource[0].id);
+      }
+    }
+  }, [props.value, dataSource]);
+  return (
+    <>
+      <SelectPanel
+        renderAnchor={({
+          children,
+          "aria-labelledby": ariaLabelledBy,
+          ...anchorProps
+        }) => (
+          <Button
+            sx={{
+              maxWidth: 300,
+            }}
+            trailingAction={TriangleDownIcon}
+            aria-labelledby={` ${ariaLabelledBy}`}
+            {...anchorProps}
+          >
+            <p
+              style={{
+                maxWidth: props.maxWidth,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {children || "Chọn Ký hiệu"}
+            </p>
+          </Button>
+        )}
+        title={
+          <>
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Box sx={{ flex: 1 }}>Chọn ký hiệu</Box>
+              {props.isShowClearBtn && props.value !== "" && (
+                <Button
+                  trailingVisual={XCircleFillIcon}
+                  variant="invisible"
+                  sx={{
+                    color: "danger.emphasis",
+                  }}
+                  onClick={() => {
+                    props.onValueChanged("");
+                  }}
+                >
+                  Bỏ chọn
+                </Button>
+              )}
+            </Box>
+          </>
+        }
+        placeholderText="Search"
+        open={open}
+        onOpenChange={setOpen}
+        items={filterdData}
+        selected={_selectedData}
+        onSelectedChange={(data: any) => {
+          if (data) {
+            props.onValueChanged(data.id);
+          }
+        }}
+        onFilterChange={setFilter}
+        showItemDividers={true}
+        overlayProps={{ width: "small", height: "medium" }}
+      />
+    </>
+  );
+};
+
+export default SelectBoxKyHieuPhatHanh;

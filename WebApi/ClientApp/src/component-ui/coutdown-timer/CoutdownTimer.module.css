@@ -1,0 +1,4 @@
+.container :global(.CircularProgressbar .CircularProgressbar-text) {
+    font-size: 30px;
+    /* margin-top:2px */
+}

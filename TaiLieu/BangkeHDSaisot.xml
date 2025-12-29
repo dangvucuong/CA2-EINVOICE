@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BKe>
+	<NDBKe Id="_12595354">
+		<TTChung>
+			<PBan> 2.1.0
+			</PBan>
+			<TBKe> BẢNG KÊ CÁC HÓA ĐƠN ĐIỆN TỬ ĐÃ LẬP SAI
+			</TBKe>
+			<KHMBKe> 01/BK-ĐCTT
+			</KHMBKe>
+			<SBKe> NCM-BKSS01
+			</SBKe>
+			<NBKe> 2025-08-1O
+			</NBKe>
+			<TCHDon>
+				2
+			</TCHDon>
+			<NBan> Công ty cổ phần công nghệ thẻ Nacencomm - Bộ test có mã
+			</NBan>
+			<MSTNBan> 0103930279-999
+			</MSTNBan>
+			<DCNBan> Thanh xuân - Hà Nội
+			</DCNBan>
+			<NMua> Công ty A
+			</NMua>
+			<MSTNMua> 12222222222
+			</MSTNMua>
+			<DCNMua> Cầu Giấy - Hà Nội
+			</DCNMua>
+			<DSLDTDoi>
+				<LDo> Lý do điều chỉnh / thay thế do người dùng nhập
+				</LDo>
+				<LDo> Lý do điều chỉnh / thay thế do người dùng nhập
+				</LDo>
+			</DSLDTDoi>
+		</TTChung>
+		<DSHHDVu>
+			<HHDVu>
+				<!-- Thông tin trước điều chỉnh/thay thế -->
+				<TTTDChinh>
+					<STT>
+						1
+					</STT>
+					<KHMSHDon>
+						1
+					</KHMS  HDon>
+					<KHHDon>
+						C25TTT
+					</KHHDon>
+					<SHDon>
+						1
+					</SHDon>
+					<THHDVGoc>
+						Tên hàng hóa gốc
+					</THHDVGoc>
+					<SLGoc>
+						10
+					</SLGoc>
+					<DGGoc>
+						20000
+					</DGGoc>
+					<ThTGoc>
+						200000
+					</ThTGoc>
+					<TSGoc>
+						10%
+					</TSGoc>
+					<TTGoc>
+						20000
+					</TTGoc>
+					<TgTKGoc>
+						0
+					</TgTKGoc>
+					<TgTSTGoc>
+						220000
+					</TgTSTGoc>
+				</TTTDChinh>
+				<!-- Thông tin sau điều chỉnh/thay thế -->
+				<TTSDChinh>
+					<THHDVTDoi>
+						Tên hàng hóa thay thế
+					</THHDVTDoi>
+					<SLTDoi>
+						12
+					</SLTDoi>
+					<DGTDoi>
+						18000
+					</DGTDoi>
+					<ThTTDoi>
+						216000
+					</ThTTDoi>
+					<TSTDoi>
+						10%
+					</TSTDoi>
+					<TTTDoi>
+						21600
+					</TTTDoi>
+					<TgTTDoi>
+						0
+					</TgTTDoi>
+					<TgTSTTDoi>
+						237600
+					</TgTSTTDoi>
+				</TTSDChinh>
+				<!-- Chênh lệch -->
+				<CLech>
+					<TgTCTCLech>
+						16000
+					</TgTCTCLech>
+					<TgTTCLech>
+						1600
+					</TgTTCLech>
+					<TgTKCLech>
+						0
+					</TgTKCLech>
+					<TgTTTCLech>
+						17600
+					</TgTTTCLech>
+				</CLech>
+				<!-- Thông tin khác nếu có-->
+				<TTKhac>
+					...
+				</TTKhac>
+			</HHDVu>
+            <HHDVu>
+				<!-- Thông tin trước điều chỉnh/thay thế -->
+				<TTTDChinh>
+					<STT>
+						2
+					</STT>
+					<KHMSHDon>
+						1
+					</KHMSHDon>
+					<KHHDon>
+						C25TTT
+					</KHHDon>
+					<SHDon>
+						2
+					</SHDon>
+					<THHDVGoc>
+						Tên hàng hóa gốc
+					</THHDVGoc>
+					<SLGoc>
+						10
+					</SLGoc>
+					<DGGoc>
+						20000
+					</DGGoc>
+					<ThTGoc>
+						200000
+					</ThTGoc>
+					<TSGoc>
+						10%
+					</TSGoc>
+					<TTGoc>
+						20000
+					</TTGoc>
+					<TgTKGoc>
+						0
+					</TgTKGoc>
+					<TgTSTGoc>
+						220000
+					</TgTSTGoc>
+				</TTTDChinh>
+				<!-- Thông tin sau điều chỉnh/thay thế -->
+				<TTSDChinh>
+					<THHDVTDoi>
+						Tên hàng hóa thay thế
+					</THHDVTDoi>
+					<SLTDoi>
+						12
+					</SLTDoi>
+					<DGTDoi>
+						18000
+					</DGTDoi>
+					<ThTTDoi>
+						216000
+					</ThTTDoi>
+					<TSTDoi>
+						10%
+					</TSTDoi>
+					<TTTDoi>
+						21600
+					</TTTDoi>
+					<TgTTDoi>
+						0
+					</TgTTDoi>
+					<TgTSTTDoi>
+						237600
+					</TgTSTTDoi>
+				</TTSDChinh>
+				<!-- Chênh lệch -->
+				<CLech>
+					<TgTCTCLech>
+						16000
+					</TgTCTCLech>
+					<TgTTCLech>
+						1600
+					</TgTTCLech>
+					<TgTKCLech>
+						0
+					</TgTKCLech>
+					<TgTTTCLech>
+						17600
+					</TgTTTCLech>
+				</CLech>
+				<!-- Thông tin khác nếu có-->
+				<TTKhac>
+					...
+				</TTKhac>
+			</HHDVu>
+		</DSHHDVu>
+	</NDBKe>
+     <DSCKS>
+        <NBan />
+        <NMua />
+        <CCKSKhac />           
+    </DSCKS>
+</BKe>

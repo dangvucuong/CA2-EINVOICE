@@ -1,0 +1,7 @@
+.boxComponent{
+    padding: 16px;
+    border: 1px solid;
+    margin: 8px;
+    border-radius: 6px;
+    border-color: #d0d7de;
+}

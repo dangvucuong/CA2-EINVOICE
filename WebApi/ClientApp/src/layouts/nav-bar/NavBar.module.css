@@ -1,0 +1,16 @@
+.navbar{
+    background-color: var(--bg-emphasis);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+}
+.appList{
+    width: 100%;
+    /* flex: 1; */
+}
+.userPanel{
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

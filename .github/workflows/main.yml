@@ -1,0 +1,45 @@
+name: .NET Core with React CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Install dependencies
+      run: |
+        cd WebApi/ClientApp
+        npm ci
+        npm run build
+        cd ../..
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '7.0' # adjust version as needed
+
+    - name: Restore NuGet packages
+      run: |
+        cd WebApi
+        dotnet restore
+
+    - name: Build .NET Core
+      run: dotnet build --configuration Release
+
+   
+    # Add deployment steps as needed

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BBan>
+
+		<NDBBan Id="_12595354">
+			<TTChung>
+				<PBan>					2.1.0				</PBan>
+				<TBBan>					BIÊN BẢN ĐIỀU CHỈNH HÓA ĐƠN				</TBBan>
+				<SBBan>		01		</SBBan>
+				<NBBan>					2025-09-03				</NBBan>
+				<TCHDon>					2				</TCHDon>
+				<NBan>					Công ty cổ phần công nghệ thẻ NACENCOMM				</NBan>
+				<MSTNBan> 					0103930279-999				</MSTNBan>
+				<DCNban>					Tòa nhà BOHEMIA số 25, Lê Văn Thiêm, Thanh Xuân, Hà Nội, Việt Nam				</DCNban>
+				<NMua>					Công ty CP Công nghệ thẻ NCM_ Test				</NMua>
+				<MSTNMua>					0103930279-998				</MSTNMua>
+				<DCNmua>					Số 2 Lê Văn Thiêm, Thanh Xuân, Hà Nội				</DCNmua>
+				<KHMSHDon>					1				</KHMSHDon>
+				<KHHDon>					C25TTH				</KHHDon>
+				<SHDon>					2				</SHDon>
+				<NLHDGoc>					2025-06-06				</NLHDGoc>
+				<DSLDTDoi>					<LDo>						test nội dung đưa vào biên bản					</LDo>				</DSLDTDoi>
+			</TTChung>
+		</NDBBan>
+	
+	<DSCKS>
+		<NBan />
+		<NMua />
+	</DSCKS>
+</BBan>

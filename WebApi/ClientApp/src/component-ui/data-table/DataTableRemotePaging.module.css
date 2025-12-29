@@ -1,0 +1,33 @@
+/* .table :global(.TableCell) {
+    display: flex;
+    align-items: center;
+} */
+.table {
+  position: relative;
+}
+
+.table :global(.TableCell):not(:global(.TableCellSkeleton)) {
+  display: flex;
+  align-items: center;
+}
+
+.table table {
+  font-size: 1rem;
+
+  /* height sẽ là độ cao của màn hình trừ đi 200px */
+  max-height: calc(100vh - 400px);
+  overflow: auto;
+}
+
+.table div {
+  grid-template-columns: unset;
+  /* grid-template-columns: 1fr auto; */
+}
+
+.pageSize {
+  color: #1f2328 !important;
+}
+.pageSize.selected {
+  color: #fff !important;
+  background-color: #0969da !important;
+}
