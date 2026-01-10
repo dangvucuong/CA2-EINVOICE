@@ -29,7 +29,27 @@ export const toKhaiStatus = [
     name_en: "Cơ quan thuế đồng ý",
     color: "#0cf478",
   },
+  {
+    id: eToKhaiStatus.CQT_TIEP_NHAN,
+    name: "CQT tiếp nhận",
+    name_en: "CQT tiếp nhận",
+    color: "#4c6ef5",
+  },
+
+  {
+    id: eToKhaiStatus.DA_GUI_CQT,
+    name: "Đã gửi CQT",
+    name_en: "Đã gửi CQT",
+    color: "#a2eeef",
+  },
+  {
+    id: eToKhaiStatus.LOI_THONG_DIEP,
+    name: "Lỗi thông điệp",
+    name_en: "Lỗi thông điệp",
+    color: "#d73a4a",
+  },
 ];
+
 const ToKhaiStatus = (props: IToKhaiStatusProps) => {
   const status = useMemo(() => {
     return toKhaiStatus.find((x) => x.id === props.id);

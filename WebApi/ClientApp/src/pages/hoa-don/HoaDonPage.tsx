@@ -198,6 +198,7 @@ const HoaDonPage = () => {
           hoa_don_trang_thai_ids: [
             eHoaDonTrangThai.DA_PHAT_HANH,
             eHoaDonTrangThai.DA_GUI_LEN_CQT_CHUA_PHAN_HOI_KIEM_TRA_DU_LIEU,
+            eHoaDonTrangThai.DA_GUI_CQT_CHUA_PHAN_HOI,
           ],
         })
       );
@@ -729,9 +730,9 @@ const HoaDonPage = () => {
                                 onSelect={() => {
                                   const ids = hoaDonSelectedIds ?? [];
                                   if (!ids || ids.length === 0) return;
-                                  if (ids.length > 50) {
+                                  if (ids.length > 20) {
                                     NotifyHelper.Error(
-                                      "Không được tải xuống quá 50 hóa đơn cùng lúc"
+                                      "Không được tải xuống quá 20 hóa đơn cùng lúc"
                                     );
                                     return;
                                   }
@@ -895,6 +896,7 @@ const HoaDonPage = () => {
                       <ViewHoaDonButtonActionListItem
                         id={row.id}
                         showText={false}
+                        hinhThucHoaDonId={row.hoa_don_hinh_thuc_id}
                       />
                     );
                   },
@@ -998,6 +1000,9 @@ const HoaDonPage = () => {
                                   onOpenedModal={() => {
                                     setHoaDonActionMenuOpenId(row.id);
                                   }}
+                                  hoa_don_hinh_thuc_id={
+                                    row.hoa_don_hinh_thuc_id
+                                  }
                                 />
                                 {tab === "nhap" && (
                                   <ActionList.Item
@@ -1291,34 +1296,6 @@ const HoaDonPage = () => {
                     );
                   },
                 },
-                {
-                  header: "Tổng tiền",
-                  field: "tong_tien_thanh_toan",
-                  rowHeader: false,
-                  width: "100px",
-                  renderCell: (cell: IHoaDon) => {
-                    return (
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                        }}
-                      >
-                        <Box>
-                          <b>{cell.tong_tien_thanh_toan.toLocaleString()}</b>
-                        </Box>
-                      </Box>
-                    );
-                  },
-                  // sortBy: "alphanumeric"
-                },
-                {
-                  header: "Mã tra cứu",
-                  field: "ma_tra_cuu",
-                  rowHeader: false,
-                  width: "150px",
-                  // sortBy: "alphanumeric"
-                },
 
                 {
                   header: "Nội dung phát hành",
@@ -1338,8 +1315,10 @@ const HoaDonPage = () => {
                       // <Box className="limit1Line">
                       <Box>
                         {tab === "da-phat-hanh" &&
-                          data.hoa_don_trang_thai_id ===
-                            eHoaDonTrangThai.DA_GUI_LEN_CQT_CHUA_PHAN_HOI_KIEM_TRA_DU_LIEU && (
+                          (data.hoa_don_trang_thai_id ===
+                            eHoaDonTrangThai.DA_GUI_LEN_CQT_CHUA_PHAN_HOI_KIEM_TRA_DU_LIEU ||
+                            data.hoa_don_trang_thai_id ===
+                              eHoaDonTrangThai.DA_GUI_CQT_CHUA_PHAN_HOI) && (
                             <Box>
                               Chưa có phản hồi kết quả kiểm tra dữ liệu từ CQT
                             </Box>
@@ -1393,6 +1372,34 @@ const HoaDonPage = () => {
                       </Box>
                     );
                   },
+                },
+                {
+                  header: "Tổng tiền",
+                  field: "tong_tien_thanh_toan",
+                  rowHeader: false,
+                  width: "100px",
+                  renderCell: (cell: IHoaDon) => {
+                    return (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                        }}
+                      >
+                        <Box>
+                          <b>{cell.tong_tien_thanh_toan.toLocaleString()}</b>
+                        </Box>
+                      </Box>
+                    );
+                  },
+                  // sortBy: "alphanumeric"
+                },
+                {
+                  header: "Mã tra cứu",
+                  field: "ma_tra_cuu",
+                  rowHeader: false,
+                  width: "150px",
+                  // sortBy: "alphanumeric"
                 },
               ]}
             />

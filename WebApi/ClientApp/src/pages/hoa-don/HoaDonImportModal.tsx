@@ -342,7 +342,7 @@ const HoaDonImportModal = (props: IHoaDonImportModalProps) => {
                       }}
                     />
                     <Text
-                      text="Đơn luồng."
+                      text="Đẩy tuần tự dữ liệu excel."
                       sx={{
                         display: "block",
                       }}

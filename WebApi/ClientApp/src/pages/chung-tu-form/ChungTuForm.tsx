@@ -176,13 +176,17 @@ const ChungTuForm = () => {
     if (parseRes.status === "success") {
       const ttchungtu = parseRes.data[0];
       setchungtuViewModel(parseRes.data[0]);
+
       reset({
         nguoi_mua_mst: ttchungtu?.MasothueNNT,
         nguoi_mua_ten_donvi: ttchungtu?.TenNNT,
         nguoi_mua_email: ttchungtu?.EmailNNT,
         nguoi_mua_dien_thoai: ttchungtu?.DienthoaiNNT,
         nguoi_mua_dia_chi: ttchungtu?.DiachiNNT,
-        nguoi_mua_cccd: ttchungtu?.SoCMND,
+        nguoi_mua_cccd:
+          ttchungtu?.SoCMND?.trim()?.length === 12 ? ttchungtu?.SoCMND : "",
+        ho_chieu:
+          ttchungtu?.SoCMND?.trim()?.length === 9 ? ttchungtu?.SoCMND : "",
         tu_thang: ttchungtu?.ThangTN,
         den_thang: ttchungtu?.Denthang,
         nam: ttchungtu?.NamTN,
@@ -357,6 +361,19 @@ const ChungTuForm = () => {
       }
     }
 
+    if (data?.ho_chieu) {
+      // nếu quá 12 ký tự thì báo lỗi
+      if (data.ho_chieu?.length !== 9) {
+        NotifyHelper.Error("Số hộ chiếu người mua hàng phải đúng 9 ký tự");
+        setError("ho_chieu" as any, {
+          type: "manual",
+          message: "Số hộ chiếu người mua hàng phải đúng 9 ký tự",
+        });
+        setFocus("ho_chieu" as any);
+        isValid = false;
+      }
+    }
+
     if (!isValid) return;
 
     if (hinhthucchungtu === 0) {
@@ -371,6 +388,8 @@ const ChungTuForm = () => {
   };
 
   const TaoChungTuThayTheDieuChinh = async (data: any) => {
+    const soCCCD = data?.nguoi_mua_cccd ? data.nguoi_mua_cccd : data?.ho_chieu;
+
     const soap = `<?xml version="1.0" encoding="utf-8"?>
 <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
   <soap12:Body>
@@ -385,7 +404,7 @@ const ChungTuForm = () => {
       <diachi>${data?.nguoi_mua_dia_chi}</diachi>
       <dienthoai>${data.nguoi_mua_dien_thoai}</dienthoai>
       <email>${data.nguoi_mua_email}</email>
-      <cccd>${data.nguoi_mua_cccd}</cccd>
+      <cccd>${soCCCD}</cccd>
       <tuthang>${data.tu_thang}</tuthang>
       <denthang>${data.den_thang}</denthang>
       <nam>${data.nam}</nam>
@@ -402,7 +421,7 @@ const ChungTuForm = () => {
       <baohiem>${data?.bao_hiem}</baohiem>
       <tthien>${data?.khoan_dong_tu_thien}</tthien>
       <TinhchatCT>${hinhthucchungtu}</TinhchatCT>
-      <LoaiCTLienquan>${thongTinChungTuGoc?.loai_chung_tu_goc}</LoaiCTLienquan>
+      <LoaiCTLienquan>1</LoaiCTLienquan>
       <KHMSCTLienquan>${
         thongTinChungTuGoc?.mau_so_chung_tu_goc
       }</KHMSCTLienquan>
@@ -438,6 +457,8 @@ const ChungTuForm = () => {
   };
 
   const TaoChungTu = async (data: any) => {
+    const soCCCD = data?.nguoi_mua_cccd ? data.nguoi_mua_cccd : data?.ho_chieu;
+
     const soap = `<?xml version="1.0" encoding="utf-8"?>
 <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
   <soap12:Body>
@@ -452,7 +473,7 @@ const ChungTuForm = () => {
       <diachi>${data?.nguoi_mua_dia_chi}</diachi>
       <dienthoai>${data.nguoi_mua_dien_thoai}</dienthoai>
       <email>${data.nguoi_mua_email}</email>
-      <cccd>${data.nguoi_mua_cccd}</cccd>
+      <cccd>${soCCCD}</cccd>
       <tuthang>${data.tu_thang}</tuthang>
       <denthang>${data.den_thang}</denthang>
       <nam>${data.nam}</nam>
@@ -494,6 +515,7 @@ const ChungTuForm = () => {
   };
 
   const SuaChungTu = async (data: any) => {
+    const soCCCD = data?.nguoi_mua_cccd ? data.nguoi_mua_cccd : data?.ho_chieu;
     const soap = `<?xml version="1.0" encoding="utf-8"?>
 <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
   <soap12:Body>
@@ -508,7 +530,7 @@ const ChungTuForm = () => {
       <diachi>${data?.nguoi_mua_dia_chi}</diachi>
       <dienthoai>${data.nguoi_mua_dien_thoai}</dienthoai>
       <email>${data.nguoi_mua_email}</email>
-      <cccd>${data.nguoi_mua_cccd}</cccd>
+      <cccd>${soCCCD}</cccd>
       <tuthang>${data.tu_thang}</tuthang>
       <denthang>${data.den_thang}</denthang>
       <nam>${data.nam}</nam>
@@ -1088,7 +1110,43 @@ const ChungTuForm = () => {
                       }}
                     />
                   </FormControl>
+
+                  <FormControl>
+                    <FormControl.Label>
+                      <Text text="Số hộ chiếu" />
+                    </FormControl.Label>
+                    <TextInput
+                      register={register}
+                      name="ho_chieu"
+                      // required
+                      block
+                      validateMessage="Vui lòng điền Số hộ chiếu"
+                      errors={errors}
+                      type="text"
+                      onChange={(e) => {
+                        if (e.target.value.length > 9) {
+                          setError("ho_chieu" as any, {
+                            type: "manual",
+                            message:
+                              "Số hộ chiếu phải đúng 9 ký tự (không bao gồm dấu cách)",
+                          });
+                        } else if (
+                          e.target.value.length < 9 &&
+                          e.target.value.length > 0
+                        ) {
+                          setError("ho_chieu" as any, {
+                            type: "manual",
+                            message:
+                              "Số hộ chiếu phải đúng 9 ký tự (không bao gồm dấu cách)",
+                          });
+                        } else {
+                          clearErrors("ho_chieu" as any);
+                        }
+                      }}
+                    />
+                  </FormControl>
                 </Box>
+
                 <Box sx={{ mt: 2 }}>
                   <FormControl>
                     <FormControl.Label>

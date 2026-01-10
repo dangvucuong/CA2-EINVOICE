@@ -43,6 +43,7 @@ const KhachHangEditFormModal = () => {
     dispatch(
       rootAction.category.khachHangAction.saveStart({
         ...data,
+        ma_dv_ngan_sach: data.ma_dv_ngan_sach || "",
       })
     );
   };

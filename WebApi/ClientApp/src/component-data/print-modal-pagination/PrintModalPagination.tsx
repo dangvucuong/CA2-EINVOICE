@@ -11,8 +11,10 @@ import HoaDonView from "../../pages/hoa-don-form/HoaDonView";
 interface IPrintModalPaginationProps {
   id?: number;
   onClose: () => void;
+  hinhThucHoaDonId?: number;
 }
 const PrintModalPagination = (props: IPrintModalPaginationProps) => {
+  const { hinhThucHoaDonId = 1 } = props;
   return (
     <Modal
       onClose={props.onClose}
@@ -20,7 +22,11 @@ const PrintModalPagination = (props: IPrintModalPaginationProps) => {
       width={"90%"}
       title="Thông tin hóa đơn"
     >
-      <HoaDonView id={props.id as number} showBackButton={false} />
+      <HoaDonView
+        id={props.id as number}
+        showBackButton={false}
+        hinhThucHoaDonId={hinhThucHoaDonId}
+      />
     </Modal>
   );
 };

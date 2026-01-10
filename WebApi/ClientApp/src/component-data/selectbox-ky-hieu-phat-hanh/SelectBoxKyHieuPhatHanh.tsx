@@ -96,7 +96,19 @@ const SelectBoxKyHieuPhatHanh = (props: ISelectBoxKyHieuPhatHanhProps) => {
     });
   }, [dataSource, filter, isShowKyHieuTheoNam]);
   const _selectedData = useMemo(() => {
-    return dataSource.find((item) => item.id === props.value);
+    const result = dataSource.find((item) => item.id === props.value);
+
+    if (isShowKyHieuTheoNam && props?.value) {
+      const year = props?.value?.substring(1, 3);
+      const currentYear = new Date().getFullYear() % 100;
+
+      if (parseInt(year) !== currentYear) {
+        props.onValueChanged(dataSource[0]?.id);
+        return dataSource[0];
+      }
+    }
+
+    return result;
   }, [props.value, dataSource]);
   useEffect(() => {
     if (props.value === "") {
@@ -105,6 +117,7 @@ const SelectBoxKyHieuPhatHanh = (props: ISelectBoxKyHieuPhatHanhProps) => {
       }
     }
   }, [props.value, dataSource]);
+
   return (
     <>
       <SelectPanel

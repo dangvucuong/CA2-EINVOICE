@@ -74,6 +74,8 @@ const ToKhaiChungTuPage = () => {
     }
   };
 
+  console.log(danhsachtokhai);
+
   return (
     <Box>
       <Helmet>
@@ -201,17 +203,20 @@ const ToKhaiChungTuPage = () => {
 
                       {row?.Trangthai === 3 && (
                         <>
-                          <IconButton
-                            aria-label={`Xem kết quả`}
-                            title={`Xem kết quả`}
-                            icon={ChecklistIcon}
-                            variant="invisible"
-                            onClick={() => {
-                              setType(6);
-                              setToKhaiEditing(row);
-                              setOpenModalXemToKhai(true);
-                            }}
-                          />
+                          {row.ketquaphanhoi !==
+                            "CQT đã tiếp nhận. Chờ xử lý" && (
+                            <IconButton
+                              aria-label={`Xem kết quả`}
+                              title={`Xem kết quả`}
+                              icon={ChecklistIcon}
+                              variant="invisible"
+                              onClick={() => {
+                                setType(6);
+                                setToKhaiEditing(row);
+                                setOpenModalXemToKhai(true);
+                              }}
+                            />
+                          )}
 
                           <IconButton
                             aria-label={`Xem lịch sử`}

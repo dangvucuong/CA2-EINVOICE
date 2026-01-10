@@ -13,6 +13,7 @@ interface IPrintHoaDonButtonProps {
   onClose?: () => void;
   onOpenedModal?: () => void;
   showText?: boolean;
+  hoa_don_hinh_thuc_id?: number;
 }
 interface IPreviewHoaDonButtonProps {
   data: IIHoaDonAddOrEditModel;
@@ -103,7 +104,7 @@ const PrintHoaDonButtonActionListItem = (props: IPrintHoaDonButtonProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [htmlData, setHtmlData] = useState<string>("");
   const [isShowPrintModal, setIsShowPrintModal] = useState(false);
-  const { showText = true } = props;
+  const { showText = true, hoa_don_hinh_thuc_id = 1 } = props;
 
   const handlePrintAsync = async () => {
     setIsLoading(true);
@@ -143,12 +144,12 @@ const PrintHoaDonButtonActionListItem = (props: IPrintHoaDonButtonProps) => {
             console.log({
               xxx: "closed",
             });
-
             setIsShowPrintModal(false);
             if (props.onClose) {
               props.onClose();
             }
           }}
+          hinhThucHoaDonId={hoa_don_hinh_thuc_id}
         />
       )}
     </>

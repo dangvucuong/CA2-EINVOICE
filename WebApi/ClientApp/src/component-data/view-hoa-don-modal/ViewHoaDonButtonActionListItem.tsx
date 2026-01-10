@@ -14,11 +14,12 @@ interface IViewHoaDonModalProps {
   onClose?: () => void;
   onOpenedModal?: () => void;
   showText?: boolean;
+  hinhThucHoaDonId?: number;
 }
 
 const ViewHoaDonButtonActionListItem = (props: IViewHoaDonModalProps) => {
   const [isShowPrintModal, setIsShowPrintModal] = useState(false);
-  const { showText = true } = props;
+  const { showText = true, hinhThucHoaDonId = 1 } = props;
 
   return (
     <>
@@ -39,6 +40,7 @@ const ViewHoaDonButtonActionListItem = (props: IViewHoaDonModalProps) => {
           onClose={() => {
             setIsShowPrintModal(false);
           }}
+          hinhThucHoaDonId={hinhThucHoaDonId}
         />
       )}
     </>

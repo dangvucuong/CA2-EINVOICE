@@ -18,10 +18,11 @@ import { appInfo } from "../../AppInfo";
 interface IHoaDonViewProps {
   id: number;
   showBackButton?: boolean;
+  hinhThucHoaDonId?: number;
 }
 
 const HoaDonView = (props: IHoaDonViewProps) => {
-  const { showBackButton = true } = props;
+  const { showBackButton = true, hinhThucHoaDonId = 1 } = props;
   const [htmlData, setHtmlData] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isShowLoading] = useDebounce(isLoading, 300);
@@ -41,6 +42,13 @@ const HoaDonView = (props: IHoaDonViewProps) => {
     }
     return "#";
   }, [props.id, pageSize, inChuyenDoi]);
+
+  const printPdfBienBanUrl = useMemo(() => {
+    if (props.id) {
+      return `${appInfo.baseApiURL}/${HOA_DON_API}/${props.id}/pdf-bien-ban`;
+    }
+    return "#";
+  }, [props.id]);
 
   useEffect(() => {
     setHtmPages(htmlData.split('<div class="page-break"></div>'));
@@ -72,6 +80,8 @@ const HoaDonView = (props: IHoaDonViewProps) => {
       setIsShowPaging(true);
     },
   });
+
+  console.log(props);
 
   return (
     <Box>
@@ -144,6 +154,18 @@ const HoaDonView = (props: IHoaDonViewProps) => {
                     leadingVisual={DownloadIcon}
                   />
                 </Link>
+
+                {hinhThucHoaDonId !== 1 && (
+                  <Link href={printPdfBienBanUrl}>
+                    <Button
+                      text="Tải biên bản"
+                      onClick={() => {}}
+                      variant="invisible"
+                      size="medium"
+                      leadingVisual={DownloadIcon}
+                    />
+                  </Link>
+                )}
 
                 <Link
                   href={`${appInfo.baseApiURL}/hoa-don/${props.id}/download`}

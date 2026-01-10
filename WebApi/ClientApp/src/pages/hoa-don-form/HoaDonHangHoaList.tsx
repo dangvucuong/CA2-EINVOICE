@@ -52,6 +52,7 @@ interface IHoaDonHangHoaListProps {
   loaiTien?: string;
   tongTienChu?: string;
   setTongTienChu?: (data: string) => void;
+  hoa_don_dang_ky_phat_hanh_mau_so?: string;
 }
 export function isNumber(value: any) {
   if (isNaN(value)) return false;
@@ -119,7 +120,8 @@ export const getTongTienData = (
   _hangHoas: IHoaDonHangHoa[],
   tienTe?: string,
   giamThueTyLe?: number,
-  loaiPhis: any[] = []
+  loaiPhis: any[] = [],
+  hoa_don_dang_ky_phat_hanh_mau_so?: string
 ) => {
   let thuesuatck = "";
   let co_hang_hoa_dv = 0;
@@ -269,6 +271,10 @@ export const getTongTienData = (
     vats_detail.map((x) => x.tong_tien_vat).reduce((a, b) => a + b, 0) ?? 0
   );
 
+  if (hoa_don_dang_ky_phat_hanh_mau_so === "2") {
+    vats_total = 0;
+  }
+
   const congTienHang = roundIfVND(
     hangHoas
       .filter(
@@ -371,6 +377,7 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
     tongTienChu,
     setTongTienChu = () => {},
     onValueChangedLoaiPhis = () => {},
+    hoa_don_dang_ky_phat_hanh_mau_so,
   } = props;
   const setHangHoas = (hangHoas: IHoaDonHangHoa[]) => {
     props.onValueChanged(hangHoas);
@@ -474,7 +481,8 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
     hangHoas,
     props.tienTe ?? "VND",
     props.giam_thue_ty_le,
-    loaiPhis
+    loaiPhis,
+    hoa_don_dang_ky_phat_hanh_mau_so
   );
   const isAllChietKhau = useMemo(() => {
     return hangHoas.find((x) => x.hang_hoa_tinh_chat_id !== 3) === undefined;
@@ -1232,27 +1240,28 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                 </b>
               </td>
             </tr>
-            {tongTienData.vats_detail.map((x) => {
-              return (
-                <tr key={x.vat}>
-                  <td colSpan={6}>{x.vat}</td>
-                  <td colSpan={6} style={{ textAlign: "right" }}>
-                    {isApDungDieuChinh5DongVaoThueSuat && (
-                      <>
-                        {numberWithCommas(
-                          x.tong_tien_vat + so_tien_tang_giam_tien_thue
-                        )}
-                      </>
-                    )}
-                    {!isApDungDieuChinh5DongVaoThueSuat && (
-                      <>{numberWithCommas(x.tong_tien_vat)}</>
-                    )}
+            {hoa_don_dang_ky_phat_hanh_mau_so !== "2" &&
+              tongTienData.vats_detail.map((x) => {
+                return (
+                  <tr key={x.vat}>
+                    <td colSpan={6}>{x.vat}</td>
+                    <td colSpan={6} style={{ textAlign: "right" }}>
+                      {isApDungDieuChinh5DongVaoThueSuat && (
+                        <>
+                          {numberWithCommas(
+                            x.tong_tien_vat + so_tien_tang_giam_tien_thue
+                          )}
+                        </>
+                      )}
+                      {!isApDungDieuChinh5DongVaoThueSuat && (
+                        <>{numberWithCommas(x.tong_tien_vat)}</>
+                      )}
 
-                    {/* {x.tong_tien_vat ? numberWithCommas(x.tong_tien_vat) : ""} */}
-                  </td>
-                </tr>
-              );
-            })}
+                      {/* {x.tong_tien_vat ? numberWithCommas(x.tong_tien_vat) : ""} */}
+                    </td>
+                  </tr>
+                );
+              })}
             <tr>
               <td colSpan={6}>Tổng tiền chiết khấu:</td>
               <td colSpan={5} style={{ textAlign: "right" }}>

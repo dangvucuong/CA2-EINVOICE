@@ -14,11 +14,10 @@ interface IPrintModalProps {
   onClose: () => void;
   disabledPdf?: boolean;
   disabledXml?: boolean;
+  hinhThucHoaDonId?: number;
 }
 const PrintModal = (props: IPrintModalProps) => {
-  console.log({
-    html: props.html,
-  });
+  const { hinhThucHoaDonId = 1 } = props;
   const contentRef = useRef<HTMLDivElement>(null); // ✅ Thêm type cho ref
 
   const handlePrint = useReactToPrint({
@@ -36,6 +35,16 @@ const PrintModal = (props: IPrintModalProps) => {
     }
     return "#";
   }, [props.id]);
+
+  const printPdfBienBanUrl = useMemo(() => {
+    if (props.id) {
+      return `${appInfo.baseApiURL}/${HOA_DON_API}/${props.id}/pdf-bien-ban`;
+    }
+    return "#";
+  }, [props.id]);
+
+  console.log(hinhThucHoaDonId);
+
   return (
     <Modal
       onClose={props.onClose}
@@ -56,20 +65,38 @@ const PrintModal = (props: IPrintModalProps) => {
           leadingVisual={PrintIcon}
         />
         {props.disabledPdf !== true && (
-          <Link href={printPdfUrl}>
-            <Button
-              text="Tải xuống PDF"
-              onClick={() => {
-                // setIsShowPaging(false);
-                // setTimeout(() => {
-                //     handleExportWithFunction();
-                // }, 300)
-              }}
-              variant="invisible"
-              size="medium"
-              leadingVisual={DownloadIcon}
-            />
-          </Link>
+          <>
+            <Link href={printPdfUrl}>
+              <Button
+                text="Tải xuống PDF"
+                onClick={() => {
+                  // setIsShowPaging(false);
+                  // setTimeout(() => {
+                  //     handleExportWithFunction();
+                  // }, 300)
+                }}
+                variant="invisible"
+                size="medium"
+                leadingVisual={DownloadIcon}
+              />
+            </Link>
+            {hinhThucHoaDonId !== 1 && (
+              <Link href={printPdfBienBanUrl}>
+                <Button
+                  text="Tải xuống biên bản"
+                  onClick={() => {
+                    // setIsShowPaging(false);
+                    // setTimeout(() => {
+                    //     handleExportWithFunction();
+                    // }, 300)
+                  }}
+                  variant="invisible"
+                  size="medium"
+                  leadingVisual={DownloadIcon}
+                />
+              </Link>
+            )}
+          </>
         )}
         {props.disabledXml !== true && (
           <Link href={`${appInfo.baseApiURL}/hoa-don/${props.id}/download`}>

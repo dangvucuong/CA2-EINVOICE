@@ -119,7 +119,10 @@ const HoaDonPage = () => {
         hoaDonAction.changeFilter({
           ...filter,
           hoa_don_hinh_thuc_code: "M",
-          hoa_don_trang_thai_ids: [eHoaDonTrangThai.DA_PHAT_HANH],
+          hoa_don_trang_thai_ids: [
+            eHoaDonTrangThai.DA_PHAT_HANH,
+            eHoaDonTrangThai.DA_GUI_CQT_CHUA_PHAN_HOI,
+          ],
         })
       );
     }
@@ -473,7 +476,7 @@ const HoaDonPage = () => {
                       </ActionMenu.Button>
                       <ActionMenu.Overlay>
                         <ActionList showDividers>
-                          <ActionList.LinkItem
+                          {/* <ActionList.LinkItem
                             target="_blank"
                             // href={`../../../api/hoa-don/pdfs?hoaDonIds=${hoaDonSelectedIds?.join(
                             //   ","
@@ -488,7 +491,32 @@ const HoaDonPage = () => {
                               <FileIcon />
                             </ActionList.LeadingVisual>
                             Tải pdf
-                          </ActionList.LinkItem>
+                          </ActionList.LinkItem> */}
+                          <ActionList.Item
+                            // target="_blank"
+                            // href={`../../../api/hoa-don/pdfs?hoaDonIds=${hoaDonSelectedIds?.join(
+                            //   ","
+                            // )}`}
+                            onSelect={() => {
+                              const ids = hoaDonSelectedIds ?? [];
+                              if (!ids || ids.length === 0) return;
+                              if (ids.length > 20) {
+                                NotifyHelper.Error(
+                                  "Không được tải xuống quá 20 hóa đơn cùng lúc"
+                                );
+                                return;
+                              }
+                              const url = `${
+                                process.env.REACT_APP_API_BASE_URL
+                              }/hoa-don/pdfs?hoaDonIds=${ids.join(",")}`;
+                              window.open(url, "_blank");
+                            }}
+                          >
+                            <ActionList.LeadingVisual>
+                              <FileIcon />
+                            </ActionList.LeadingVisual>
+                            Tải pdf
+                          </ActionList.Item>
                           {tab !== "nhap" && (
                             <ActionList.LinkItem
                               target="_blank"
@@ -628,6 +656,7 @@ const HoaDonPage = () => {
                       <PrintHoaDonButtonActionListItem
                         id={row.id}
                         showText={false}
+                        hoa_don_hinh_thuc_id={row.hoa_don_hinh_thuc_id}
                       />
                     );
                   },

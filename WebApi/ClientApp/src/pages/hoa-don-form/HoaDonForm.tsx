@@ -976,7 +976,9 @@ const HoaDonForm = () => {
     hoaDonId === hoaDonViewModel.id &&
     hoaDonViewModel.hoa_don_trang_thai_id === eHoaDonTrangThai.DA_PHAT_HANH
   ) {
-    return <HoaDonView id={hoaDonViewModel.id} />;
+    return (
+      <HoaDonView id={hoaDonViewModel.id} hinhThucHoaDonId={hinhThucHoaDonId} />
+    );
   }
   if (user && user.donvi && (user.donvi.to_khai_success_id ?? 0) === 0) {
     return (
@@ -2014,6 +2016,9 @@ const HoaDonForm = () => {
                     setTongTienChu(data);
                   }}
                   tongTienChu={tongTienChu}
+                  hoa_don_dang_ky_phat_hanh_mau_so={
+                    formData.hoa_don_dang_ky_phat_hanh_mau_so
+                  }
                 />
               )}
             </Box>
