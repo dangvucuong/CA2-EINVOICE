@@ -104,7 +104,7 @@ namespace Service.HoaDon
                 xsltContent = xsltContent.Replace("contentDisable", $"{(hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_BI_DIEU_CHINH ? "HÓA ĐƠN BỊ ĐIỀU CHỈNH" : "HÓA ĐƠN BỊ THAY THẾ")}");
                 xsltContent = xsltContent.Replace("paramdisable", $"position:absolute;z-index:0; width:auto; height:70px; border:4px solid red;  background:transparent; display:block;top:45%;left:50%;transform: translate(-50%, -50%);color:red;font-size:25pt;font-weight:bold;text-align:center;padding-top:10px;opacity:0.5");
             }
-            if (hoaDon.hoa_don_hinh_thuc_id != (int)e_hoa_don_hinh_thuc.HOA_DON_BI_DIEU_CHINH && hoaDon.hoa_don_hinh_thuc_id != (int)e_hoa_don_hinh_thuc.HOA_DON_BI_THAY_THE)
+            if (hoaDon.hoa_don_hinh_thuc_id != (int)e_hoa_don_hinh_thuc.HOA_DON_BI_DIEU_CHINH && hoaDon.hoa_don_hinh_thuc_id != (int)e_hoa_don_hinh_thuc.HOA_DON_BI_THAY_THE && hoaDon.hoa_don_hinh_thuc_id != (int)e_hoa_don_hinh_thuc.DA_GUI_TBSS_THAY_THE)
             {
                 xsltContent = xsltContent.Replace("param1", "");
                 xsltContent = xsltContent.Replace("param1_1", "none");
@@ -112,6 +112,15 @@ namespace Service.HoaDon
                 xsltContent = xsltContent.Replace("param2", $"");
                 xsltContent = xsltContent.Replace("contentDisable", $"&#160;");
                 xsltContent = xsltContent.Replace("paramdisable", $"position:absolute;z-index:0 ; width:300px; height:100px; border:3px solid red; background:transparent; display:none;  top:45%; left:40%; color:red;font-size:70pt;text-align:center;padding-top:10px;");
+            }
+            if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.DA_GUI_TBSS_THAY_THE)
+            {
+                xsltContent = xsltContent.Replace("param1", "");
+                xsltContent = xsltContent.Replace("param1_1", "none");
+                xsltContent = xsltContent.Replace("param2_2", "normal");
+                xsltContent = xsltContent.Replace("param2", $"");
+                xsltContent = xsltContent.Replace("contentDisable", "HÓA ĐƠN BỊ THAY THẾ");
+                xsltContent = xsltContent.Replace("paramdisable", $"position:absolute;z-index:0; width:auto; height:70px; border:4px solid red;  background:transparent; display:block;top:45%;left:50%;transform: translate(-50%, -50%);color:red;font-size:25pt;font-weight:bold;text-align:center;padding-top:10px;opacity: 0.5");
             }
             xsltContent = xsltContent.Replace("paramlien", "0");
             string xmlInput = hoaDonData.SerializeToXml();
@@ -592,7 +601,7 @@ namespace Service.HoaDon
                 return content;
             }
         }
-        private async Task<string> GetXmlConntentFormTvanAsync(string khoaPhien)
+        private async Task<string> GetXmlConntentFormTvanAsync(hoa_don hoaDon, Boolean isCoMa)
         {
             using (var client = Helper.WSInterTRCA2Helper.GetClient())
             {
@@ -600,11 +609,21 @@ namespace Service.HoaDon
                 var authHeader = Helper.WSInterTRCA2Helper.GetAuthHeader();
                 try
                 {
-                    var getXmlResultBase64 = await client.GetXML_MTTAsync(authHeader, khoaPhien);
+                    string base64ResultString = string.Empty;
 
-                    if (getXmlResultBase64.GetXML_MTTResult.ConvertToString().Length > 2)
+                    if (isCoMa)
                     {
-                        byte[] xmlBytes = Convert.FromBase64String(getXmlResultBase64.GetXML_MTTResult.ConvertToString());
+                        var response = await client.GetXMLAsync(authHeader, $"{hoaDon.donvi_ma_dv}_{hoaDon.hoa_don_dang_ky_phat_hanh_mau_so}{hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu}_{hoaDon.ma_so_hoa_don}_000_");
+                        base64ResultString = response.GetXMLResult.ConvertToString();
+                    }
+                    else
+                    {
+                        var response = await client.GetXML_MTTAsync(authHeader, $"{hoaDon.invoice_id}");
+                        base64ResultString = response.GetXML_MTTResult.ConvertToString();
+                    }
+                    if (base64ResultString.Length > 2)
+                    {
+                        byte[] xmlBytes = Convert.FromBase64String(base64ResultString);
 
                         string xmlString = Encoding.UTF8.GetString(xmlBytes);
                         return xmlString;
@@ -614,7 +633,7 @@ namespace Service.HoaDon
                 }
                 catch (System.Exception ex)
                 {
-                    LogWriter.Writer("GetXmlConntentFormTvanAsync", $"{khoaPhien}", "");
+                    // LogWriter.Writer("GetXmlConntentFormTvanAsync", $"{}", "");
                     return string.Empty;
                 }
                 finally
@@ -735,7 +754,7 @@ namespace Service.HoaDon
                 xsltContent = xsltContent.Replace("contentDisable", hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_BI_DIEU_CHINH ? $"HÓA ĐƠN BỊ ĐIỀU CHỈNH" : "HÓA ĐƠN BỊ THAY THẾ");
                 xsltContent = xsltContent.Replace("paramdisable", $"position:absolute;z-index:0; width:auto; height:70px; border:4px solid red;  background:transparent; display:block;top:45%;left:50%;transform: translate(-50%, -50%);color:red;font-size:25pt;font-weight:bold;text-align:center;padding-top:10px;opacity:0.5");
             }
-            if (hoaDon.hoa_don_hinh_thuc_id != (int)e_hoa_don_hinh_thuc.HOA_DON_BI_DIEU_CHINH && hoaDon.hoa_don_hinh_thuc_id != (int)e_hoa_don_hinh_thuc.HOA_DON_BI_THAY_THE)
+            if (hoaDon.hoa_don_hinh_thuc_id != (int)e_hoa_don_hinh_thuc.HOA_DON_BI_DIEU_CHINH && hoaDon.hoa_don_hinh_thuc_id != (int)e_hoa_don_hinh_thuc.HOA_DON_BI_THAY_THE && hoaDon.hoa_don_hinh_thuc_id != (int)e_hoa_don_hinh_thuc.DA_GUI_TBSS_THAY_THE)
             {
                 xsltContent = xsltContent.Replace("param1", "");
                 xsltContent = xsltContent.Replace("param1_1", "none");
@@ -743,6 +762,15 @@ namespace Service.HoaDon
                 xsltContent = xsltContent.Replace("param2", $"");
                 xsltContent = xsltContent.Replace("contentDisable", $"&#160;");
                 xsltContent = xsltContent.Replace("paramdisable", $"position:absolute;z-index:0 ; width:300px; height:100px; border:3px solid red; background:transparent; display:none;  top:45%; left:40%; color:red;font-size:70pt;text-align:center;padding-top:10px;");
+            }
+            if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.DA_GUI_TBSS_THAY_THE)
+            {
+                xsltContent = xsltContent.Replace("param1", "");
+                xsltContent = xsltContent.Replace("param1_1", "none");
+                xsltContent = xsltContent.Replace("param2_2", "normal");
+                xsltContent = xsltContent.Replace("param2", $"");
+                xsltContent = xsltContent.Replace("contentDisable", "HÓA ĐƠN BỊ THAY THẾ");
+                xsltContent = xsltContent.Replace("paramdisable", $"position:absolute;z-index:0; width:auto; height:70px; border:4px solid red;  background:transparent; display:block;top:45%;left:50%;transform: translate(-50%, -50%);color:red;font-size:25pt;font-weight:bold;text-align:center;padding-top:10px;opacity: 0.5");
             }
 
             var html = "";
@@ -835,7 +863,7 @@ namespace Service.HoaDon
                         var xml = await this.GetXmlFromTVANAsync(hoaDon, hoaDongLogs.ToList());
                         if (xml.ConvertToString() == "")
                         {
-                            xml = await this.GetXmlConntentFormTvanAsync($"{hoaDon.invoice_id}");
+                            xml = await this.GetXmlConntentFormTvanAsync(hoaDon, isCoMa);
                         }
                         if (xml != string.Empty)
                         {
@@ -861,7 +889,7 @@ namespace Service.HoaDon
                     if (xmlContent.ConvertToString() == string.Empty)
                     {
                         // xmlContent = await this.GetXmlConntentFormTvanAsync($"{hoaDon.donvi_ma_dv}_{hoaDon.hoa_don_dang_ky_phat_hanh_mau_so}{hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu}_{hoaDon.ma_so_hoa_don}_000_");
-                        xmlContent = await this.GetXmlConntentFormTvanAsync($"{hoaDon.invoice_id}");
+                        xmlContent = await this.GetXmlConntentFormTvanAsync(hoaDon, isCoMa);
                         if (xmlContent != string.Empty)
                         {
                             var filePath = xmlDataFile.file_thong_diep_url;
@@ -1113,6 +1141,10 @@ namespace Service.HoaDon
                     if (!File.Exists(xmlDataFile.file_thong_diep_url))
                     {
                         var xml = await this.GetXmlFromTVANAsync(hoaDon, hoaDongLogs.ToList());
+                        if (xml.ConvertToString() == "")
+                        {
+                            xml = await this.GetXmlConntentFormTvanAsync(hoaDon, isCoMa);
+                        }
                         if (xml != string.Empty)
                         {
                             var filePath = xmlDataFile.file_thong_diep_url;
@@ -1531,6 +1563,8 @@ namespace Service.HoaDon
                 ngan_hang = "Ngân hàng ABC",
                 stk = "1425334134",
                 website = "congtya.com.vn",
+                cccd = "123456789012",
+                ma_dv_ngan_sach = "ABCCC"
 
             };
             return sampleData;
@@ -1710,7 +1744,7 @@ namespace Service.HoaDon
                 xsltContent = xsltContent.Replace("contentDisable", $"{(hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_BI_DIEU_CHINH ? "HÓA ĐƠN BỊ ĐIỀU CHỈNH" : "HÓA ĐƠN BỊ THAY THẾ")}");
                 xsltContent = xsltContent.Replace("paramdisable", $"position:absolute;z-index:0; width:auto; height:70px; border:4px solid red;  background:transparent; display:block;top:45%;left:50%;transform: translate(-50%, -50%);color:red;font-size:25pt;font-weight:bold;text-align:center;padding-top:10px;opacity: 0.5");
             }
-            if (hoaDon.hoa_don_hinh_thuc_id != (int)e_hoa_don_hinh_thuc.HOA_DON_BI_DIEU_CHINH && hoaDon.hoa_don_hinh_thuc_id != (int)e_hoa_don_hinh_thuc.HOA_DON_BI_THAY_THE)
+            if (hoaDon.hoa_don_hinh_thuc_id != (int)e_hoa_don_hinh_thuc.HOA_DON_BI_DIEU_CHINH && hoaDon.hoa_don_hinh_thuc_id != (int)e_hoa_don_hinh_thuc.HOA_DON_BI_THAY_THE && hoaDon.hoa_don_hinh_thuc_id != (int)e_hoa_don_hinh_thuc.DA_GUI_TBSS_THAY_THE)
             {
                 xsltContent = xsltContent.Replace("param1", "");
                 xsltContent = xsltContent.Replace("param1_1", "none");
@@ -1718,6 +1752,15 @@ namespace Service.HoaDon
                 xsltContent = xsltContent.Replace("param2", $"");
                 xsltContent = xsltContent.Replace("contentDisable", $"&#160;");
                 xsltContent = xsltContent.Replace("paramdisable", $"position:absolute;z-index:0 ; width:300px; height:100px; border:3px solid red; background:transparent; display:none;  top:45%; left:40%; color:red;font-size:70pt;text-align:center;padding-top:10px;");
+            }
+            if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.DA_GUI_TBSS_THAY_THE)
+            {
+                xsltContent = xsltContent.Replace("param1", "");
+                xsltContent = xsltContent.Replace("param1_1", "none");
+                xsltContent = xsltContent.Replace("param2_2", "normal");
+                xsltContent = xsltContent.Replace("param2", $"");
+                xsltContent = xsltContent.Replace("contentDisable", "HÓA ĐƠN BỊ THAY THẾ");
+                xsltContent = xsltContent.Replace("paramdisable", $"position:absolute;z-index:0; width:auto; height:70px; border:4px solid red;  background:transparent; display:block;top:45%;left:50%;transform: translate(-50%, -50%);color:red;font-size:25pt;font-weight:bold;text-align:center;padding-top:10px;opacity: 0.5");
             }
             xsltContent = xsltContent.Replace("paramlien", "0");
             var getXmlKySoPreview = await _serviceWrapper.HoaDon.HoaDon.CreateXmlKySoAsync(hoaDon.id, true);

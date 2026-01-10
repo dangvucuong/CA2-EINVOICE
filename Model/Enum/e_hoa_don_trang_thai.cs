@@ -14,7 +14,7 @@ namespace Model.Enum
         DA_GUI_LEN_CQT_CHUA_PHAN_HOI_KIEM_TRA_DU_LIEU = 6,
         KHONG_HOP_LE = 7,
         LOI_THONG_DIEP = 8,
-       
+        DA_GUI_CQT_CHUA_PHAN_HOI = 10,
 
 
     }

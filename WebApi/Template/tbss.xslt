@@ -226,42 +226,41 @@
                                         8
                                     </td>
                                 </tr>
-                                <xsl:for-each select="DLieu/TBao/DLTBao/DSHDon/HDon">
+                              <xsl:for-each select="DLieu/TBao/DLTBao/DSHDon/HDon">
                                     <tr style="height:28px;">
-                                        <td>
+                                        <td style="border: 1px solid black;">
                                             <xsl:value-of select="STT" />
                                         </td>
-                                        <td>
-                                            <xsl:value-of select="MCQTCap" />
+                                        <td style="border: 1px solid black;">
+                                            <xsl:value-of select="MCCQT" />
                                         </td>
-                                        <td>
+                                        <td style="border: 1px solid black;">
                                             <xsl:value-of select="KHMSHDon" /><xsl:value-of select="KHHDon" />
                                         </td>
-                                        <td>
+                                        <td style="border: 1px solid black;">
                                             <xsl:value-of select="SHDon" />
                                         </td>
-                                        <td>
+                                        <td style="border: 1px solid black;">
                                             <xsl:variable name="date" select="normalize-space(Ngay)"/>
                                             <xsl:value-of select="concat(substring($date, 9, 2), '/', substring($date, 6, 2), '/', substring($date, 1, 4))"/>
-                                            
-                                            
-                                            
                                         </td>
-                                        <td>
+                                        <td style="border: 1px solid black;">
                                             
                                             <xsl:if test="LADHDDT=1">Hóa đơn điện tử theo Nghị định 123/2020/NĐ-CP</xsl:if>
                                             <xsl:if test="LADHDDT=2">Hóa đơn điện tử có mã xác thực của cơ quan thuế theo Quyết định 1209/QĐ-BTC</xsl:if>
                                             <xsl:if test="LADHDDT=3">Các loại hóa đơn theo Nghị định số 51/ 2010/NĐ-CP</xsl:if>
                                             <xsl:if test="LADHDDT=4">Hóa đơn đặt in theo Nghị định 123/2020/NĐ-CP</xsl:if>
                                         </td>
-                                        <td>
+                                        <td style="border: 1px solid black;">
+                                            <xsl:if test="TCTBao=0">Mới</xsl:if>
                                             <xsl:if test="TCTBao=1">Hủy</xsl:if>
                                             <xsl:if test="TCTBao=2">Điều chỉnh</xsl:if>
                                             <xsl:if test="TCTBao=3">Thay Thế</xsl:if>
                                             <xsl:if test="TCTBao=4">Giải Trình</xsl:if>
                                             <xsl:if test="TCTBao=5">Sai sót do tổng hợp</xsl:if>
+                                            <xsl:if test="TCTBao=6">Thông báo</xsl:if>
                                         </td>
-                                        <td>
+                                        <td style="border: 1px solid black;">
                                             <xsl:value-of select="LDo" />
                                         </td>
                                     </tr>

@@ -642,6 +642,22 @@ namespace Service.ToKhai
             var TTXNCQT = ketQuaThongDiepRespone?.DLieu?.TBao?.DLTBao?.TTXNCQT ?? "";
             var MLTDiep = ketQuaThongDiepRespone.TTChung.MLTDiep;
             var MCCQT = ketQuaThongDiepRespone?.DLieu?.TBao?.DLTBao?.MCCQT ?? "";
+
+            if (xmlThongDiep.Contains("<MLTDiep>999</MLTDiep>") && xmlThongDiep.Contains("<TTTNhan>0</TTTNhan>"))
+            {
+                toKhai.to_khai_status_id = (int)e_thong_bao_sai_sot_trang_thai.DA_GUI_CQT;
+
+            }
+            if (xmlThongDiep.Contains("<MLTDiep>999</MLTDiep>") && xmlThongDiep.Contains("<TTTNhan>1</TTTNhan>"))
+            {
+                toKhai.to_khai_status_id = (int)e_thong_bao_sai_sot_trang_thai.LOI_THONG_DIEP;
+
+            }
+            if (xmlThongDiep.Contains("<MLTDiep>-1</MLTDiep>"))
+            {
+                toKhai.to_khai_status_id = (int)e_thong_bao_sai_sot_trang_thai.LOI_THONG_DIEP;
+
+            }
             if (MLTDiep == "102")
             {
                 if (THOP == "1" || THOP == "3")

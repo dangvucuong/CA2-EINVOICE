@@ -1901,6 +1901,10 @@ namespace Service.HoaDon
                             {
                                 await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
                             });
+
+                            // update trạng thái gửi cqt
+                            hoaDon.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.DA_GUI_CQT_CHUA_PHAN_HOI;
+                            await this.UpdateAsync(hoaDon);
                         }
                         else
                         {
@@ -2492,6 +2496,31 @@ namespace Service.HoaDon
             return new ErrorResult<string>(getHtmlHoaDon.message);
         }
 
+
+        public async Task<FunctionResult<string>> GetHtmlForDownloadAsync(int id, int page_size = 10,
+           MauHoaDonInChuyenDoiParam chuyenDoiParam = null)
+        {
+            var hoaDon = await this.SelectByIdAsync(id);
+            if (hoaDon == null) return new ErrorResult<string>("Dữ liệu không hợp lệ");
+            if (hoaDon.hoa_don_trang_thai_id == (int)e_hoa_don_trang_thai.NHAP)
+            {
+                // var previewModel = hoaDon.Map<HoaDonAddOrEditModel>();
+                // previewModel.hoang_hoas =
+                //     (await _serviceWrapper.HoaDon.HoaDonHangHoa.SelectByHoaDonIdAsync(id)).ToList();
+                // previewModel.loai_phis = (await _serviceWrapper.HoaDon.HoaDonLoaiPhi.SelectByHoaDonAsync(id)).ToList();
+                return await this.GetHtmlPreviewAsync(id);
+            }
+
+            var getHtmlHoaDon = await _serviceWrapper.HoaDon.MauHoaDon.CreatePrintHtmlAsync(hoaDon, page_size, chuyenDoiParam);
+            if (getHtmlHoaDon.is_success)
+            {
+                var result = getHtmlHoaDon.data;
+                return new SuccessResult<string>(result);
+            }
+            return new ErrorResult<string>(getHtmlHoaDon.message);
+        }
+
+
         public async Task<FunctionResult<string>> GetHtmlPreviewAsync(HoaDonAddOrEditModel model)
         {
             LogWriter.Writer($"GetHtmlPreviewAsync Start", "api/hoa-don/{id}/print", "");
@@ -2607,7 +2636,8 @@ namespace Service.HoaDon
                                 {
                                     await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
                                 });
-                                //
+
+                                //updaate hóa đơn
                             }
                             else
                             {

@@ -72,23 +72,35 @@ namespace WebApi.Controllers
         public async Task<IActionResult> DownloadPdf([FromRoute] int id, [FromQuery] int page_size = 10, [FromQuery] string chuyen_doi = null)
         {
             var html = "";
-            var cacheKey = $"PRINT_HOA_DON_{id}_{page_size}_{chuyen_doi}";
-            html = await _serviceWrapper.Cache.GetDataAsync<string>(cacheKey);
-            html = html.ConvertToString();
-            if (html == string.Empty)
+            // var cacheKey = $"PRINT_HOA_DON_{id}_{page_size}_{chuyen_doi}";
+            // html = await _serviceWrapper.Cache.GetDataAsync<string>(cacheKey);
+            // html = html.ConvertToString();
+            // if (html == string.Empty)
+            // {
+            //     var result = await _hoaDonService.GetHtmlForDownloadAsync(
+            //                    id,
+            //                    page_size,
+            //                    chuyen_doi != null ? new MauHoaDonInChuyenDoiParam()
+            //                    {
+            //                        nguoi_chuyen_doi = chuyen_doi
+            //                    } : null
+            //                );
+            //     if (result.is_success)
+            //     {
+            //         html = result.data;
+            //     }
+            // }
+            var result = await _hoaDonService.GetHtmlForDownloadAsync(
+                              id,
+                              page_size,
+                              chuyen_doi != null ? new MauHoaDonInChuyenDoiParam()
+                              {
+                                  nguoi_chuyen_doi = chuyen_doi
+                              } : null
+                          );
+            if (result.is_success)
             {
-                var result = await _hoaDonService.GetHtmlPrintAsync(
-                               id,
-                               page_size,
-                               chuyen_doi != null ? new MauHoaDonInChuyenDoiParam()
-                               {
-                                   nguoi_chuyen_doi = chuyen_doi
-                               } : null
-                           );
-                if (result.is_success)
-                {
-                    html = result.data;
-                }
+                html = result.data;
             }
             if (html == string.Empty) return null;
             var hoaDon = await _hoaDonService.SelectByIdAsync(id);
@@ -104,6 +116,29 @@ namespace WebApi.Controllers
             return null;
 
 
+            // return result.is_success ? this.OK(result.data) : this.BadRequest(result.message);
+        }
+        [HttpGet("{id}/pdf-bien-ban")]
+        public async Task<IActionResult> DownloadPdfBienBan([FromRoute] int id, [FromQuery] int page_size = 10, [FromQuery] string chuyen_doi = null)
+        {
+            var html = "";
+            var result = await _hoaDonService.GetHtmlPrintBienBanAsync(id);
+            if (result.is_success)
+            {
+                html = result.data;
+            }
+            if (html == string.Empty) return null;
+            var hoaDon = await _hoaDonService.SelectByIdAsync(id);
+            if (hoaDon != null)
+            {
+                var xmlBytes = await _pdfService.ConvertFromHtmlAsync(html);
+                var fileContentResult = new FileContentResult(xmlBytes, "application/pdf")
+                {
+                    FileDownloadName = $"Bienban_{hoaDon.nguoi_mua_mst}_{hoaDon.nguoi_mua_ten.ConvertToString()}_{hoaDon.hoa_don_dang_ky_phat_hanh_mau_so}_{hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu}_{hoaDon.ma_so_hoa_don.ConvertToString()}.pdf"
+                };
+                return fileContentResult;
+            }
+            return null;
             // return result.is_success ? this.OK(result.data) : this.BadRequest(result.message);
         }
         [HttpPost("pdf/from-html")]
@@ -176,12 +211,12 @@ namespace WebApi.Controllers
         public async Task<IActionResult> DownloadPdfs([FromQuery] string hoaDonIds)
         {
             var ids = hoaDonIds.ConvertToList();
-            if (ids.Count > 100) return this.BadRequest("Tối đa 100 hóa đơn 1 lần");
+            if (ids.Count > 20) return this.BadRequest("Tối đa 20 hóa đơn 1 lần");
             var hoaDons = await _hoaDonService.SelectByIdsAsync(ids);
 
             var tasks = hoaDons.Select(async hoaDon =>
             {
-                var htmlResult = await _hoaDonService.GetHtmlPrintAsync(hoaDon.id);
+                var htmlResult = await _hoaDonService.GetHtmlForDownloadAsync(hoaDon.id);
                 var html = htmlResult.data;
                 if (html == string.Empty) return null;
                 var xmlBytes = await _pdfService.ConvertFromHtmlAsync(html);

@@ -21,9 +21,11 @@ namespace Contracts.Service.HoaDon
         Task<FunctionResult<string>> CreateBase64MTTAsync(int id);
         Task<FunctionResult<string>> CreateBase64MTTAsync(hoa_don hoaDon);
         Task<FunctionResult<string>> CreateBase64MTTBangKeAsync(List<hoa_don> hoaDons);
-        Task<FunctionResult<string>> CreateXmlKySoAsync(int id,bool isPreview = false);
+        Task<FunctionResult<string>> CreateXmlKySoAsync(int id, bool isPreview = false);
         Task<FunctionResult<string>> CreateXmlKySoAsync(hoa_don hoaDon);
         Task<FunctionResult<string>> GetHtmlPrintAsync(int id, int page_size = 10, MauHoaDonInChuyenDoiParam chuyenDoiParam = null);
+        Task<FunctionResult<string>> GetHtmlForDownloadAsync(int id, int page_size = 10, MauHoaDonInChuyenDoiParam chuyenDoiParam = null);
+
         Task<FunctionResult<string>> GetHtmlPrintBienBanAsync(int id);
         Task<FunctionResult<string>> GetBase64BienBanAsync(int id);
         Task<FunctionResult<string>> GetHtmlPreviewAsync(HoaDonAddOrEditModel model);
