@@ -310,5 +310,13 @@ namespace Repository.HoaDon
             param.Add("@user_id_phathanh", user_id_phathanh);
             return _dbConnection.ExecuteAsync("hoa_don_update_phathanh_bangkes", param);
         }
+
+        public Task<bool> UpdateTrangThaiAsync(int id, int hoa_don_trang_thai_id)
+        {
+            var param = new DynamicParameters();
+            param.Add("@id", id);
+            param.Add("@hoa_don_trang_thai_id", hoa_don_trang_thai_id);
+            return _dbConnection.ExecuteAsync("hoa_don_update_trang_thai", param);
+        }
     }
 }

@@ -7,6 +7,7 @@ import { useDispatch } from "react-redux";
 import { eReducerStatusBase } from "../../state/reducer-models/eReducerStatusBase";
 import { rootAction } from "../../state/actions/rootAction";
 import { useHistory } from "react-router-dom";
+import moment from "moment";
 
 function LapHoaDonButton() {
   const [open, setOpen] = useState(false);
@@ -20,6 +21,9 @@ function LapHoaDonButton() {
   const dataSource = useMemo(() => {
     var uniqueData = new Set();
     hoaDonDangKyPhatHanhs
+      .filter((x) => {
+        return moment(x?.ngay_su_dung).year() === moment().year();
+      })
       .map((x) => ({ id: x.loai_hoa_don_ct_id, text: x.ten_hoa_don }))
       .forEach((item) => {
         uniqueData.add(JSON.stringify(item));

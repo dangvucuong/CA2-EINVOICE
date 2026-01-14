@@ -6,6 +6,7 @@ import { useDispatch } from "react-redux";
 import { useAppSelector } from "../../hooks/useAppSelector";
 import { rootAction } from "../../state/actions/rootAction";
 import { eReducerStatusBase } from "../../state/reducer-models/eReducerStatusBase";
+import moment from "moment";
 interface ISelectBoxLoaiHoaDonCTPhatHanhProps {
   onValueChanged: (id: number) => void;
   value: number;
@@ -26,8 +27,14 @@ const SelectBoxLoaiHoaDonCTPhatHanh = (
   const dataSource = useMemo(() => {
     var uniqueData = new Set();
     hoaDonDangKyPhatHanhs
-      // .filter(x => props.i)
-      .map((x) => ({ id: x.loai_hoa_don_ct_id, text: x.ten_hoa_don }))
+      ///chỉ lấy ra những bản ghi có ngay_su_dung trong năm hiện tại, dùng momentjs để lấy năm hiện tại
+      .filter((x) => {
+        return moment(x?.ngay_su_dung).year() === moment().year();
+      })
+      .map((x) => ({
+        id: x.loai_hoa_don_ct_id,
+        text: x.ten_hoa_don,
+      }))
       .sort((a, b) => a.id - b.id)
       .forEach((item) => {
         uniqueData.add(JSON.stringify(item));

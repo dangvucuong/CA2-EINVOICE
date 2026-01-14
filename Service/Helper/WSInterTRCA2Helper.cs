@@ -10,7 +10,7 @@ namespace Service.Helper
         public static WSInterTRCA2SoapClient GetClient()
         {
             var epAddress = new System.ServiceModel.EndpointAddress(AppSettings.WSInterTRCA2Config.Endpoint);
-            var binding = new BasicHttpBinding(BasicHttpSecurityMode.TransportCredentialOnly);
+            var binding = new BasicHttpBinding(BasicHttpSecurityMode.Transport);
 
             // 200KB = 204800 bytes
             int limitSize = 204800;
@@ -35,6 +35,7 @@ namespace Service.Helper
             // --- HẾT CẤU HÌNH ---
 
             binding.Security.Transport.ClientCredentialType = HttpClientCredentialType.Basic;
+
             var client = new WSInterTRCA2.WSInterTRCA2SoapClient(binding, epAddress);
             client.ClientCredentials.UserName.UserName = AppSettings.WSInterTRCA2Config.Username;
             client.ClientCredentials.UserName.Password = AppSettings.WSInterTRCA2Config.Password;

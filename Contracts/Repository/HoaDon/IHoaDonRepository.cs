@@ -33,5 +33,7 @@ namespace Contracts.Repository.HoaDon
         Task<bool> UpdatePhatHanhBangKeAsync(List<int> ids, string phat_hanh_uuid, int user_id_phathanh);
         Task<bool> UpdateMaSoHoaDonAsync(int id, int ma_so_hoa_don);
         Task<DateTime?> GetNgayHoaDonPhatHanhMaxAsynsc(string donvi_ma_dv, string hoa_don_dang_ky_phat_hanh_mau_so, string hoa_don_dang_ky_phat_hanh_ky_hieu);
+        Task<bool> UpdateTrangThaiAsync(int id, int hoa_don_trang_thai_id);
+
     }
 }
