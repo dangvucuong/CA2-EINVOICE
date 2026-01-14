@@ -1103,7 +1103,20 @@ const HoaDonPage = () => {
                                         row.phat_hanh_ma_ketqua_cqt
                                       }
                                       onSelect={() => {
-                                        history.push(`../../tbss/0`);
+                                        history.push(`../../tbss/0`, {
+                                          hoa_don: {
+                                            hoa_don_dang_ky_phat_hanh_mau_so:
+                                              row.hoa_don_dang_ky_phat_hanh_mau_so,
+                                            hoa_don_dang_ky_phat_hanh_ky_hieu:
+                                              row.hoa_don_dang_ky_phat_hanh_ky_hieu,
+                                            ma_so_hoa_don: row.ma_so_hoa_don,
+                                            ma_cqt_cap:
+                                              row.phat_hanh_ma_ketqua_cqt,
+                                            ngay_hoa_don: moment(
+                                              row.ngay_hoa_don
+                                            ).format("DD/MM/YYYY"),
+                                          },
+                                        });
                                       }}
                                     >
                                       <ActionList.LeadingVisual>

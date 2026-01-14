@@ -2,7 +2,7 @@ import { Box, FormControl } from "@primer/react";
 import moment from "moment";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useHistory, useParams } from "react-router-dom";
+import { useHistory, useLocation, useParams } from "react-router-dom";
 import {
   THONG_BAO_SAI_SOT_API_PHAT_HANH,
   thongBaoSaiSotApi,
@@ -35,8 +35,8 @@ import { coQuanThueApi } from "../../api/category/coQuanThueApi";
 const ThongBaoSaiSotForm = () => {
   const { user } = useAuth();
   const dispatch = useAppDispatch();
-    const [isShowImportModal, setIsShowImportModal] = useState(false);
-  
+  const [isShowImportModal, setIsShowImportModal] = useState(false);
+
   const [viewDataModel, setViewDataModel] =
     useState<IThongBaoSaiSotAddOrEditRequest>();
   const { checkAccesiableTo } = useCommonContext();
@@ -79,6 +79,10 @@ const ThongBaoSaiSotForm = () => {
   const { toKhais, status: toKhaiStatus } = useAppSelector(
     (x) => x.toKhai.toKhaiReducer
   );
+  const location = useLocation<any>();
+  const hoa_don = location.state?.hoa_don;
+  console.log(hoa_don);
+
   useEffect(() => {
     if (
       toKhaiStatus === eReducerStatusBase.is_not_initialization ||
@@ -87,6 +91,7 @@ const ThongBaoSaiSotForm = () => {
       dispatch(rootAction.toKhai.toKhaiAction.loadStart());
     }
   }, [toKhaiStatus]);
+
   const toKhaiAccept = useMemo(() => {
     return toKhais
       .sort((a, b) => b.id - a.id)
@@ -146,8 +151,13 @@ const ThongBaoSaiSotForm = () => {
   useEffect(() => {
     if (thongBaoSaiSotId > 0) {
       handleGetDataAsync();
+    } else {
+      if (hoa_don) {
+        setThongBaoSaiSotChiTiets([hoa_don]);
+      }
     }
-  }, [thongBaoSaiSotId]);
+  }, [thongBaoSaiSotId, hoa_don]);
+
   const handleGetDataAsync = async () => {
     const res: IBaseRespone = await thongBaoSaiSotApi.getViewModel(
       thongBaoSaiSotId

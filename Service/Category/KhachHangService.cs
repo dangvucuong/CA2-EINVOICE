@@ -42,6 +42,7 @@ namespace Service.Category
                     stk = row["stk"].ConvertToString(),
                     ten_don_vi = row["ten_don_vi"].ConvertToString(),
                     ten_khach_hang = row["ten_khach_hang"].ConvertToString(),
+                    ma_dv_ngan_sach = ""
                 };
                 obj.SetInsertInfo(user.id);
                 khachHangs.Add(obj);

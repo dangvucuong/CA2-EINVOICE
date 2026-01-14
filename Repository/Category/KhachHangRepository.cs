@@ -17,7 +17,7 @@ namespace Repository.Category
         public Task<bool> InsertsAsync(IEnumerable<khachhang> khachhangs)
         {
             var param = new DynamicParameters();
-            param.Add("@khachhangs", khachhangs.ConvertToTableValuedParameter("utp_khachhang"));
+            param.Add("@khachhangs", khachhangs.ConvertToTableValuedParameter("utp_khachhang_edit"));
             return _dbConnection.ExecuteAsync("khachhang_inserts", param);
         }
 

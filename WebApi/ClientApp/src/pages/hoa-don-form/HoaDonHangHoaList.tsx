@@ -475,7 +475,7 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
       )
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hangHoas, loaiTien, loaiPhis]);
+  }, [hangHoas, loaiTien, loaiPhis, props.giam_thue_ty_le]);
 
   const tongTienData = getTongTienData(
     hangHoas,
