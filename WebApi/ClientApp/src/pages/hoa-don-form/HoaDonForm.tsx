@@ -1073,6 +1073,32 @@ const HoaDonForm = () => {
                         </Box>
                       </Box>
                     </PaperFormGroup>
+
+                    {hinhThucHoaDonId === 2 && (
+                      <PaperFormGroup label="Lý do thay thế">
+                        <Box
+                          ref={hinhThucDieuChinhRef}
+                          sx={{
+                            display: "flex",
+                            gap: 2,
+                            alignItems: "center",
+                          }}
+                        >
+                          <Box sx={{ flex: 1 }}>
+                            <FormControl>
+                              <TextInput
+                                name="ly_do_dieu_chinh"
+                                block
+                                register={register}
+                                required
+                                errors={errors}
+                                validateMessage="Vui lòng điền lý do thay thế"
+                              />
+                            </FormControl>
+                          </Box>
+                        </Box>
+                      </PaperFormGroup>
+                    )}
                   </>
                 )}
             </Box>
@@ -1294,6 +1320,7 @@ const HoaDonForm = () => {
                 </Box>
               )}
             </PaperFormGroup>
+
             {hinhThucHoaDonId === 3 && (
               <PaperFormGroup label="Hình thức điều chỉnh">
                 <Box

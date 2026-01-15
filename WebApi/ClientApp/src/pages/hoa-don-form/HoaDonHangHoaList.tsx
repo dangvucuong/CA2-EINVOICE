@@ -533,7 +533,9 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                   fontSize: "14px",
                 }}
               >
-                Áp dụng giảm mức thuế suất giá trị gia tăng.
+                Áp dụng giảm mức thuế suất giá trị gia tăng tại Nghị quyết số
+                204/2025/QH15 ngày 17 tháng 06 năm 2025. Mức tỷ lệ phần trăm
+                chịu thuế :
                 {/* tại Nghị quyết số
                 174/2024/QH15. */}
               </Box>
