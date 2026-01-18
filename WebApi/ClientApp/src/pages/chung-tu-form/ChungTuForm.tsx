@@ -96,7 +96,7 @@ const ChungTuForm = () => {
   }, [signalRConnectionServer, machungtu]);
 
   const onHoaDonPhatHanhHasResult = (
-    message: IHoaDonPhatHanhPushNotifyModel
+    message: IHoaDonPhatHanhPushNotifyModel,
   ) => {
     if (message.id === machungtu && machungtu > 0) {
       setIsShowPhatHanhResultModal(true);
@@ -149,7 +149,7 @@ const ChungTuForm = () => {
 
   const handleGetDetailAsync = async (
     machungtu: string,
-    isChungTuGoc?: boolean
+    isChungTuGoc?: boolean,
   ) => {
     const soap = `<?xml version="1.0" encoding="utf-8"?>
   <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
@@ -168,7 +168,7 @@ const ChungTuForm = () => {
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);
@@ -225,7 +225,7 @@ const ChungTuForm = () => {
   const LaysoCT_update = async (
     mst: string,
     machungtu: string,
-    kyhieu: string
+    kyhieu: string,
   ) => {
     const soap = `<?xml version="1.0" encoding="utf-8"?>
 <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
@@ -246,7 +246,7 @@ const ChungTuForm = () => {
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);
@@ -323,7 +323,7 @@ const ChungTuForm = () => {
       //check độ dài mst người mua không được lớn hơn 14
       if (data.nguoi_mua_mst?.trim()?.length > 14) {
         NotifyHelper.Error(
-          "Mã số thuế người mua hàng không được vượt quá 14 ký tự"
+          "Mã số thuế người mua hàng không được vượt quá 14 ký tự",
         );
         setError("nguoi_mua_mst", {
           type: "manual",
@@ -350,7 +350,7 @@ const ChungTuForm = () => {
       // nếu quá 12 ký tự thì báo lỗi
       if (data.nguoi_mua_cccd?.length !== 12) {
         NotifyHelper.Error(
-          "Căn cước công dân người mua hàng phải đúng 12 ký tự"
+          "Căn cước công dân người mua hàng phải đúng 12 ký tự",
         );
         setError("nguoi_mua_cccd" as any, {
           type: "manual",
@@ -428,7 +428,7 @@ const ChungTuForm = () => {
       <KHCTLienquan>${thongTinChungTuGoc?.ky_hieu_chung_tu_goc}</KHCTLienquan>
       <SoCTLienquan>${thongTinChungTuGoc?.so_chung_tu_goc}</SoCTLienquan>
       <NgaylapCTLienquan>${moment(
-        thongTinChungTuGoc?.ngay_lap_chung_tu_goc
+        thongTinChungTuGoc?.ngay_lap_chung_tu_goc,
       ).format("YYYY-MM-DD")}</NgaylapCTLienquan>
     </TaoChungTuThayTheDieuChinh>
   </soap12:Body>
@@ -441,7 +441,7 @@ const ChungTuForm = () => {
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);
@@ -449,7 +449,7 @@ const ChungTuForm = () => {
     if (parseRes.status === "success") {
       NotifyHelper.Success(parseRes.message);
       history.push(
-        `../../chung-tu/form/${parseRes.data}?tinhchatct=${hinhthucchungtu}&mact_goc=${parseRes.data}`
+        `../../chung-tu/form/${parseRes.data}?tinhchatct=${hinhthucchungtu}&mact_goc=${parseRes.data}`,
       );
     } else {
       NotifyHelper.Error(parseRes.message);
@@ -500,7 +500,7 @@ const ChungTuForm = () => {
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);
@@ -557,7 +557,7 @@ const ChungTuForm = () => {
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);
@@ -576,7 +576,7 @@ const ChungTuForm = () => {
       await LaysoCT_update(
         user?.donvi_ma_dv,
         machungtu.toString(),
-        formData?.ky_hieu_chung_tu
+        formData?.ky_hieu_chung_tu,
       );
     }
     // setIsKySoVaPhatHanh(false);
@@ -603,7 +603,7 @@ const ChungTuForm = () => {
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);
@@ -637,7 +637,7 @@ const ChungTuForm = () => {
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);
@@ -669,8 +669,6 @@ const ChungTuForm = () => {
   //     </Flash>
   //   );
   // }
-
-  console.log(formData);
 
   return (
     <Box>
@@ -710,7 +708,7 @@ const ChungTuForm = () => {
                           , Ngày chứng từ:{" "}
                           <b>
                             {moment(
-                              thongTinChungTuGoc?.ngay_lap_chung_tu_goc
+                              thongTinChungTuGoc?.ngay_lap_chung_tu_goc,
                             ).format("DD/MM/YYYY")}
                           </b>
                           ;
@@ -916,19 +914,19 @@ const ChungTuForm = () => {
                         trigger("nguoi_mua_mst");
                         setValue(
                           "nguoi_mua_ten_donvi",
-                          data.khach_hang?.ten_don_vi ?? ""
+                          data.khach_hang?.ten_don_vi ?? "",
                         );
                         setValue(
                           "nguoi_mua_email",
-                          data.khach_hang?.email ?? ""
+                          data.khach_hang?.email ?? "",
                         );
                         setValue(
                           "nguoi_mua_ten",
-                          data.khach_hang?.ten_khach_hang ?? ""
+                          data.khach_hang?.ten_khach_hang ?? "",
                         );
                         setValue(
                           "nguoi_mua_dia_chi",
-                          data.khach_hang?.dia_chi ?? ""
+                          data.khach_hang?.dia_chi ?? "",
                         );
                         // const x = getValues("nguoi_mua_mst")
                         // console.log({

@@ -91,7 +91,7 @@ export const ToKhaiCTForm = () => {
     "not_init" | "loading" | "load_success" | "load_err"
   >("not_init");
   const [isLoadingDone, setIsLoadingDone] = useState<boolean>(
-    id > 0 ? false : true
+    id > 0 ? false : true,
   );
 
   const [isSaving, setIsSaving] = useState(false);
@@ -101,7 +101,7 @@ export const ToKhaiCTForm = () => {
     donvi_ma_dv: user?.donvi.ma_dv,
     nguoi_nop_thue: user?.donvi.ten_dv,
     mst: user?.donvi.mst,
-    nguoi_lien_he: user?.donvi.ten_dv,
+    nguoi_lien_he: "",
     co_quan_thue: user?.donvi.donvi_chuquan,
     dia_chi_lien_he: user?.donvi.dia_chi,
     email_lien_he: user?.donvi.email,
@@ -169,7 +169,7 @@ export const ToKhaiCTForm = () => {
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);
@@ -205,7 +205,7 @@ export const ToKhaiCTForm = () => {
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);
@@ -241,7 +241,7 @@ export const ToKhaiCTForm = () => {
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);
@@ -318,7 +318,7 @@ export const ToKhaiCTForm = () => {
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);
@@ -345,7 +345,7 @@ export const ToKhaiCTForm = () => {
               issuer: x?.TTChuc,
             },
           };
-        })
+        }),
       );
 
       reset({
@@ -501,14 +501,14 @@ export const ToKhaiCTForm = () => {
     if (id <= 0) {
       await TaoToKhaiChungTu(
         JSON.stringify(objTTChungClean),
-        JSON.stringify(sjsonTTCTS)
+        JSON.stringify(sjsonTTCTS),
       );
     } else {
       await SuaToKhaiChungTu(
         JSON.stringify(objTTChungClean),
         JSON.stringify(sjsonTTCTS),
         id,
-        user?.donvi.ma_dv
+        user?.donvi.ma_dv,
       );
     }
     setIsSaving(false);
@@ -572,7 +572,7 @@ export const ToKhaiCTForm = () => {
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);
@@ -589,7 +589,7 @@ export const ToKhaiCTForm = () => {
     objTTChung: string,
     sjsonTTCTS: string,
     Matokhai_CT: number,
-    madonvi: string | undefined
+    madonvi: string | undefined,
   ) => {
     const soap = `<?xml version="1.0" encoding="utf-8"?>
 <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
@@ -610,7 +610,7 @@ export const ToKhaiCTForm = () => {
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);

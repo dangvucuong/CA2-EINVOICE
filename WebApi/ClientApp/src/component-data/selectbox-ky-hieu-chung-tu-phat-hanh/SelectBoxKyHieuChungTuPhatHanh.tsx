@@ -15,7 +15,7 @@ interface ISelectBoxKyHieuChungTuPhatHanhProps {
 }
 
 const SelectBoxKyHieuChungTuPhatHanh = (
-  props: ISelectBoxKyHieuChungTuPhatHanhProps
+  props: ISelectBoxKyHieuChungTuPhatHanhProps,
 ) => {
   const { value, mau_so } = props;
   const [open, setOpen] = useState(false);
@@ -50,17 +50,21 @@ const SelectBoxKyHieuChungTuPhatHanh = (
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);
 
     if (parseRes.status === "success") {
-      const opts = (parseRes?.data ?? []).map((item: any, index: number) => ({
-        id: index,
-        text: item?.ky_hieu,
-        value: item?.ky_hieu,
-      }));
+      const currentYear = new Date().getFullYear().toString().slice(-2); // "26"
+
+      const opts = (parseRes?.data ?? [])
+        .filter((item: any) => item?.ky_hieu?.includes(`/${currentYear}E`))
+        .map((item: any, index: number) => ({
+          id: index,
+          text: item.ky_hieu,
+          value: item.ky_hieu,
+        }));
       setOptions(opts);
 
       if (value) {

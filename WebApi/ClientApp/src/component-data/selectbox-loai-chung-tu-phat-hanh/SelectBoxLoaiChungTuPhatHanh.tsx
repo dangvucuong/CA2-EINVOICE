@@ -44,7 +44,7 @@ const SelectBoxLoaiChungTuPhatHanh = (props: ISelectBoxLoaiChungTuProps) => {
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);

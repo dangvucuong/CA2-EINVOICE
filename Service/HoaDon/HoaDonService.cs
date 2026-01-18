@@ -1902,11 +1902,9 @@ namespace Service.HoaDon
                                 await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
                             });
 
+                            var duLieuHoaDonMoi = await this.SelectByIdAsync(hoaDon.id);
 
-                            var hoaDongLogs = await _serviceWrapper.HoaDon.HoaDonLog.SelectByHoaDonAsync(hoaDon.id);
-                            var xmlDataFile = hoaDongLogs.LastOrDefault(x => x.mltdiep == "202" || x.mltdiep == "204");
-                            // update trạng thái gửi cqt
-                            if (xmlDataFile == null)
+                            if (duLieuHoaDonMoi.hoa_don_trang_thai_id != (int)e_hoa_don_trang_thai.DA_PHAT_HANH)
                             {
                                 await _repositoryWrapper.HoaDon.HoaDon.UpdateTrangThaiAsync(hoaDon.id, (int)e_hoa_don_trang_thai.DA_GUI_CQT_CHUA_PHAN_HOI);
                             }
