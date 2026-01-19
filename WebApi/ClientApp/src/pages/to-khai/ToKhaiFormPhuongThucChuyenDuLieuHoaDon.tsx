@@ -16,7 +16,7 @@ interface ToKhaiFormPhuongThucChuyenDuLieuHoaDonProps {
   is_hoadon_co_ma_cqt?: boolean;
 }
 const ToKhaiFormPhuongThucChuyenDuLieuHoaDon = (
-  props: ToKhaiFormPhuongThucChuyenDuLieuHoaDonProps
+  props: ToKhaiFormPhuongThucChuyenDuLieuHoaDonProps,
 ) => {
   const { setValue, errors, control, watch } = props;
   const is_chuyen_day_du_tung_hoadon = watch("is_chuyen_day_du_tung_hoadon");
@@ -72,7 +72,7 @@ const ToKhaiFormPhuongThucChuyenDuLieuHoaDon = (
         render={({ field }) => {
           return (
             <FormControl
-              disabled={is_hoadon_co_ma_cqt || is_hoadon_co_ma_cqt_mtt}
+            // disabled={is_hoadon_co_ma_cqt || is_hoadon_co_ma_cqt_mtt}
             >
               <Checkbox
                 checked={field.value}
