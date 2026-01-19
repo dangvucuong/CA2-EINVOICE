@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { eHoaDonHinhThuc } from "../models/commons/eHoaDonHinhThuc";
 
-const hoaDonHinhThucs = [
+export const hoaDonHinhThucs = [
   {
     id: 0,
     name: "Hóa đơn gốc",

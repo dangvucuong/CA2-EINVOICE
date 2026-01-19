@@ -30,6 +30,8 @@ import {
   thongKeHDThayTheTemplate,
 } from "../../../helpers/excelteamplate";
 import { useAuth } from "../../../hooks/useAuth";
+import { hoaDonHinhThucs } from "../../../hooks/useHoaDonHinhThuc";
+import { hoaDonTrangThais } from "../../../hooks/useHoaDonTrangThai";
 interface IHoaDonListProps {
   tu_ngay?: string;
   den_ngay?: string;
@@ -112,7 +114,7 @@ const HoaDonList = (props: IHoaDonListProps) => {
           language: localStorage.getItem("language"),
         },
         responseType: "blob", // Important for handling binary data
-      }
+      },
     );
 
     // Create a URL for the file blob
@@ -122,7 +124,7 @@ const HoaDonList = (props: IHoaDonListProps) => {
 
     link.setAttribute(
       "download",
-      `${user?.donvi.ma_dv}_${moment().format("DD-MM-YYYY")}.xlsx`
+      `${user?.donvi.ma_dv}_${moment().format("DD-MM-YYYY")}.xlsx`,
     );
     document.body.appendChild(link);
     link.click();
@@ -232,12 +234,26 @@ const HoaDonList = (props: IHoaDonListProps) => {
                       : x.nguoi_mua_ten,
                     MST: x.nguoi_mua_mst,
                     Email: x.nguoi_mua_email,
+                    "Trước thuế": x.tong_tien_truong_thue,
+                    Thuế: x.tong_tien_thue,
                     "Tổng tiền": x.tong_tien_thanh_toan,
+                    "Hình thức hóa đơn":
+                      hoaDonHinhThucs.find(
+                        (h) => h.id === x.hoa_don_hinh_thuc_id,
+                      )?.name || "",
+                    "Trạng thái hóa đơn":
+                      hoaDonTrangThais.find(
+                        (h) => h.id === x.hoa_don_trang_thai_id,
+                      )?.name || "",
                     "Mã tra cứu": x.ma_tra_cuu,
                     "Kết quả": x.ket_qua_phat_hanh,
                     "Mã CQT cấp": x.phat_hanh_ma_ketqua_cqt,
                     "Mã ĐVNS": x.ma_dv_ngan_sach,
                     "Người mua CCCD": x.nguoi_mua_cccd,
+                    "Tiền phí": x.tong_tien_phi,
+                    "Tiền giảm": x.giam_thue_thanh_tien,
+                    "Loại tiền": x.loai_tien,
+                    "Tỷ giá": x.ty_gia,
                     Link: x.link,
                   };
                 });
