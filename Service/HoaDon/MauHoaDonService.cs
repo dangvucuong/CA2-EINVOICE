@@ -1077,8 +1077,9 @@ namespace Service.HoaDon
                 {
                     // BƯỚC 1: Tìm ưu tiên theo dữ liệu đã lưu trong DB (nhanh nhất)
                     xmlDataFile = hoaDongLogs.LastOrDefault(x =>
-                        x.hoa_don_log_type_id == (int)e_hoa_don_log_type.CO_QUAN_THUE_CHAP_NHAN
-                        && x.mltdiep == "202");
+                        //    x.hoa_don_log_type_id == (int)e_hoa_don_log_type.CO_QUAN_THUE_CHAP_NHAN
+                        // && x.mltdiep == "202");
+                        x.hoa_don_log_type_id == (int)e_hoa_don_log_type.CO_QUAN_THUE_CHAP_NHAN);
 
                     // BƯỚC 2: Nếu không tìm thấy trong DB, bắt đầu check File XML
                     if (xmlDataFile == null)
