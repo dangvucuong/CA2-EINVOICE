@@ -93,7 +93,7 @@ namespace Service.HoaDon
                 //     return new ErrorResult<int>(
                 //         $"Ngày hóa đơn phải từ ngày {donVi.ngay_hoa_don_max.Value.ToString("dd/MM/yyyy")}");
 
-                if (model.ngay_hoa_don > DateTime.Today)
+                if (model.ngay_hoa_don.Date > DateTime.Today)
                 {
                     return new ErrorResult<int>(
                         "Ngày hóa đơn không được lớn hơn ngày hiện tại"
@@ -301,7 +301,7 @@ namespace Service.HoaDon
                     }
 
 
-                    if (model.ngay_hoa_don > DateTime.Today)
+                    if (model.ngay_hoa_don.Date > DateTime.Today)
                     {
                         return new ErrorResult<int>(
                             "Ngày hóa đơn không được lớn hơn ngày hiện tại"
