@@ -211,7 +211,7 @@ namespace WebApi.Controllers
         public async Task<IActionResult> DownloadPdfs([FromQuery] string hoaDonIds)
         {
             var ids = hoaDonIds.ConvertToList();
-            if (ids.Count > 20) return this.BadRequest("Tối đa 20 hóa đơn 1 lần");
+            if (ids.Count > 200) return this.BadRequest("Tối đa 20 hóa đơn 1 lần");
             var hoaDons = await _hoaDonService.SelectByIdsAsync(ids);
 
             var tasks = hoaDons.Select(async hoaDon =>

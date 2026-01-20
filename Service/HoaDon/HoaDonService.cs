@@ -93,6 +93,13 @@ namespace Service.HoaDon
                 //     return new ErrorResult<int>(
                 //         $"Ngày hóa đơn phải từ ngày {donVi.ngay_hoa_don_max.Value.ToString("dd/MM/yyyy")}");
 
+                if (model.ngay_hoa_don > DateTime.Today)
+                {
+                    return new ErrorResult<int>(
+                        "Ngày hóa đơn không được lớn hơn ngày hiện tại"
+                    );
+                }
+
                 var ngayHoaDonMax = await _repositoryWrapper.HoaDon.HoaDon.GetMaxNgayHoaDon(model.donvi_ma_dv, model.hoa_don_dang_ky_phat_hanh_mau_so, model.hoa_don_dang_ky_phat_hanh_ky_hieu);
                 if (ngayHoaDonMax != null && model.ngay_hoa_don < ngayHoaDonMax.Value)
                 {
@@ -284,6 +291,13 @@ namespace Service.HoaDon
                     // if (donVi.ngay_hoa_don_max != null && model.ngay_hoa_don < donVi.ngay_hoa_don_max)
                     //     return new ErrorResult<int>(
                     //         $"Ngày hóa đơn phải từ ngày {donVi.ngay_hoa_don_max.Value.ToString("dd/MM/yyyy")}");
+
+                    if (model.ngay_hoa_don > DateTime.Today)
+                    {
+                        return new ErrorResult<int>(
+                            "Ngày hóa đơn không được lớn hơn ngày hiện tại"
+                        );
+                    }
 
                     var ngayHoaDonMax = await _repositoryWrapper.HoaDon.HoaDon.GetMaxNgayHoaDon(model.donvi_ma_dv, model.hoa_don_dang_ky_phat_hanh_mau_so, model.hoa_don_dang_ky_phat_hanh_ky_hieu);
                     if (ngayHoaDonMax != null && model.ngay_hoa_don < ngayHoaDonMax.Value)
