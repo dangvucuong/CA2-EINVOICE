@@ -75,7 +75,7 @@ const getTienChietKhau = (hangHoa: IHoaDonHangHoa) => {
     new Big(ty_le_chiet_khau)
       .div(new Big(100))
       .times(new Big(tongTienGoc))
-      .toString()
+      .toString(),
   );
 };
 export const getDonGia = (value: number, tienTe?: string) => {
@@ -93,7 +93,7 @@ export const getThanhTien = (
   don_gia: any,
   ty_le_chiet_khau: any,
   tienTe?: string,
-  _isLamTron?: boolean
+  _isLamTron?: boolean,
 ): number => {
   const _soLuong = isNumber(so_luong) ? parseFloat(so_luong) : 0;
   const _donGia = isNumber(don_gia) ? parseFloat(don_gia) : 0;
@@ -121,7 +121,7 @@ export const getTongTienData = (
   tienTe?: string,
   giamThueTyLe?: number,
   loaiPhis: any[] = [],
-  hoa_don_dang_ky_phat_hanh_mau_so?: string
+  hoa_don_dang_ky_phat_hanh_mau_so?: string,
 ) => {
   let thuesuatck = "";
   let co_hang_hoa_dv = 0;
@@ -167,7 +167,7 @@ export const getTongTienData = (
         h.don_gia,
         h.ty_le_chiet_khau,
         tienTe,
-        false
+        false,
       ),
     };
   });
@@ -182,14 +182,14 @@ export const getTongTienData = (
     hangHoas
       .filter((x) => x.hang_hoa_tinh_chat_id !== eTinhChatHangHoa.CHIET_KHAU)
       .map((x) => getTienChietKhau(x))
-      .reduce((a, b) => a + b, 0)
+      .reduce((a, b) => a + b, 0),
   );
 
   const tongMatHangChietKhau = roundIfVND(
     hangHoas
       .filter((x) => x.hang_hoa_tinh_chat_id === eTinhChatHangHoa.CHIET_KHAU)
       .map((x) => x.thanh_tien_khong_lam_tron)
-      .reduce((a, b) => a + b, 0)
+      .reduce((a, b) => a + b, 0),
   );
 
   const vats = [...Array.from(new Set(hangHoas.map((x) => x.thue_vat)))];
@@ -237,7 +237,7 @@ export const getTongTienData = (
             (h.hang_hoa_tinh_chat_id === eTinhChatHangHoa.HANG_HOA_DICH_VU ||
               h.hang_hoa_tinh_chat_id ===
                 eTinhChatHangHoa.HANG_HOA_DAC_TRUNG) &&
-            h.thue_vat === x
+            h.thue_vat === x,
         )
         .map((h) => h.thanh_tien)
         .reduce((a, b) => a + b, 0);
@@ -247,7 +247,7 @@ export const getTongTienData = (
         .filter(
           (h) =>
             h.hang_hoa_tinh_chat_id === eTinhChatHangHoa.CHIET_KHAU &&
-            h.thue_vat === x
+            h.thue_vat === x,
         )
         .map((h) => h.thanh_tien_khong_lam_tron)
         .reduce((a, b) => a + b, 0);
@@ -256,7 +256,7 @@ export const getTongTienData = (
       const tienTinhThue = tongHangHoaTheoThue - tongChietKhauTheoThue;
       // ✅ Tiền VAT
       const tong_tien_vat = roundIfVND(
-        parseFloat(new Big(tienTinhThue).times(phan_tram).div(100).toString())
+        parseFloat(new Big(tienTinhThue).times(phan_tram).div(100).toString()),
       );
 
       return {
@@ -268,7 +268,7 @@ export const getTongTienData = (
     .filter((x) => x.phan_tram > 0);
 
   let vats_total = roundIfVND(
-    vats_detail.map((x) => x.tong_tien_vat).reduce((a, b) => a + b, 0) ?? 0
+    vats_detail.map((x) => x.tong_tien_vat).reduce((a, b) => a + b, 0) ?? 0,
   );
 
   if (hoa_don_dang_ky_phat_hanh_mau_so === "2") {
@@ -280,13 +280,13 @@ export const getTongTienData = (
       .filter(
         (x) =>
           x.hang_hoa_tinh_chat_id === eTinhChatHangHoa.HANG_HOA_DICH_VU ||
-          x.hang_hoa_tinh_chat_id === eTinhChatHangHoa.HANG_HOA_DAC_TRUNG
+          x.hang_hoa_tinh_chat_id === eTinhChatHangHoa.HANG_HOA_DAC_TRUNG,
       )
       .map((x) => x.thanh_tien)
       // .map((x) =>
       //   x.don_gia > 0 || x.so_luong > 0 ? x.don_gia * x.so_luong : x.thanh_tien
       // )
-      .reduce((a, b) => a + b, 0)
+      .reduce((a, b) => a + b, 0),
   );
   let tienGiamThueTheoNghiDinh = 0;
   const giam_thue_ty_le = giamThueTyLe ?? 0;
@@ -295,17 +295,17 @@ export const getTongTienData = (
       .times(new Big(giam_thue_ty_le).div(100))
       .times(0.2);
     tienGiamThueTheoNghiDinh = parseFloat(
-      temp.round(0, Big.roundHalfUp).toString()
+      temp.round(0, Big.roundHalfUp).toString(),
     );
     tienGiamThueTheoNghiDinh = roundIfVND(tienGiamThueTheoNghiDinh);
   }
   const tongTienChietKhau = roundIfVND(
-    tongTienChietKhauTungMatHang + tongMatHangChietKhau
+    tongTienChietKhauTungMatHang + tongMatHangChietKhau,
   );
 
   const tongTienPhi = loaiPhis.reduce(
     (sum, item) => sum + (item?.so_tien || 0),
-    0
+    0,
   );
 
   let tongThanhTienSauCKVaVAT = 0;
@@ -324,7 +324,7 @@ export const getTongTienData = (
         vats_total -
         tongMatHangChietKhau -
         tienGiamThueTheoNghiDinh +
-        tongTienPhi
+        tongTienPhi,
     );
   } else {
     if (co_hang_hoa_dv === 1) {
@@ -334,13 +334,15 @@ export const getTongTienData = (
           vats_total +
           tongTienPhi -
           tongMatHangChietKhau -
-          tienGiamThueTheoNghiDinh
+          tienGiamThueTheoNghiDinh,
       );
     } else {
       if (isAllChietKhau) {
         cong_tien_hang = tongTienChietKhauValid * -1;
         tongThanhTienSauCKVaVAT = roundIfVND(
-          vats_total * -1 + tongMatHangChietKhau * -1 - tienGiamThueTheoNghiDinh
+          vats_total * -1 +
+            tongMatHangChietKhau * -1 -
+            tienGiamThueTheoNghiDinh,
         );
         vats_total = vats_total * -1;
       }
@@ -471,18 +473,25 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
           so_tien_tang_giam +
           so_tien_tang_giam_tien_hang +
           so_tien_tang_giam_tien_thue,
-        loaiTien
-      )
+        loaiTien,
+      ),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hangHoas, loaiTien, loaiPhis, props.giam_thue_ty_le]);
+  }, [
+    hangHoas,
+    loaiTien,
+    loaiPhis,
+    props.giam_thue_ty_le,
+    so_tien_tang_giam_tien_hang,
+    so_tien_tang_giam_tien_thue,
+  ]);
 
   const tongTienData = getTongTienData(
     hangHoas,
     props.tienTe ?? "VND",
     props.giam_thue_ty_le,
     loaiPhis,
-    hoa_don_dang_ky_phat_hanh_mau_so
+    hoa_don_dang_ky_phat_hanh_mau_so,
   );
   const isAllChietKhau = useMemo(() => {
     return hangHoas.find((x) => x.hang_hoa_tinh_chat_id !== 3) === undefined;
@@ -500,71 +509,74 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
       >
         <Box sx={{ mr: 2, flex: 1 }}>
           <Heading text="Danh sách hàng hóa" size={eSize.medium} />
-          <Box
-            sx={{
-              display: "flex",
-              mt: 0,
-              flexDirection: ["column", "column", "row"],
-              gap: 2,
-              alignItems: "center",
-            }}
-          >
+
+          {props.isHoaDonBanHang && (
             <Box
               sx={{
                 display: "flex",
-                alignItems: "center",
+                mt: 0,
+                flexDirection: ["column", "column", "row"],
                 gap: 2,
+                alignItems: "center",
               }}
             >
-              <Checkbox
-                checked={props.giam_thue_ty_le > 0}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    props.onGiamThueTyLeChanged(0);
-                  } else {
-                    props.onGiamThueTyLeChanged(-1);
-                  }
-                }}
-              />
               <Box
                 sx={{
-                  ml: 1,
-                  fontWeight: "400",
-                  fontSize: "14px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 2,
                 }}
               >
-                Áp dụng giảm mức thuế suất giá trị gia tăng tại Nghị quyết số
-                204/2025/QH15 ngày 17 tháng 06 năm 2025. Mức tỷ lệ phần trăm
-                chịu thuế :
-                {/* tại Nghị quyết số
-                174/2024/QH15. */}
-              </Box>
-            </Box>
-            <Box>
-              {props.giam_thue_ty_le >= 0 && (
-                <TextInput
-                  placeholder="3"
-                  type="number"
-                  value={props.giam_thue_ty_le}
-                  min={0}
+                <Checkbox
+                  checked={props.giam_thue_ty_le > 0}
                   onChange={(e) => {
-                    props.onGiamThueTyLeChanged(parseInt(e.target.value));
+                    if (e.target.checked) {
+                      props.onGiamThueTyLeChanged(0);
+                    } else {
+                      props.onGiamThueTyLeChanged(-1);
+                    }
                   }}
+                />
+                <Box
                   sx={{
                     ml: 1,
-                    width: "100px",
+                    fontWeight: "400",
+                    fontSize: "14px",
                   }}
-                  trailingVisual={
-                    <img
-                      src="../../images/percent.png"
-                      alt="%"
-                      style={{ height: "11px", width: "auto" }}
-                    />
-                  }
-                />
-              )}
+                >
+                  Áp dụng giảm mức thuế suất giá trị gia tăng tại Nghị quyết số
+                  204/2025/QH15 ngày 17 tháng 06 năm 2025. Mức tỷ lệ phần trăm
+                  chịu thuế :
+                  {/* tại Nghị quyết số
+                174/2024/QH15. */}
+                </Box>
+              </Box>
+              <Box>
+                {props.giam_thue_ty_le >= 0 && (
+                  <TextInput
+                    placeholder="3"
+                    type="number"
+                    value={props.giam_thue_ty_le}
+                    min={0}
+                    onChange={(e) => {
+                      props.onGiamThueTyLeChanged(parseInt(e.target.value));
+                    }}
+                    sx={{
+                      ml: 1,
+                      width: "100px",
+                    }}
+                    trailingVisual={
+                      <img
+                        src="../../images/percent.png"
+                        alt="%"
+                        style={{ height: "11px", width: "auto" }}
+                      />
+                    }
+                  />
+                )}
+              </Box>
             </Box>
-          </Box>
+          )}
         </Box>
         <Box
           sx={{
@@ -702,7 +714,7 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                                 return {
                                   ...x,
                                 };
-                              })
+                              }),
                             );
                           } else {
                             setHangHoas(
@@ -716,7 +728,7 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                                 return {
                                   ...x,
                                 };
-                              })
+                              }),
                             );
                           }
                         }}
@@ -726,7 +738,7 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                       <AutoResizeText
                         sx={{
                           border: IsHoaDonHangHoaValidIncludeField(
-                            hangHoa
+                            hangHoa,
                           ).errors.find((e) => e.field === "ten_hang")
                             ? "1px solid red"
                             : undefined,
@@ -740,8 +752,8 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                                     ...x,
                                     ten_hang: val,
                                   }
-                                : { ...x }
-                            )
+                                : { ...x },
+                            ),
                           );
                         }}
                       />
@@ -750,9 +762,9 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                       <SelectBoxTinhChatHangHoa
                         sx={{
                           border: IsHoaDonHangHoaValidIncludeField(
-                            hangHoa
+                            hangHoa,
                           ).errors.find(
-                            (e) => e.field === "hang_hoa_tinh_chat_id"
+                            (e) => e.field === "hang_hoa_tinh_chat_id",
                           )
                             ? "1px solid red"
                             : 0,
@@ -829,7 +841,7 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                               return {
                                 ...x,
                               };
-                            })
+                            }),
                           );
                         }}
                       />
@@ -851,14 +863,14 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                                     x.so_luong,
                                     x.don_gia,
                                     parseFloat(e.target.value) ?? 0,
-                                    props.tienTe ?? "VND"
+                                    props.tienTe ?? "VND",
                                   ),
                                 };
                               }
                               return {
                                 ...x,
                               };
-                            })
+                            }),
                           );
                         }}
                         onChange={(e) => {
@@ -874,7 +886,7 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                               return {
                                 ...x,
                               };
-                            })
+                            }),
                           );
                         }}
                       />
@@ -899,12 +911,14 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                                 return {
                                   ...x,
                                 };
-                              })
+                              }),
                             );
                           }
                         }}
                         value={
-                          props.isHoaDonBanHang ? "0%" : hangHoa.thue_vat ?? ""
+                          props.isHoaDonBanHang
+                            ? "0%"
+                            : (hangHoa.thue_vat ?? "")
                         }
                       />
                     </td>
@@ -925,14 +939,14 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                                     parseFloat(e.target.value) ?? 0,
                                     x.don_gia,
                                     x.ty_le_chiet_khau,
-                                    props.tienTe ?? "VND"
+                                    props.tienTe ?? "VND",
                                   ),
                                 };
                               }
                               return {
                                 ...x,
                               };
-                            })
+                            }),
                           );
                         }}
                         onChange={(e) => {
@@ -947,7 +961,7 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                               return {
                                 ...x,
                               };
-                            })
+                            }),
                           );
                         }}
                       />
@@ -967,20 +981,20 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                                   ...x,
                                   don_gia: getDonGia(
                                     value,
-                                    props.tienTe ?? "VND"
+                                    props.tienTe ?? "VND",
                                   ),
                                   thanh_tien: getThanhTien(
                                     x.so_luong,
                                     value ?? 0,
                                     x.ty_le_chiet_khau,
-                                    props.tienTe ?? "VND"
+                                    props.tienTe ?? "VND",
                                   ),
                                 };
                               }
                               return {
                                 ...x,
                               };
-                            })
+                            }),
                           );
                         }}
                       />
@@ -1011,7 +1025,7 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                                 return {
                                   ...x,
                                 };
-                              })
+                              }),
                             );
                           }}
                         />
@@ -1051,7 +1065,7 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                             hangHoas.filter(
                               (item) =>
                                 item?.hang_hoa_tinh_chat_id !==
-                                eTinhChatHangHoa.GHI_CHU_DIEN_GIAI
+                                eTinhChatHangHoa.GHI_CHU_DIEN_GIAI,
                             )?.length + 1,
                         };
                         setHangHoas([...hangHoas, newHangHoa]);
@@ -1170,7 +1184,7 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                 <b>
                   {numberWithCommas(
                     (tongTienData.cong_tien_hang ?? 0) +
-                      so_tien_tang_giam_tien_hang
+                      so_tien_tang_giam_tien_hang,
                   )}
                 </b>
               </td>
@@ -1237,7 +1251,7 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
               <td colSpan={6} style={{ textAlign: "right" }}>
                 <b>
                   {numberWithCommas(
-                    tongTienData.vats_total + so_tien_tang_giam_tien_thue
+                    tongTienData.vats_total + so_tien_tang_giam_tien_thue,
                   )}
                 </b>
               </td>
@@ -1251,7 +1265,7 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                       {isApDungDieuChinh5DongVaoThueSuat && (
                         <>
                           {numberWithCommas(
-                            x.tong_tien_vat + so_tien_tang_giam_tien_thue
+                            x.tong_tien_vat + so_tien_tang_giam_tien_thue,
                           )}
                         </>
                       )}
@@ -1271,7 +1285,7 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                 <b>
                   {numberWithCommas(
                     tongTienData.tong_tien_chiet_khau *
-                      (isAllChietKhau ? -1 : 1)
+                      (isAllChietKhau ? -1 : 1),
                   )}
                 </b>
               </td>
@@ -1295,7 +1309,7 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                     tongTienData.tong_thanh_tien +
                       so_tien_tang_giam +
                       so_tien_tang_giam_tien_hang +
-                      so_tien_tang_giam_tien_thue
+                      so_tien_tang_giam_tien_thue,
                   )}
                 </b>
               </td>
@@ -1397,7 +1411,7 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                     stt: x.stt === 0 ? ("" as any) : x.stt,
                     thue_vat: "0%",
                   };
-                })
+                }),
               );
             } else {
               setHangHoas(
@@ -1406,7 +1420,7 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                     ...x,
                     stt: x.stt === 0 ? ("" as any) : x.stt,
                   };
-                })
+                }),
               );
             }
             setIsShowImportModal(false);

@@ -259,26 +259,50 @@ const HoaDonImportModal = (props: IHoaDonImportModalProps) => {
                   }}
                 >
                   {template === "" && (
-                    <Link
-                      href={`${appInfo.baseApiURL.replace(
-                        "/api",
-                        ""
-                      )}/Template/Template-import-hoa-don.xlsx`}
-                      target="_blank"
+                    <Box
+                      sx={{
+                        display: "flex",
+                        gap: 2,
+                        width: "100%",
+                        justifyContent: "center",
+                      }}
                     >
-                      <Button
-                        text="Tải file mẫu"
-                        size="medium"
-                        variant="invisible"
-                        leadingVisual={DownloadIcon}
-                      />
-                    </Link>
+                      <Link
+                        href={`${appInfo.baseApiURL.replace(
+                          "/api",
+                          "",
+                        )}/Template/Template-import-hoa-don.xlsx`}
+                        target="_blank"
+                      >
+                        <Button
+                          text="Tải file mẫu"
+                          size="medium"
+                          variant="invisible"
+                          leadingVisual={DownloadIcon}
+                        />
+                      </Link>
+
+                      <Link
+                        href={`${appInfo.baseApiURL.replace(
+                          "/api",
+                          "",
+                        )}/Template/Template-import-hoa-don-hh-dac-trung.xlsx`}
+                        target="_blank"
+                      >
+                        <Button
+                          text="Tải file mẫu hàng hóa đặc trưng"
+                          size="medium"
+                          variant="invisible"
+                          leadingVisual={DownloadIcon}
+                        />
+                      </Link>
+                    </Box>
                   )}
                   {template === "hoc_phi" && (
                     <Link
                       href={`${appInfo.baseApiURL.replace(
                         "/api",
-                        ""
+                        "",
                       )}/Template/Template-import-hoa-don-hoc-phi.xlsx`}
                       target="_blank"
                     >
@@ -294,7 +318,7 @@ const HoaDonImportModal = (props: IHoaDonImportModalProps) => {
                     <Link
                       href={`${appInfo.baseApiURL.replace(
                         "/api",
-                        ""
+                        "",
                       )}/Template/Template-import-hoa-don-nuoc.xlsx`}
                       target="_blank"
                     >
@@ -421,7 +445,7 @@ const ValidateDataResult = (props: IValidateDataResultProps) => {
     } else {
       props.onValidDone(
         "success",
-        dataSource.map((x) => ({ ...x, thue_vat: x.thue_suat }))
+        dataSource.map((x) => ({ ...x, thue_vat: x.thue_suat })),
       );
     }
   }, [errData, dataSource]);
