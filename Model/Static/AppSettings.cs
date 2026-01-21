@@ -16,6 +16,7 @@ namespace Model.Static
         public static FixedValue FixedValue { get; private set; }
         public static AWSS3Config AWSS3Config { get; private set; }
         public static WSInterTRCA2 WSInterTRCA2Config { get; private set; }
+        public static GipNcm_V2 GipNcm_V2Config { get; private set; }
         public static ApiSignHd ApiSignHd { get; private set; }
         public static RedisConfig RedisConfig { get; private set; }
         public static EmailConfig EmailConfig { get; private set; }
@@ -90,6 +91,14 @@ namespace Model.Static
                 Username = configuration["WSInterTRCA2:Username"].ConvertToString(),
                 Password = configuration["WSInterTRCA2:Password"].ConvertToString(),
             };
+
+            GipNcm_V2Config = new GipNcm_V2()
+            {
+                Endpoint = configuration["GipNcm_V2:Endpoint"].ConvertToString(),
+                Username = configuration["GipNcm_V2:Username"].ConvertToString(),
+                Password = configuration["GipNcm_V2:Password"].ConvertToString(),
+            };
+
             ApiSignHd = new ApiSignHd()
             {
                 Endpoint = configuration["ApiSignHd:Endpoint"].ConvertToString(),
@@ -230,6 +239,14 @@ namespace Model.Static
         public string Username { get; set; }
         public string Password { get; set; }
     }
+
+    public class GipNcm_V2
+    {
+        public string Endpoint { get; set; }
+        public string Username { get; set; }
+        public string Password { get; set; }
+    }
+
     public class ApiSignHd
     {
         public string Endpoint { get; set; }

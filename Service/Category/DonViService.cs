@@ -1,4 +1,4 @@
-using Contracts.Service.Category;
+﻿using Contracts.Service.Category;
 using Model.Static;
 using Model.Table;
 using Service.Base;
@@ -12,30 +12,77 @@ namespace Service.Category
             this._repositoryBase = _repositoryWrapper.Category.DonVi;
         }
 
+        //public async Task<donvi> GetGipInfoAsync(string ma_dv)
+        //{
+        //    try
+        //    {
+        //        using (var client = new GipNcm.CA2_GIPSoapClient(GipNcm.CA2_GIPSoapClient.EndpointConfiguration.CA2_GIPSoap))
+        //        {
+        //            client.ClientCredentials.UserName.UserName = AppSettings.WSInterTRCA2Config.Username;
+        //            client.ClientCredentials.UserName.Password = AppSettings.WSInterTRCA2Config.Password;
+        //            await client.OpenAsync();
+
+        //            var data = await client.Laythongtin_NNTAsync(ma_dv);
+        //            if (data != null)
+        //            {
+        //                var diaBanHanhChinhInfo = await _repositoryWrapper.Category.DiaBanHanhChinh.SelectByMaDiaBanAsync(data.MA_HUYEN);
+        //                var resutl = new donvi()
+        //                {
+        //                    mst = data.MST,
+        //                    ten_dv = data.TEN_NNT,
+        //                    co_quan_thu_id_chuquan = 0,
+        //                    donvi_chuquan = "",
+        //                    dia_chi = $"{data.MOTA_DIACHI}, {diaBanHanhChinhInfo?.Ten_QuanHuyen ?? ""}, {diaBanHanhChinhInfo?.Ten_TinhThanhPho ?? ""}",
+
+        //                };
+        //                return resutl;
+        //            }
+
+        //        }
+        //        return null;
+        //    }
+
+        //    catch (Exception ex)
+        //    {
+
+        //        return null;
+        //    }
+        //}
+
+
         public async Task<donvi> GetGipInfoAsync(string ma_dv)
         {
             try
             {
-                using (var client = new GipNcm.CA2_GIPSoapClient(GipNcm.CA2_GIPSoapClient.EndpointConfiguration.CA2_GIPSoap))
+                using (var client = new GipNcm_V2.CA2_GIPSoapClient(GipNcm_V2.CA2_GIPSoapClient.EndpointConfiguration.CA2_GIPSoap))
                 {
-                    client.ClientCredentials.UserName.UserName = AppSettings.WSInterTRCA2Config.Username;
-                    client.ClientCredentials.UserName.Password = AppSettings.WSInterTRCA2Config.Password;
+                    client.ClientCredentials.UserName.UserName = AppSettings.GipNcm_V2Config.Username;
+                    client.ClientCredentials.UserName.Password = AppSettings.GipNcm_V2Config.Password;
                     await client.OpenAsync();
 
-                    var data = await client.Laythongtin_NNTAsync(ma_dv);
-                    if (data != null)
+                    var myHeader = new GipNcm_V2.AuthHeader();
+                    // Gán user/pass vào header này (Bạn gõ dấu chấm để xem thuộc tính chính xác là gì, thường là Username/Password)
+                    myHeader.Username = AppSettings.GipNcm_V2Config.Username;
+                    myHeader.Password = AppSettings.GipNcm_V2Config.Password;
+
+                    var data = await client.Laythongtin_NNTAsync(myHeader, ma_dv);
+
+                    var realData = data.Laythongtin_NNTResult;
+
+                    if (realData != null)
                     {
-                        var diaBanHanhChinhInfo = await _repositoryWrapper.Category.DiaBanHanhChinh.SelectByMaDiaBanAsync(data.MA_HUYEN);
-                        var resutl = new donvi()
+                        var resultl = new donvi()
                         {
-                            mst = data.MST,
-                            ten_dv = data.TEN_NNT,
+                            // Phải chấm qua realData (tức là data.Laythongtin_NNTResult)
+                            mst = realData.MST,
+                            ten_dv = realData.TEN_NNT,
                             co_quan_thu_id_chuquan = 0,
                             donvi_chuquan = "",
-                            dia_chi = $"{data.MOTA_DIACHI}, {diaBanHanhChinhInfo?.Ten_QuanHuyen ?? ""}, {diaBanHanhChinhInfo?.Ten_TinhThanhPho ?? ""}",
 
+                            // Các trường khác tương tự
+                            dia_chi = $"{realData.DIACHI_DAYDU}"
                         };
-                        return resutl;
+                        return resultl;
                     }
 
                 }

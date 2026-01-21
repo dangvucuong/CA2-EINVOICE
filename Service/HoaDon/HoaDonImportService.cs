@@ -128,12 +128,50 @@ namespace Service.HoaDon
             model.hoa_don_hinh_thuc_id = 1;
 
 
+
             model.hoang_hoas = new List<hoa_don_hang_hoa>();
             model.loai_phis = new List<hoa_don_loai_phi>();
             var stt = 0;
             for (int i = rows.from_idx; i <= rows.to_idx; i++)
             {
                 stt += 1;
+
+                // Tạo hang_hoa_dac_trung_json dựa vào LHHDTrung
+                string hang_hoa_dac_trung_json = "";
+                var lhhdTrung = dt.Rows[i]["LHHDTrung"].ConvertToString();
+
+                if (lhhdTrung == "1")
+                {
+                    var dacTrung = new
+                    {
+                        LHHDTrung = 1,
+                        SKhung = dt.Rows[i]["SKhung"].ConvertToString(),
+                        SMay = dt.Rows[i]["Smay"].ConvertToString()
+                    };
+                    hang_hoa_dac_trung_json = Newtonsoft.Json.JsonConvert.SerializeObject(dacTrung);
+                }
+                else if (lhhdTrung == "2")
+                {
+                    var dacTrung = new
+                    {
+                        LHHDTrung = 2,
+                        BKSPTVChuyen = dt.Rows[i]["BKSPTVChuyen"].ConvertToString()
+                    };
+                    hang_hoa_dac_trung_json = Newtonsoft.Json.JsonConvert.SerializeObject(dacTrung);
+                }
+                else if (lhhdTrung == "3")
+                {
+                    var dacTrung = new
+                    {
+                        LHHDTrung = 3,
+                        TNGHang = dt.Rows[i]["TNGHang"].ConvertToString(),
+                        DCNGHang = dt.Rows[i]["DCNGHang"].ConvertToString(),
+                        MSTNGHang = dt.Rows[i]["MSTNGHang"].ConvertToString(),
+                        MDDNGHang = dt.Rows[i]["MDDNGHang"].ConvertToString()
+                    };
+                    hang_hoa_dac_trung_json = Newtonsoft.Json.JsonConvert.SerializeObject(dacTrung);
+                }
+
                 var hangHoa = new hoa_don_hang_hoa()
                 {
                     don_gia = dt.Rows[i]["don_gia"].ConvertToDecimal(),
@@ -146,10 +184,14 @@ namespace Service.HoaDon
                     ty_le_chiet_khau = dt.Rows[i]["ty_le_chiet_khau"].ConvertToDecimal(),
                     thue_vat = dt.Rows[i]["thue_vat"].ConvertToString(),
                     thanh_tien = 0,
-                    tien_chiet_khau = 0
-
+                    tien_chiet_khau = 0,
                 };
 
+                // nếu tính chát hàng hóa là 5 thì thêm  hang_hoa_dac_trung_json
+                if (hangHoa.hang_hoa_tinh_chat_id == 5)
+                {
+                    hangHoa.hang_hoa_dac_trung_json = hang_hoa_dac_trung_json;
+                }
 
                 hangHoa.tien_chiet_khau = hangHoa.so_luong * hangHoa.don_gia * (hangHoa.ty_le_chiet_khau / 100);
                 if (hangHoa.hang_hoa_tinh_chat_id != 4)
@@ -247,6 +289,18 @@ namespace Service.HoaDon
             dt.Columns.Add("don_gia", typeof(decimal));
             dt.Columns.Add("ty_le_chiet_khau", typeof(decimal));
             dt.Columns.Add("thue_vat", typeof(string));
+
+
+            // LHHDTrung	SKhung	Smay	BKSPTVChuyen	TNGHang	DCNGHang	MSTNGHang	MDDNGHang
+            dt.Columns.Add("LHHDTrung", typeof(string));
+            dt.Columns.Add("SKhung", typeof(string));
+            dt.Columns.Add("Smay", typeof(string));
+            dt.Columns.Add("BKSPTVChuyen", typeof(string));
+            dt.Columns.Add("TNGHang", typeof(string));
+            dt.Columns.Add("DCNGHang", typeof(string));
+            dt.Columns.Add("MSTNGHang", typeof(string));
+            dt.Columns.Add("MDDNGHang", typeof(string));
+
             dt.Columns.Add("ma_loi", typeof(string));
             dt.Columns.Add("is_break_hoadon", typeof(bool));
             var thueSuatValid = new List<string>() { "0%", "5%", "8%", "10%", "KCT", "KKKNT" };
@@ -281,6 +335,17 @@ namespace Service.HoaDon
                 row["don_gia"] = excelDatas.Columns.Contains("don_gia") ? data["don_gia"].ConvertToDecimal() : 0;
                 row["ty_le_chiet_khau"] = excelDatas.Columns.Contains("ty_le_chiet_khau") ? data["ty_le_chiet_khau"].ConvertToDecimal() : 0;
                 row["thue_vat"] = excelDatas.Columns.Contains("thue_vat") ? data["thue_vat"].ConvertToString() : "";
+
+                // LHHDTrung	SKhung	Smay	BKSPTVChuyen	TNGHang	DCNGHang	MSTNGHang	MDDNGHang
+
+                row["LHHDTrung"] = excelDatas.Columns.Contains("LHHDTrung") ? data["LHHDTrung"].ConvertToString() : "";
+                row["SKhung"] = excelDatas.Columns.Contains("SKhung") ? data["SKhung"].ConvertToString() : "";
+                row["Smay"] = excelDatas.Columns.Contains("Smay") ? data["Smay"].ConvertToString() : "";
+                row["BKSPTVChuyen"] = excelDatas.Columns.Contains("BKSPTVChuyen") ? data["BKSPTVChuyen"].ConvertToString() : "";
+                row["TNGHang"] = excelDatas.Columns.Contains("TNGHang") ? data["TNGHang"].ConvertToString() : "";
+                row["DCNGHang"] = excelDatas.Columns.Contains("DCNGHang") ? data["DCNGHang"].ConvertToString() : "";
+                row["MSTNGHang"] = excelDatas.Columns.Contains("MSTNGHang") ? data["MSTNGHang"].ConvertToString() : "";
+                row["MDDNGHang"] = excelDatas.Columns.Contains("MDDNGHang") ? data["MDDNGHang"].ConvertToString() : "";
 
                 var is_break_hoadon = true;
                 if (
@@ -330,7 +395,7 @@ namespace Service.HoaDon
                     }
                     else
                     {
-                        if (row["tinh_chat_hang_hoa"].ConvertToInt() < 1 || row["tinh_chat_hang_hoa"].ConvertToInt() > 4) maLois.Add("Tính chất không hợp lệ");
+                        if (row["tinh_chat_hang_hoa"].ConvertToInt() < 1 || row["tinh_chat_hang_hoa"].ConvertToInt() > 5) maLois.Add("Tính chất không hợp lệ");
                     }
 
                     if (!thueSuatValid.Contains(row["thue_vat"].ConvertToString().ToUpper())) maLois.Add("Thuế suất không hợp lệ");

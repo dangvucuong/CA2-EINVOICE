@@ -41,7 +41,22 @@ namespace Service.HoaDon
             dt.Columns.Add("don_gia", typeof(decimal));
             dt.Columns.Add("ty_le_chiet_khau", typeof(decimal));
             dt.Columns.Add("thanh_tien", typeof(decimal));
+
+            // hàng hóa đặc trưng
+            dt.Columns.Add("LHHDTrung", typeof(string));
+            dt.Columns.Add("SKhung", typeof(string));
+            dt.Columns.Add("Smay", typeof(string));
+            dt.Columns.Add("BKSPTVChuyen", typeof(string));
+            dt.Columns.Add("TNGHang", typeof(string));
+            dt.Columns.Add("DCNGHang", typeof(string));
+            dt.Columns.Add("MSTNGHang", typeof(string));
+            dt.Columns.Add("MDDNGHang", typeof(string));
+            dt.Columns.Add("hang_hoa_dac_trung_json", typeof(string)); // Thêm dòng này
             dt.Columns.Add("ma_loi", typeof(string));
+
+
+
+
             for (int i = 0; i < excelDatas.Rows.Count; i++)
             {
                 DataRow data = excelDatas.Rows[i];
@@ -63,8 +78,49 @@ namespace Service.HoaDon
                 if (tinh_chat == "Khuyến mại") hang_hoa_tinh_chat_id = 2;
                 if (tinh_chat == "Chiết khấu") hang_hoa_tinh_chat_id = 3;
                 if (tinh_chat == "Ghi chú, diễn giải") hang_hoa_tinh_chat_id = 4;
+                if (tinh_chat == "Hàng hóa đặc trưng") hang_hoa_tinh_chat_id = 5;
                 row["hang_hoa_tinh_chat_id"] = hang_hoa_tinh_chat_id;
 
+                if (hang_hoa_tinh_chat_id == 5)
+                {
+                    // Tạo hang_hoa_dac_trung_json dựa vào LHHDTrung
+                    string hang_hoa_dac_trung_json = "";
+                    var lhhdTrung = data["LHHDTrung"].ConvertToString();
+
+                    if (lhhdTrung == "1")
+                    {
+                        var dacTrung = new
+                        {
+                            LHHDTrung = 1,
+                            SKhung = data["SKhung"].ConvertToString(),
+                            SMay = data["Smay"].ConvertToString()
+                        };
+                        hang_hoa_dac_trung_json = Newtonsoft.Json.JsonConvert.SerializeObject(dacTrung);
+                    }
+                    else if (lhhdTrung == "2")
+                    {
+                        var dacTrung = new
+                        {
+                            LHHDTrung = 2,
+                            BKSPTVChuyen = data["BKSPTVChuyen"].ConvertToString()
+                        };
+                        hang_hoa_dac_trung_json = Newtonsoft.Json.JsonConvert.SerializeObject(dacTrung);
+                    }
+                    else if (lhhdTrung == "3")
+                    {
+                        var dacTrung = new
+                        {
+                            LHHDTrung = 3,
+                            TNGHang = data["TNGHang"].ConvertToString(),
+                            DCNGHang = data["DCNGHang"].ConvertToString(),
+                            MSTNGHang = data["MSTNGHang"].ConvertToString(),
+                            MDDNGHang = data["MDDNGHang"].ConvertToString()
+                        };
+                        hang_hoa_dac_trung_json = Newtonsoft.Json.JsonConvert.SerializeObject(dacTrung);
+                    }
+
+                    row["hang_hoa_dac_trung_json"] = hang_hoa_dac_trung_json;
+                }
 
                 // if (row["stt"].ConvertToInt() == 0) maLois.Add("Số thứ tự không được trống");
                 // if (row["thue_suat"].ConvertToString() == "") maLois.Add("Thuế suất không được trống");
@@ -81,7 +137,7 @@ namespace Service.HoaDon
 
         public Task<PagingResult<IEnumerable<hoa_don_hang_hoa_vm>>> SelectByDonViThongKePageAsync(string donvi_ma_dv, HoaDonSelectPagingRequest pagingRequest)
         {
-            return _repositoryWrapper.HoaDon.HoaDonHangHoa.SelectByDonViThongKePageAsync(donvi_ma_dv,pagingRequest);
+            return _repositoryWrapper.HoaDon.HoaDonHangHoa.SelectByDonViThongKePageAsync(donvi_ma_dv, pagingRequest);
         }
 
         public Task<IEnumerable<hoa_don_hang_hoa>> SelectByHoaDonIdAsync(int hoaDonId)
