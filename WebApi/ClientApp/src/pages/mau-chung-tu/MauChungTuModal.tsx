@@ -63,6 +63,9 @@ function MauChungTuModal({
           ? moment(dataEdit?.NgayQD).format("YYYY-MM-DD")
           : moment().format("YYYY-MM-DD"),
         mau_so: dataEdit?.Mauso,
+        ngay_tao_mau: dataEdit?.ThoigianPH
+          ? moment(dataEdit?.ThoigianPH).format("YYYY-MM-DD")
+          : moment().format("YYYY-MM-DD"),
       });
       setLoaiChungTu(dataEdit?.MaloaiHD);
     } else {
@@ -144,7 +147,7 @@ function MauChungTuModal({
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);
@@ -188,7 +191,7 @@ function MauChungTuModal({
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);
@@ -202,15 +205,23 @@ function MauChungTuModal({
 
   const XemTruocMau = async () => {
     setIsSaving(true);
-    const logoPath = await uploadLogoMau({
-      base64: logo.base64,
-      fileName: logo.fileName,
-    });
 
-    const anhnenPath = await uploadBgMau({
-      base64: anhnen.base64,
-      fileName: anhnen.fileName,
-    });
+    let logoPath = "";
+    let anhnenPath = "";
+
+    if (dataEdit) {
+      logoPath = dataEdit?.Logo;
+      anhnenPath = dataEdit?.Nen;
+    } else {
+      logoPath = await uploadLogoMau({
+        base64: logo.base64,
+        fileName: logo.fileName,
+      });
+      anhnenPath = await uploadBgMau({
+        base64: anhnen.base64,
+        fileName: anhnen.fileName,
+      });
+    }
 
     const soap = `<?xml version="1.0" encoding="utf-8"?>
 <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
@@ -236,7 +247,7 @@ function MauChungTuModal({
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);
@@ -266,19 +277,19 @@ function MauChungTuModal({
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);
 
     if (parseRes.status === "success") {
       setDsmauhienthi(
-        Array.isArray(parseRes.data) ? parseRes.data : [parseRes.data]
+        Array.isArray(parseRes.data) ? parseRes.data : [parseRes.data],
       );
       setMauhienthi(
         Array.isArray(parseRes.data) && parseRes.data.length > 0
           ? parseRes.data[0].Filepath
-          : ""
+          : "",
       );
     }
   };
@@ -310,7 +321,7 @@ function MauChungTuModal({
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);
@@ -347,7 +358,7 @@ function MauChungTuModal({
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);
@@ -356,6 +367,8 @@ function MauChungTuModal({
       return parseRes.data;
     }
   };
+
+  console.log(dataEdit);
 
   return (
     <Modal
@@ -455,12 +468,22 @@ function MauChungTuModal({
                     onChangeValue={(value, fileName) =>
                       setAnhnen({ base64: value, fileName })
                     }
+                    defaultImage={
+                      dataEdit
+                        ? process.env.REACT_APP_URL_CHUNG_TU + dataEdit?.Nen
+                        : undefined
+                    }
                   />
                   <UploadImage
                     id="upload-logo"
                     noImageText="Chọn logo"
                     onChangeValue={(value, fileName) =>
                       setLogo({ base64: value, fileName })
+                    }
+                    defaultImage={
+                      dataEdit
+                        ? process.env.REACT_APP_URL_CHUNG_TU + dataEdit?.Logo
+                        : undefined
                     }
                   />
                 </Box>

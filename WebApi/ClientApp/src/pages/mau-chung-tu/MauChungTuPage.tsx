@@ -45,17 +45,20 @@ const MauChungTuPage = () => {
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);
 
     if (parseRes.status === "success") {
+      const sortedData = parseRes?.data?.sort(
+        (a: any, b: any) => b.idMauHD - a.idMauHD,
+      );
       setDanhsachmau(
-        parseRes?.data?.map((item: any, index: number) => ({
+        sortedData.map((item: any, index: number) => ({
           ...item,
           stt: index + 1,
-        }))
+        })),
       );
     } else {
       NotifyHelper.Error(parseRes.message);

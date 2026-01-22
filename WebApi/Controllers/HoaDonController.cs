@@ -234,6 +234,7 @@ namespace WebApi.Controllers
             var user_id = this.GetUserId();
             var checkNotHoaDonNhaps = hoaDons.Where(x => !(x.hoa_don_trang_thai_id == (int)e_hoa_don_trang_thai.NHAP
             || x.hoa_don_trang_thai_id == (int)e_hoa_don_trang_thai.CHUA_GUI_CQT
+            || x.hoa_don_trang_thai_id == (int)e_hoa_don_trang_thai.LOI_THONG_DIEP
             || x.hoa_don_trang_thai_id == (int)e_hoa_don_trang_thai.KHONG_HOP_LE)).ToList();
             if (checkNotHoaDonNhaps.Count > 0) return this.BadRequest($"Có {checkNotHoaDonNhaps.Count} hóa đơn không phải hóa đơn nháp hoặc chưa phát hành");
             foreach (var hoaDon in hoaDons)

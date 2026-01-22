@@ -1,16 +1,18 @@
 import { Box } from "@primer/react";
-import React, { memo, useState } from "react";
+import React, { memo, useEffect, useState } from "react";
 
 function UploadImage({
   sx,
   id,
   noImageText,
   onChangeValue,
+  defaultImage,
 }: {
   sx?: any;
   id?: string;
   noImageText?: string;
   onChangeValue?: (value: string, fileName: string) => void;
+  defaultImage?: string;
 }) {
   const [preview, setPreview] = useState<string>();
 
@@ -40,6 +42,12 @@ function UploadImage({
     };
     reader.readAsDataURL(file);
   };
+
+  useEffect(() => {
+    if (defaultImage) {
+      setPreview(defaultImage);
+    }
+  }, [defaultImage]);
 
   return (
     <Box sx={sx}>
