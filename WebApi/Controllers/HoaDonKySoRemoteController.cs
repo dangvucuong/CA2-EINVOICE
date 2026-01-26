@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Model.Enum;
 using WebApi.Filters;
+using System.Linq;
 
 namespace WebApi.Controllers
 {
@@ -39,8 +40,14 @@ namespace WebApi.Controllers
                     var base64 = "";
                     if (hoaDon.hoa_don_hinh_thuc_code == "M")
                     {
-                        var base64Result = await _hoaDonService.CreateBase64MTTAsync(hoaDon);
-                        base64 = base64Result.data;
+                        // var base64Result = await _hoaDonService.CreateBase64MTTAsync(hoaDon);
+                        // base64 = base64Result.data;
+                        var xmlResult = await _hoaDonService.CreateXmlKySoAsync(hoaDon);
+                        if (!xmlResult.is_success)
+                        {
+                            return this.BadRequest(xmlResult.message);
+                        }
+                        base64 = xmlResult.data.ConvertToBase64();
                     }
                     else
                     {
@@ -90,6 +97,7 @@ namespace WebApi.Controllers
             return this.BadRequest("Chỉ áp dụng với tài khoản được phép ký số HSM hoặc Remote Signing");
 
         }
+
         [HttpPost("{id}/ky-so-va-phat-hanh")]
         [MustAuthorized("[POST]api/hoa-don/phat-hanh")]
         public async Task<ContentResult> KySoVaPhatHanhAsync([FromRoute] int id, [FromQuery] bool notify = false)
@@ -126,6 +134,85 @@ namespace WebApi.Controllers
                     if (userSerialInfo.is_hsm_signing)
                     {
                         var phatHanhResult = await _hoaDonKyLoService.SignAndPhatHanhHSMAsync(hoaDon, base64, userSerialInfo.serial_number, null, null, base64BienBan);
+                        if (phatHanhResult)
+                        {
+                            return this.OK();
+                        }
+                        return this.BadRequest("Thất bại");
+                    }
+                    if (userSerialInfo.rs_ma_but_ky.ConvertToString() != "")
+                    {
+                        if (notify)
+                        {
+                            var kySoResult = await _hoaDonKyLoService.KySoRemoteSigningThenPhatHanhBackgroundAsync(hoaDon, base64, hoaDon.donvi_ma_dv, userSerialInfo.serial_number, null, null);
+                            if (kySoResult.is_success)
+                            {
+                                return this.OK(kySoResult.data);
+                            }
+                            return this.BadRequest(kySoResult.message);
+                        }
+                        else
+                        {
+
+                            var phatHanhResult = await _hoaDonKyLoService.SignAndPhatHanhRemoteSigningAsync(hoaDon, base64, userSerialInfo.serial_number, null, null);
+                            if (phatHanhResult)
+                            {
+                                return this.OK();
+                            }
+                            return this.BadRequest("Thất bại");
+                        }
+                    }
+
+                }
+                return this.BadRequest("Không tìm thấy hóa đơn");
+            }
+
+
+            return this.BadRequest("Chỉ áp dụng với tài khoản được phép ký số HSM hoặc Remote Signing");
+
+        }
+
+
+
+        [HttpPost("{id}/ky-so-va-phat-hanh-thong-diep-206-mtt")]
+        [MustAuthorized("[POST]api/hoa-don/phat-hanh")]
+        public async Task<ContentResult> KySoVaPhatHanhThongDiep206Async([FromRoute] int id, [FromQuery] bool notify = false)
+        {
+            var userId = this.GetUserId();
+            var userSerialInfo = await _serviceWrapper.User.User.SelectByIdAsync(userId);
+            if (userSerialInfo.is_hsm_signing || userSerialInfo.rs_ma_but_ky.ConvertToString() != "")
+            {
+                var hoaDon = await _hoaDonService.SelectByIdAsync(id);
+                if (hoaDon != null)
+                {
+                    var donVi = await _serviceWrapper.Category.DonVi.SelectByMaDonViAsync(hoaDon.donvi_ma_dv);
+                    var base64 = "";
+
+                    var hoaDongLogs = await _serviceWrapper.HoaDon.HoaDonLog.SelectByHoaDonAsync(id);
+
+                    var signedText = string.Empty;
+
+                    var hoaDonLogKySo = hoaDongLogs
+                                            .Where(x => x.hoa_don_log_type_id == (int)e_hoa_don_log_type.KY_SO_SUCCESS)
+                                            .OrderByDescending(x => x.created_time).FirstOrDefault();
+                    if (hoaDonLogKySo == null)
+                        return this.BadRequest("Không tìm thấy dữ liệu hợp lệ");
+                    var signedTextXmlFile = hoaDonLogKySo.file_thong_diep_url;
+                    var xmlContent = System.IO.File.ReadAllText(signedTextXmlFile);
+                    signedText = xmlContent.ConvertToBase64();
+
+                    var xmlResult = await _hoaDonService.CreateBase64_206MTTAsync(hoaDon, signedText);
+                    if (!xmlResult.is_success)
+                    {
+                        return this.BadRequest(xmlResult.message);
+                    }
+                    base64 = xmlResult.data;
+
+                    if (base64.ConvertToString() == "") return this.BadRequest("Không tạo được XML");
+
+                    if (userSerialInfo.is_hsm_signing)
+                    {
+                        var phatHanhResult = await _hoaDonKyLoService.SignAndPhatHanhHSMAsync(hoaDon, base64, userSerialInfo.serial_number, null, null, "");
                         if (phatHanhResult)
                         {
                             return this.OK();

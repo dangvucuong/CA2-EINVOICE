@@ -15,6 +15,7 @@ using Model.Respone.HoaDon;
 using Model.Respone.Upload;
 using Model.Static;
 using WebApi.Filters;
+using System.IO;
 
 namespace WebApi.Controllers
 {
@@ -347,8 +348,12 @@ namespace WebApi.Controllers
                 {
                     if (hoaDon.hoa_don_hinh_thuc_code == "M")
                     {
-                        var base64Result = await _hoaDonService.CreateBase64MTTAsync(hoaDon);
-                        return base64Result.is_success ? this.OK(base64Result.data) : this.BadRequest(base64Result.message);
+                        // var base64Result = await _hoaDonService.CreateBase64MTTAsync(hoaDon);
+                        // return base64Result.is_success ? this.OK(base64Result.data) : this.BadRequest(base64Result.message);
+                        var xmlResult = await _hoaDonService.CreateXmlKySoAsync(hoaDon);
+                        if (!xmlResult.is_success) return this.BadRequest(xmlResult.message);
+                        var base64 = xmlResult.data.ConvertToBase64();
+                        return this.OK(base64);
                     }
                     else
                     {
@@ -494,11 +499,75 @@ namespace WebApi.Controllers
             }
             return this.BadRequest(result.message);
         }
+
+
+
+        /// <summary>
+        /// Phát hành hóa đơn máy tính tiền, ký số riêng
+        /// </summary>
+        /// <remarks>
+        ///
+        /// </remarks>
+        [HttpPost]
+        [Route("phat-hanh-mtt")]
+        // [Route("/api/phat-hanh-hoa-don")]
+        public async Task<ContentResult> PhatHanhMTTAsync([FromBody] HoaDonPhatHanhRequest request)
+        {
+            var hoaDon = await _hoaDonService.SelectByIdAsync(request.id);
+            if (hoaDon.hoa_don_hinh_thuc_code == "M")
+            {
+                var base64 = await _hoaDonService.PhatHanhMTT_KyRiengAsync(request, hoaDon);
+                return this.OK(base64);
+            }
+            return this.BadRequest("Có lỗi!");
+        }
+        /// <summary>
+        /// Lấy xml để ký số của 1 hóa đơn
+        /// </summary>
+        /// <remarks>
+        ///
+        /// </remarks>
+        [HttpGet("{id}/ky-so-thong-diep-206")]
+        [MustAuthorized("[POST]api/hoa-don/phat-hanh")]
+        public async Task<ContentResult> XmlKySoBase64ThongDiep206Async([FromRoute] int id)
+        {
+            var hoaDon = await _hoaDonService.SelectByIdAsync(id);
+            if (hoaDon != null)
+            {
+                if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DA_HUY_NOI_BO)
+                {
+                    return this.BadRequest("Hóa đơn đã hủy nội bộ");
+                }
+
+                var hoaDongLogs = await _serviceWrapper.HoaDon.HoaDonLog.SelectByHoaDonAsync(id);
+
+                var signedText = string.Empty;
+
+                var hoaDonLogKySo = hoaDongLogs
+                                        .Where(x => x.hoa_don_log_type_id == (int)e_hoa_don_log_type.KY_SO_SUCCESS)
+                                        .OrderByDescending(x => x.created_time).FirstOrDefault();
+                if (hoaDonLogKySo == null)
+                    return this.BadRequest("Không tìm thấy dữ liệu hợp lệ");
+                var signedTextXmlFile = hoaDonLogKySo.file_thong_diep_url;
+                var xmlContent = System.IO.File.ReadAllText(signedTextXmlFile);
+                signedText = xmlContent.ConvertToBase64();
+
+                var xmlResult = await _hoaDonService.CreateBase64_206MTTAsync(hoaDon, signedText);
+                if (!xmlResult.is_success) return this.BadRequest(xmlResult.message);
+                var base64 = xmlResult.data;
+                return this.OK(base64);
+
+
+            }
+            return this.BadRequest();
+
+        }
+
+
         [HttpPost]
         [Route("import/valid")]
         [MustAuthorized("[POST]api/hoa-don")]
         [ApiExplorerSettings(IgnoreApi = true)]
-
         public async Task<ContentResult> ReadAndValidImportData([FromBody] HoaDonImportRequest upload)
         {
             var userInfo = this.GetUserInfo();

@@ -831,6 +831,55 @@ namespace Service.HoaDon
             return new SuccessResult<string>(base64thongdiep);
         }
 
+        public async Task<FunctionResult<string>> CreateBase64_206MTTAsync(int id, string signedText)
+        {
+            var hoaDon = await this.SelectByIdAsync(id);
+            if (hoaDon != null)
+            {
+                return await this.CreateBase64_206MTTAsync(hoaDon, signedText);
+            }
+
+            return new ErrorResult<string>();
+        }
+
+        public async Task<FunctionResult<string>> CreateBase64_206MTTAsync(hoa_don hoaDon, string signedText)
+        {
+            if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DA_HUY_NOI_BO)
+            {
+                return new ErrorResult<string>("Hóa đơn đã hủy nội bộ");
+            }
+
+            var userId = this.GetCurrentUserId();
+            var hoaDonXml = signedText.ConvertToXmlFromBase64();
+            var uuid = Guid.NewGuid().ToString().Replace("-", "").ToUpper();
+            await _serviceWrapper.Cache.SetDataAsync<string>(uuid, "hoa_don", DateTime.Now.AddDays(30));
+            await _repositoryWrapper.HoaDon.PhatHanhUUID.SaveLogUuidAsync(uuid, "hoa_don", userId);
+
+            var thongDiep = new ThongDiep()
+            {
+                ThongTinChung = new ThongTinChungThongDiep()
+                {
+                    phien_ban = hoaDon.phien_ban,
+                    ma_noi_gui = AppSettings.FixedValue.MNGui,
+                    ma_noi_nhan = AppSettings.FixedValue.MNNhan,
+                    thong_diep = "206",
+                    ma_noi_gui_uuid = $"{AppSettings.FixedValue.MNGui}{uuid}".ToUpper(),
+                    ma_thong_diep_tham_chieu = $"",
+                    mst = hoaDon.nguoi_ban_mst,
+                    so_luong = 1
+                },
+            };
+            hoaDon.phat_hanh_uuid = uuid;
+            hoaDon.user_id_phathanh = userId;
+            await this.UpdateAsync(hoaDon);
+            await _serviceWrapper.Cache.SetDataAsync<hoa_don>(uuid + "_hoa_don", hoaDon, DateTime.Now.AddDays(30));
+            var base64thongdiep = thongDiep.ConvertToXmlAndAppendChild("/TDiep", "DLieu", hoaDonXml, false,
+                System.Xml.NewLineHandling.None, true, $"_{uuid}").ConvertToBase64();
+            // LogWriter.Writer(base64thongdiep, "CreateBase64MTTAsync", "");
+            return new SuccessResult<string>(base64thongdiep);
+        }
+
+
         public async Task<FunctionResult<Model.Request.Xml.HoaDon>> CreateXmlObjectKySoAsync(int id, bool isPreview = false)
         {
             var obj = await this.SelectByIdAsync(id);
@@ -2585,6 +2634,12 @@ namespace Service.HoaDon
             return _repositoryWrapper.HoaDon.HoaDon.SelectByIdsAsync(ids);
         }
 
+
+        public Task<IEnumerable<HoaDonPdfInforResponse>> SelectByMaSoHoaDonRangeAsync(string donvi_ma_dv, string ky_hieu, int fromMaSo, int toMaSo)
+        {
+            return _repositoryWrapper.HoaDon.HoaDon.SelectByMaSoHoaDonRangeAsync(donvi_ma_dv, ky_hieu, fromMaSo, toMaSo);
+        }
+
         public async Task<FunctionResult<HoaDonPhatHanhRespone>> PhatHanhMTTAsync(HoaDonPhatHanhRequest request,
             hoa_don hoaDon, int user_id_phathanh = 0)
         {
@@ -2724,6 +2779,135 @@ namespace Service.HoaDon
                 await ReleaseLockHoaDonAsync(request.id);
             }
         }
+
+
+        public async Task<FunctionResult<HoaDonPhatHanhRespone>> PhatHanhMTT_KyRiengAsync(HoaDonPhatHanhRequest request,
+                 hoa_don hoaDon, int user_id_phathanh = 0)
+        {
+            try
+            {
+                //tránh phát hành chưa xong user gọi phát hành tiếp -> phát hành lần đầu tạo lock -> phát hành xong xóa lock
+                var isGetLockKey = await AcquireLockHoaDonAsync(request.id);
+                if (!isGetLockKey) return new ErrorResult<HoaDonPhatHanhRespone>("Tạo khóa phát hành thất bại");
+                var hoaDonLogs = await _hoaDonLogService.SelectByHoaDonAsync(request.id);
+                var logGui = hoaDonLogs.Where(x => x.hoa_don_log_type_id == (int)e_hoa_don_log_type.GUI_THONG_DIEP)
+                    .FirstOrDefault();
+                if (logGui != null)
+                {
+                    return new ErrorResult<HoaDonPhatHanhRespone>("Hóa đơn đã gửi thông điệp");
+                }
+
+                // var base64thongdiep = request.signed_text;
+                var base64thongdiep = request.signed_text;
+                var user = this.GetCurrentUser();
+                if (user_id_phathanh > 0)
+                {
+                    var objUser = await _serviceWrapper.User.User.SelectAndFormatJwtTokenAsync(user_id_phathanh);
+                    if (objUser != null) user = objUser;
+                }
+
+                using (var client = Helper.WSInterTRCA2Helper.GetClient())
+                {
+                    await client.OpenAsync();
+                    var authHeader = Helper.WSInterTRCA2Helper.GetAuthHeader();
+                    // await _serviceWrapper.Cache.SetDataAsync<hoa_don>(uuid + "_hoa_don", hoaDon, DateTime.Now.AddDays(3));
+                    //
+                    var fileName = Guid.NewGuid().ToString() + ".xml";
+                    // var filePath = $"Xml/{DateTime.Now.Year}/{DateTime.Now.Month}/{fileName}";
+                    var filePath = $"Xml/{DateTime.Now.Year}/{DateTime.Now.Month}/{DateTime.Now.Day}/{fileName}";
+                    var directoryPath = Path.GetDirectoryName(filePath);
+                    if (!Directory.Exists(directoryPath))
+                    {
+                        Directory.CreateDirectory(directoryPath);
+                    }
+
+                    await File.WriteAllTextAsync(filePath, base64thongdiep.ConvertToXmlFromBase64());
+
+
+                    try
+                    {
+                        await _semaphore.WaitAsync();
+                        try
+                        {
+                            var guiThongDiepResult = await client.Guithongdiep2024Async(authHeader, base64thongdiep, 1);
+                            if (guiThongDiepResult.Guithongdiep2024Result.ConvertToString().Length > 2)
+                            {
+                                var log = new hoa_don_log()
+                                {
+                                    file_thong_diep_url = filePath,
+                                    ngay_thuc_hien = DateTime.Now,
+                                    nguoi_thuc_hien = user.full_name,
+                                    noi_dung_thuc_hien = "Gửi thông điệp lên CQT",
+                                    hoa_don_id = hoaDon.id,
+                                    hoa_don_log_type_id = (int)e_hoa_don_log_type.GUI_THONG_DIEP
+                                };
+                                log.SetInsertInfo(user.id);
+                                _serviceWrapper.Core.TaskQueue.EnqueueTask(async _ =>
+                                {
+                                    await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
+                                });
+                                //
+                            }
+                            else
+                            {
+                                var log = new hoa_don_log()
+                                {
+                                    file_thong_diep_url = filePath,
+                                    ngay_thuc_hien = DateTime.Now,
+                                    nguoi_thuc_hien = user.full_name,
+                                    noi_dung_thuc_hien = $"Gửi thông điệp thất bại {guiThongDiepResult.Guithongdiep2024Result.ConvertToString()}",
+                                    hoa_don_id = hoaDon.id,
+                                    hoa_don_log_type_id = -1 * (int)e_hoa_don_log_type.GUI_THONG_DIEP
+                                };
+                                log.SetInsertInfo(user.id);
+                                _serviceWrapper.Core.TaskQueue.EnqueueTask(async _ =>
+                                {
+                                    await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
+                                });
+                            }
+                        }
+                        catch (System.Exception ex)
+                        {
+                            var log = new hoa_don_log()
+                            {
+                                file_thong_diep_url = filePath,
+                                ngay_thuc_hien = DateTime.Now,
+                                nguoi_thuc_hien = user.full_name,
+                                noi_dung_thuc_hien = $"Gửi thông điệp thất bại {ex.Message.ConvertToString()}",
+                                hoa_don_id = hoaDon.id,
+                                hoa_don_log_type_id = -1 * (int)e_hoa_don_log_type.GUI_THONG_DIEP
+                            };
+                            log.SetInsertInfo(user.id);
+                            _serviceWrapper.Core.TaskQueue.EnqueueTask(async _ =>
+                            {
+                                await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
+                            });
+                        }
+                        finally
+                        {
+                            await client.CloseAsync();
+                        }
+
+
+
+                    }
+                    finally
+                    {
+                        _semaphore.Release();
+                    }
+
+                    // LogWriter.Writer(guiThongDiepResult.Guithongdiep2024Result, base64thongdiep, hoaDon.id.ToString());
+                    // LogWriter.Writer(Newtonsoft.Json.JsonConvert.SerializeObject(guiThongDiepResult), base64thongdiep, hoaDon.id.ToString());
+
+                    return new SuccessResult<HoaDonPhatHanhRespone>();
+                }
+            }
+            finally
+            {
+                await ReleaseLockHoaDonAsync(request.id);
+            }
+        }
+
 
         public async Task<FunctionResult<HoaDonPhatHanhRespone>> PhatHanhHoaDonMTTAsync(hoa_don hoaDon,
             string signed_text)

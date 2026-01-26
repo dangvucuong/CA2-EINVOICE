@@ -250,8 +250,8 @@ namespace Service.HoaDon
         {
             try
             {
-                var kySoHSMResult = await this.KySoHSMAsync(hoaDon, base64, hoaDon.donvi_ma_dv, serial,  bienBanBase64);
-               
+                var kySoHSMResult = await this.KySoHSMAsync(hoaDon, base64, hoaDon.donvi_ma_dv, serial, bienBanBase64);
+
                 if (kySoHSMResult != null)
                 {
                     if (processChangedModel != null)
@@ -266,7 +266,7 @@ namespace Service.HoaDon
                     }
                     if (kySoHSMResult.Macode == 1)
                     {
-                       
+
 
                         //phát hành
                         FunctionResult<HoaDonPhatHanhRespone> phatHanhResult = null;
@@ -318,7 +318,7 @@ namespace Service.HoaDon
                 if (signResultModel != null && signResultModel.Macode == 1)
                 {
                     signResultModel.HoadonId = hoaDon.id;
-                    if(bienBanBase64!= null && bienBanBase64!= string.Empty)
+                    if (bienBanBase64 != null && bienBanBase64 != string.Empty)
                     {
                         var signResultModelBienban = await _serviceWrapper.ApiSignHoaDon.SignAsync(bienBanBase64, mst, serial);
                         if (signResultModelBienban != null && signResultModel.Macode == 1)
@@ -327,7 +327,7 @@ namespace Service.HoaDon
                             {
                                 id = hoaDon.id,
                                 signed_text = signResultModel.SignedData,
-                                bienBanSignedText= signResultModelBienban.SignedData
+                                bienBanSignedText = signResultModelBienban.SignedData
                             });
                         }
                     }
@@ -337,10 +337,10 @@ namespace Service.HoaDon
                         {
                             id = hoaDon.id,
                             signed_text = signResultModel.SignedData
-                            
+
                         });
                     }
-                  
+
 
                 }
 
@@ -440,7 +440,7 @@ namespace Service.HoaDon
                             id = hoaDon.id,
                             xml_base64 = base64
                         });
-                        
+
                     }
                     if (processChangedModel != null)
                     {
@@ -464,6 +464,43 @@ namespace Service.HoaDon
             try
             {
                 var kySoRequest = new KySoRequest(serial, mst, base64, hoaDon.nguoi_mua_email.ConvertToString());
+                kySoRequest.hoa_don_id = hoaDon.id;
+                kySoRequest.ma_tra_cuu = hoaDon.ma_tra_cuu.ConvertToString();
+                kySoRequest.KHHDon = hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu;
+                kySoRequest.so_hoa_don = hoaDon.ma_so_hoa_don ?? 0;
+                var userId = this.GetCurrentUserId();
+                var guiYeucauResult = await _serviceWrapper.RemoteSigningSerivce.KySoAsync(kySoRequest);
+                if (guiYeucauResult.is_success)
+                {
+                    var code = guiYeucauResult.data;
+                    if (code != "-2")
+                    {
+                        var user_id = this.GetCurrentUserId();
+                        await _serviceWrapper.HoaDon.RsYeuCauKy.SaveYeuCauKyAsync(code, user_id.ToString(), Model.Enum.e_rs_yeu_cau_ky_type.KY_SO_HOA_DON, hoaDon.id.ToString());
+
+                        // _serviceWrapper.Core.TaskQueue.EnqueueTask(async _ =>
+                        //      {
+                        //          await TryGetAndProcesssQuaKySoRsBackgroundAsync(code, hoaDon.id, base64, userId);
+                        //      });
+                        return new SuccessResult<string>(code);
+                    }
+
+                }
+
+                return new ErrorResult<string>(guiYeucauResult.message);
+            }
+            catch (System.Exception ex)
+            {
+                return new ErrorResult<string>(ex.Message);
+            }
+        }
+
+
+        public async Task<FunctionResult<string>> KySoThongDiep206MTTRemoteSigningBackgroundAsync(hoa_don hoaDon, string base64thongdiep, string mst, string serial)
+        {
+            try
+            {
+                var kySoRequest = new KySoRequest(serial, mst, base64thongdiep, hoaDon.nguoi_mua_email.ConvertToString());
                 kySoRequest.hoa_don_id = hoaDon.id;
                 kySoRequest.ma_tra_cuu = hoaDon.ma_tra_cuu.ConvertToString();
                 kySoRequest.KHHDon = hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu;

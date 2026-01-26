@@ -20,6 +20,8 @@ namespace Contracts.Service.HoaDon
         Task<FunctionResult<Model.Request.Xml.HoaDon>> CreateXmlObjectKySoAsync(int id, bool isPreview = false);
         Task<FunctionResult<string>> CreateBase64MTTAsync(int id);
         Task<FunctionResult<string>> CreateBase64MTTAsync(hoa_don hoaDon);
+        Task<FunctionResult<string>> CreateBase64_206MTTAsync(int id, string signedText);
+        Task<FunctionResult<string>> CreateBase64_206MTTAsync(hoa_don hoaDon, string signedText);
         Task<FunctionResult<string>> CreateBase64MTTBangKeAsync(List<hoa_don> hoaDons);
         Task<FunctionResult<string>> CreateXmlKySoAsync(int id, bool isPreview = false);
         Task<FunctionResult<string>> CreateXmlKySoAsync(hoa_don hoaDon);
@@ -40,6 +42,7 @@ namespace Contracts.Service.HoaDon
         Task<List<HoaDonUpdateKySoSuccessItemRespone>> UpdteKySoSuccessBangKeAsync(List<hoa_don> hoaDons, string signed_text, int user_id = 0);
         Task<FunctionResult<HoaDonPhatHanhRespone>> PhatHanhAsync(HoaDonPhatHanhRequest request, int user_id_phathanh = 0);
         Task<FunctionResult<HoaDonPhatHanhRespone>> PhatHanhMTTAsync(HoaDonPhatHanhRequest request, hoa_don hoaDon, int user_id_phathanh = 0);
+        Task<FunctionResult<HoaDonPhatHanhRespone>> PhatHanhMTT_KyRiengAsync(HoaDonPhatHanhRequest request, hoa_don hoaDon, int user_id_phathanh = 0);
         /// <summary>
         /// Phát hành bảng kê
         /// </summary>
@@ -55,6 +58,9 @@ namespace Contracts.Service.HoaDon
         Task<FunctionResult<int>> UpdateHoaDonPhatHanhLoiChuaPhatHanhAsync();
         Task<FunctionResult<int>> SaoChepHoaDonNghichDaoAsync();
         Task<FunctionResult<int>> XuLyLoiMaKhongLienTiepAsync();
+
+        Task<IEnumerable<HoaDonPdfInforResponse>> SelectByMaSoHoaDonRangeAsync(string donvi_ma_dv, string ky_hieu, int fromMaSo, int toMaSo);
+
 
     }
 }
