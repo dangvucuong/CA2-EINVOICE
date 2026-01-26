@@ -80,7 +80,7 @@ export interface IToKhaiCT {
 }
 
 export const ToKhaiCTForm = () => {
-  const { _signalrConnected, createUUID, _signalrHubProxy } =
+  const { _signalrConnected, createUUID, _signalrConnection } =
     useCommonContext();
   const history = useHistory();
   const { id: pId }: any = useParams();
@@ -385,8 +385,8 @@ export const ToKhaiCTForm = () => {
   };
 
   useEffect(() => {
-    if (_signalrConnected) {
-      _signalrHubProxy.on("addMessage", function (eventName: any, data: any) {
+    if (_signalrConnected && _signalrConnection) {
+      _signalrConnection.on("addMessage", function (eventName: any, data: any) {
         // console.log({
         //   data,
         // });
@@ -439,7 +439,7 @@ export const ToKhaiCTForm = () => {
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_signalrConnected, _signalrHubProxy]);
+  }, [_signalrConnected, _signalrConnection]);
 
   const onSubmit = async (data: IToKhaiCT) => {
     const objTTChung = {

@@ -1,13 +1,15 @@
-import { HubConnectionBuilder } from "@microsoft/signalr";
+// common.tsx (updated to use @microsoft/signalr)
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
+import * as signalR from "@microsoft/signalr";
+
 import { Toaster } from "react-hot-toast";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { Connection, hubConnection } from "signalr-no-jquery";
-import { v4 as uuidv4 } from "uuid";
-import { appInfo } from "../AppInfo";
+
 import { useAppSelector } from "../hooks/useAppSelector";
 import { useAuth } from "../hooks/useAuth";
+import { appInfo } from "../AppInfo";
 
 type CommonContextType = {
   children: React.ReactNode;
@@ -16,118 +18,148 @@ type CommonContextType = {
 type CommonStoreType = {
   checkAccesiableTo: (
     path: string,
-    httpMethod: "GET" | "POST" | "PUT" | "DELETE"
+    httpMethod: "GET" | "POST" | "PUT" | "DELETE",
   ) => boolean;
   createUUID: () => string;
   translate: (code: string) => string;
-  _signalrHubProxy: any;
-  _signalrConnection: any;
+
+  // signalr core
+  _signalrConnection: signalR.HubConnection | null; // thay _signalrHubProxy
   _signalrConnected: boolean;
   _signalrReConnectedCount: number;
   _signalrStopped: boolean;
   _signalrReConnectMaxCount: number;
-  _signalrSelectCert: () => void;
+
+  _signalrSelectCert: () => Promise<void>;
   handleReconnect: () => void;
   handleDisconnect: () => void;
-  _signalrSignLogin: (code: string, serial: string) => void;
+  _signalrSignLogin: (code: string, serial: string) => Promise<void>;
   getMSTFromCertSubject: (subject: string) => string;
-  signalRConnectionServer: any;
-  isSignalRReady: () => boolean;
-  reconnectSignalR: () => void;
-};
-const SignalRStates = {
-  connecting: 1,
-  connected: 2,
-  disconnecting: 3,
-  disconnected: 4,
-  reconnecting: 5
-};
-const CommonContext = createContext({} as CommonStoreType);
-const useCommonContext = () => useContext(CommonContext);
-const reConnectTime: number = 5000;
-const reConnectMaxCount: number = 10;
 
-// const reConnectTime: number = 5000000;
-const CommonProvider = ({ children }: CommonContextType) => {
+  signalRConnectionServer: any; // giữ nguyên hub server riêng của hệ thống bạn
+  isSignalRReady: () => boolean;
+  reconnectSignalR: () => Promise<void>;
+
+  _signalrHubProxy: any; // giữ nguyên để tránh lỗi biên dịch tạm thời
+};
+
+const CommonContext = createContext({} as CommonStoreType);
+export const useCommonContext = () => useContext(CommonContext);
+
+const reConnectTime = 5000;
+const reConnectMaxCount = 10;
+
+export const CommonProvider = ({ children }: CommonContextType) => {
   const { user } = useAuth();
   const { localized_resources } = useAppSelector(
-    (x) => x.common.localizedResourceReducer
+    (x) => x.common.localizedResourceReducer,
   );
-  const { createUUID } = useCommonContext();
-  const [hubProxy, sethubProxy] = useState<any>();
-  const [connection, setConnection] = useState<Connection>();
-  const [isConnected, setIsConnected] = useState(false);
-  const [isStoppedConnect, setIsStoppedConnect] = useState(false);
+
+  // SIGNALR (server hub already in your web)
+  const [connectionServer, setConnectionServer] =
+    useState<signalR.HubConnection | null>(null);
+
+  // LOCAL SignalR (WinForms host)
+  const [connection, setConnection] = useState<signalR.HubConnection | null>(
+    null,
+  );
+  const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [isStoppedConnect, setIsStoppedConnect] = useState<boolean>(false);
   const [reConnectCount, setReConnectCount] = useState<number>(0);
 
-  const [connectionServer, setConnectionServer] = useState<any>(null);
+  // ---------------------------
+  // server hub connection (kept similar)
+  // ---------------------------
   useEffect(() => {
     if (user) {
       const domain = appInfo.baseApiURL.includes("http")
         ? appInfo.baseApiURL.replace("/api", "")
         : window.location.origin;
-      console.log({
-        hubDomainServer: domain,
-      });
 
-      const newConnection = new HubConnectionBuilder()
+      const newConnection = new signalR.HubConnectionBuilder()
         .withUrl(
           domain +
-          "/hubs/hoa-don?userId=" +
-          user?.user_id.toString() +
-          "&donVi=" +
-          user?.donvi_ma_dv
+            "/hubs/hoa-don?userId=" +
+            user?.user_id.toString() +
+            "&donVi=" +
+            user?.donvi_ma_dv,
         )
         .withAutomaticReconnect()
         .build();
 
       setConnectionServer(newConnection);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
-  useEffect(() => {
-    if (connectionServer) {
-      connectionServer
-        .start()
-        .then((result: any) => {
-          console.log("ConnectionServer Connected!");
 
-        })
-        .catch((e: any) => {
-          console.log("connectionServer failed: ", e);
-          const intervalId = setInterval(() => {
-            console.log("Try reconnect connectionServer");
-            if (connectionServer) {
-              try {
-                connectionServer.start().done(function () {
-                  clearInterval(intervalId);
-                });
-              } catch (error) { }
-            }
-          }, reConnectTime);
-        });
-    }
+  useEffect(() => {
+    if (!connectionServer) return;
+
+    let isMounted = true;
+    connectionServer
+      .start()
+      .then(() => {
+        if (!isMounted) return;
+        console.log("ConnectionServer Connected!");
+      })
+      .catch((e) => {
+        console.error("connectionServer failed: ", e);
+        // fallback retry (simple)
+        const intervalId = setInterval(() => {
+          if (!connectionServer) {
+            clearInterval(intervalId);
+            return;
+          }
+          connectionServer
+            .start()
+            .then(() => {
+              clearInterval(intervalId);
+              console.log("ConnectionServer reconnected");
+            })
+            .catch(() => {
+              /* keep retrying */
+            });
+        }, reConnectTime);
+      });
+
     return () => {
-      if (connectionServer) connectionServer.stop();
+      isMounted = false;
+      if (connectionServer) connectionServer.stop().catch(() => {});
     };
   }, [connectionServer]);
+
+  // ---------------------------
+  // initialize local SignalR connection (to WinForms-hosted hub)
+  // ---------------------------
   useEffect(() => {
-    const localConnection = hubConnection(`${appInfo.chuKySoSignalrUrl}`);
-    setConnection(localConnection);
+    // if there's no url configured, skip
+    if (!appInfo.chuKySoSignalrUrl) return;
+
+    const conn = new signalR.HubConnectionBuilder()
+      .withUrl(appInfo.chuKySoSignalrUrl) // expect full hub url like http://127.0.0.1:5000/chathub
+      .withAutomaticReconnect()
+      .build();
+
+    setConnection(conn);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ---------------------------
+  // manage lifecycle & events for local connection
+  // ---------------------------
   useEffect(() => {
-    if (connection) {
-      var hubProxy = connection.createHubProxy("chathub");
+    if (!connection) return;
 
-      hubProxy.on("addMessage", function (eventName, data) {
+    let reconnectAttempts = 0;
+    let manualRetryInterval: any = null;
 
-        if (eventName === "SERVER") {
-          const ketquas = data.split("|");
+    // event handler: incoming messages from server
+    const onAddMessage = (sender: string, message: string) => {
+      try {
+        if (sender === "SERVER") {
+          const ketquas = message.split("|");
           const [returnCode, code, signedtext] = ketquas;
-          // console.log({
-          //     returnCode,
-          //     code,
-          //     signedtext
-          // });
+
           if (signedtext === "CertInf") {
             const [nhaCungCap, serial, tuNgay, denNgay, subject] =
               ketquas.slice(3);
@@ -141,304 +173,263 @@ const CommonProvider = ({ children }: CommonContextType) => {
               denNgay,
               subject,
             };
-            console.log({
-              data,
-            });
+            console.log({ data });
           }
         }
-      });
-      sethubProxy(hubProxy);
-      connection
-        .start()
-        .done(function () {
-          console.log("Now connected, connection ID=" + connection.id);
-          setIsConnected(true);
-        })
-        .fail(function () {
-          console.log("Could not connect");
-          const intervalId = setInterval(() => {
-            console.log("Try reconnect");
-            try {
-              connection
-                .start()
-                .done(function () {
-                  console.log("Now connected, connection ID=" + connection.id);
-                  setIsConnected(true);
-                  clearInterval(intervalId);
-                  setReConnectCount(0);
-                  setIsStoppedConnect(false);
-                })
-                .fail(function () {
-                  setReConnectCount((p) => {
-                    // console.log({ p });
+      } catch (err) {
+        console.error("onAddMessage handler error", err);
+      }
+    };
 
-                    if (p + 1 > reConnectMaxCount) {
-                      clearInterval(intervalId);
-                      setIsStoppedConnect(true);
-                    }
-                    return p + 1;
-                  });
-                });
-            } catch (error) {
-              console.log({
-                error,
-              });
-            }
-          }, reConnectTime);
-        });
+    connection.on("addMessage", onAddMessage);
 
-      connection.reconnecting(() => {
-        setIsConnected(false);
+    connection.onreconnecting((err) => {
+      console.warn("SignalR reconnecting", err);
+      setIsConnected(false);
+    });
 
-        console.log(
-          "reconnecting:  SignalR connection closed. Trying to reconnect..."
-        );
-        const intervalId = setInterval(() => {
-          console.log("Try reconnect");
+    connection.onreconnected((connectionId) => {
+      console.log("SignalR reconnected, id:", connectionId);
+      setIsConnected(true);
+      reconnectAttempts = 0;
+      setReConnectCount(0);
+      setIsStoppedConnect(false);
+      if (manualRetryInterval) {
+        clearInterval(manualRetryInterval);
+        manualRetryInterval = null;
+      }
+    });
+
+    connection.onclose((err) => {
+      console.warn("SignalR closed", err);
+      setIsConnected(false);
+      // try manual retry if automatic reconnect exhausted
+      if (!isStoppedConnect) {
+        // start a manual retry loop up to reConnectMaxCount
+        let tries = 0;
+        manualRetryInterval = setInterval(() => {
+          tries++;
           connection
             .start()
-            .done(function () {
-              console.log("Now connected, connection ID=" + connection.id);
-              setIsConnected(true);
-              clearInterval(intervalId);
+            .then(() => {
+              clearInterval(manualRetryInterval);
+              manualRetryInterval = null;
             })
-            .fail(function () {
-              setReConnectCount((p) => {
-                // console.log({ p });
+            .catch(() => {
+              setReConnectCount((p) => p + 1);
+              if (tries >= reConnectMaxCount) {
+                clearInterval(manualRetryInterval);
+                manualRetryInterval = null;
+                setIsStoppedConnect(true);
+              }
+            });
+        }, reConnectTime);
+      }
+    });
 
-                if (p + 1 > reConnectMaxCount) {
-                  clearInterval(intervalId);
-                  setIsStoppedConnect(true);
-                }
-                return p + 1;
-              });
+    // start connection
+    connection
+      .start()
+      .then(() => {
+        console.log(
+          "Local SignalR connected, id:",
+          (connection as any).connectionId ?? "n/a",
+        );
+        setIsConnected(true);
+        setReConnectCount(0);
+        setIsStoppedConnect(false);
+      })
+      .catch((err) => {
+        console.log(err);
+
+        console.error("Local SignalR start failed:", err);
+        // schedule retries
+        let tries = 0;
+        const intervalId = setInterval(() => {
+          tries++;
+          connection
+            .start()
+            .then(() => {
+              clearInterval(intervalId);
+              setIsConnected(true);
+              setReConnectCount(0);
+            })
+            .catch(() => {
+              setReConnectCount((p) => p + 1);
+              if (tries >= reConnectMaxCount) {
+                clearInterval(intervalId);
+                setIsStoppedConnect(true);
+              }
             });
         }, reConnectTime);
       });
-    }
+
     return () => {
-      if (connection) {
-        connection.stop();
-        setIsConnected(false);
-      }
+      // cleanup
+      connection.off("addMessage", onAddMessage);
+      try {
+        connection.stop().catch(() => {});
+      } catch {}
+      if (manualRetryInterval) clearInterval(manualRetryInterval);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connection]);
-  const SelectCert = () => {
+
+  // ---------------------------
+  // Actions: SelectCert, SignLogin (use invoke)
+  // ---------------------------
+  const SelectCert = async (): Promise<void> => {
     try {
-      var code = uuidv4();
-      var content = code + "|0|LoadCert|Cert";
-      // _signalrHubProxy.send(content)
-      hubProxy
-        .invoke("send", content)
-        .done(function () {
-          // console.log({
-          //   sendSuccess: content,
-          // });
-        })
-        .fail(function (error: any) {
-          console.log("Invocation failed. Error: " + error);
-        });
-    } catch (error) { }
+      if (!connection) {
+        console.warn("SelectCert: connection not ready");
+        return;
+      }
+      const code = uuidv4();
+      const content = `${code}|0|LoadCert|Cert`;
+      await connection.invoke("Send", content);
+      // note: server will respond via addMessage
+    } catch (err) {
+      console.error("SelectCert invoke error:", err);
+    }
   };
-  const SignLogin = (code: string, serial: string) => {
-    // var code = uuidv4();
-    var content = code + "|" + serial + "|Login|Text";
-    // _signalrHubProxy.send(content)
-    hubProxy
-      .invoke("send", content)
-      .done(function () {
-        // console.log({
-        //   sendSuccess: content,
-        // });
-        // return code;
-      })
-      .fail(function (error: any) {
-        console.log("Invocation failed. Error: " + error);
-        // return false;
-      });
+
+  const SignLogin = async (code: string, serial: string): Promise<void> => {
+    try {
+      if (!connection) {
+        console.warn("SignLogin: connection not ready");
+        return;
+      }
+      const content = `${code}|${serial}|Login|Text`;
+      await connection.invoke("Send", content);
+    } catch (err) {
+      console.error("SignLogin invoke error:", err);
+    }
   };
+
+  // ---------------------------
+  // Utilities
+  // ---------------------------
   const getMSTFromCertSubject = (subject: string) => {
-    // Tìm vị trí của MST:
     const indexOfMST = subject.indexOf("MST:");
     const indexOfCCCD = subject.indexOf("CCCD:");
-    // Kiểm tra xem có MST không
     if (indexOfMST !== -1) {
-      // Tìm vị trí của dấu phẩy kế tiếp sau MST:
       const indexOfComma = subject.indexOf(",", indexOfMST);
-
-      // Kiểm tra xem có dấu phẩy kế tiếp sau MST không
       if (indexOfComma !== -1) {
-        // Lấy phần text sau MST: và trước dấu phẩy
-        const mstContent = subject.substring(indexOfMST + 4, indexOfComma);
-        // console.log("Nội dung MST:", mstContent);
-        return mstContent;
+        return subject.substring(indexOfMST + 4, indexOfComma);
       } else {
-        const mstContent = subject.substring(indexOfMST + 4);
-        // console.log("Nội dung MST:", mstContent);
-        return mstContent;
+        return subject.substring(indexOfMST + 4);
       }
-    } else {
-      if (indexOfCCCD !== -1) {
-        const indexOfComma = subject.indexOf(",", indexOfCCCD);
-        if (indexOfComma !== -1) {
-          const cccdContent = subject
-            .substring(indexOfCCCD + 5, indexOfComma)
-            .trim();
-          return cccdContent;
-        } else {
-          const cccdContent = subject.substring(indexOfCCCD + 5).trim();
-          return cccdContent;
-        }
+    } else if (indexOfCCCD !== -1) {
+      const indexOfComma = subject.indexOf(",", indexOfCCCD);
+      if (indexOfComma !== -1) {
+        return subject.substring(indexOfCCCD + 5, indexOfComma).trim();
+      } else {
+        return subject.substring(indexOfCCCD + 5).trim();
       }
     }
     console.log("Không tìm thấy MST trong chuỗi");
     return "";
   };
+
+  // ---------------------------
+  // reconnect / disconnect helpers
+  // ---------------------------
   const handleReconnect = () => {
     if (connection && !isConnected) {
       setIsStoppedConnect(false);
       setReConnectCount(0);
+      let tries = 0;
       const intervalId = setInterval(() => {
-        console.log("Try reconnect");
+        tries++;
         connection
           .start()
-          .done(function () {
-            console.log("Now connected, connection ID=" + connection.id);
-            setIsConnected(true);
+          .then(() => {
             clearInterval(intervalId);
+            setIsConnected(true);
             setReConnectCount(0);
             setIsStoppedConnect(false);
           })
-          .fail(function () {
-            setReConnectCount((p) => {
-              if (p + 1 > reConnectMaxCount) {
-                clearInterval(intervalId);
-                setIsStoppedConnect(true);
-              }
-              return p + 1;
-            });
+          .catch(() => {
+            setReConnectCount((p) => p + 1);
+            if (tries >= reConnectMaxCount) {
+              clearInterval(intervalId);
+              setIsStoppedConnect(true);
+            }
           });
       }, reConnectTime);
     }
   };
+
   const handleDisconnect = () => {
     if (connection) {
-      connection.stop();
+      connection.stop().catch(() => {});
     }
     setIsConnected(false);
     setIsStoppedConnect(true);
-    // setConnection(undefined)
   };
+
   const isSignalRReady = () => {
-    debugger
-    // CHECK 1: Proxy tồn tại
-    if (!hubProxy) {
-      console.log("❌ SignalR proxy not initialized");
-      return false;
+    return connection !== null && isConnected;
+  };
+
+  const reconnectSignalR = async (): Promise<void> => {
+    if (!connection) return;
+    if (isConnected) return;
+    try {
+      await connection.start();
+    } catch (err) {
+      console.error("reconnectSignalR failed", err);
+      throw err;
     }
+  };
 
-    // CHECK 2: Connection state
-    const state = hubProxy.state;
-    console.log("📡 SignalR State:", state);
-
-    // ✅ READY STATES
-    return state === 2;// SignalRStates.connected
-  }
-  const reconnectSignalR = () => {
-    console.log("🔄 Reconnecting...");
-    if (hubProxy.current?.state === 2) {
-      return; // Đã connect
-    }
-
-    // Stop cũ
-    if (hubProxy.current) {
-      hubProxy.current.connection.stop();
-    }
-
-    // Re-init
-    initializeSignalR()
-      .then(() => {
-        console.log("✅ Reconnected!");
-        // NotifyHelper.Success("Kết nối lại thành công");
-        // Retry send sau 500ms
-        // setTimeout(Send, 500);
-      })
-      .catch((error: any) => {
-        console.error("❌ Reconnect failed:", error);
-        // NotifyHelper.Error("Không thể kết nối");
-      });
-  }
-  function initializeSignalR() {
-    return new Promise((resolve, reject) => {
-      try {
-        // Tạo connection KHÔNG JQUERY
-        // const connection = new signalR.hubConnection();
-        const localConnection = hubConnection(`${appInfo.chuKySoSignalrUrl}`);
-        setConnection(localConnection);
-
-       
-
-      } catch (error) {
-        reject(error);
-      }
-    });
-  }
+  // ---------------------------
+  // Provider store
+  // ---------------------------
   const store: CommonStoreType = {
     checkAccesiableTo: (
       endpoint: string,
-      httpMethod: "GET" | "POST" | "PUT" | "DELETE"
+      httpMethod: "GET" | "POST" | "PUT" | "DELETE",
     ) => {
       const api = user?.apis
         .filter((x) => x.method === httpMethod)
         .find(
-          (x) => x.endpoint === endpoint || x.endpoint === `api/${endpoint}`
+          (x) => x.endpoint === endpoint || x.endpoint === `api/${endpoint}`,
         );
-      if (api) return true;
-      return false;
+      return !!api;
     },
-    createUUID: () => {
-      return uuidv4();
-    },
-    translate: (code: string) => {
-      return localized_resources.get(code) ?? code;
-    },
-    _signalrHubProxy: hubProxy,
+    createUUID: () => uuidv4(),
+    translate: (code: string) => localized_resources.get(code) ?? code,
     _signalrConnection: connection,
     _signalrConnected: isConnected,
     _signalrReConnectedCount: reConnectCount,
     _signalrStopped: isStoppedConnect,
     _signalrReConnectMaxCount: reConnectMaxCount,
-    handleReconnect: handleReconnect,
-    handleDisconnect: handleDisconnect,
+    handleReconnect,
+    handleDisconnect,
     _signalrSelectCert: SelectCert,
     _signalrSignLogin: SignLogin,
     getMSTFromCertSubject,
     isSignalRReady,
     reconnectSignalR,
     signalRConnectionServer: connectionServer,
+
+    _signalrHubProxy: null,
   };
+
   return (
     <CommonContext.Provider value={store}>
       {children}
       <ToastContainer />
       <Toaster
         toastOptions={{
-          success: {
-            style: {
-              background: "#1B7F36",
-              color: "#fff",
-            },
-          },
-          error: {
-            style: {
-              background: "#A30F26",
-              color: "#fff",
-            },
-          },
+          success: { style: { background: "#1B7F36", color: "#fff" } },
+          error: { style: { background: "#A30F26", color: "#fff" } },
           position: "bottom-right",
         }}
       />
     </CommonContext.Provider>
   );
 };
-export { CommonProvider, useCommonContext };
+
+//export { CommonProvider, useCommonContext };

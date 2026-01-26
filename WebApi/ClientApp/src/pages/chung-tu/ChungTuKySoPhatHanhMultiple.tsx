@@ -26,10 +26,10 @@ interface IHoaDonCreateXmlKySoRespone {
   signedtext?: string;
 }
 const ChungTuKySoPhatHanhMultiple = (
-  props: IChungTuKySoPhatHanhMultipleProps
+  props: IChungTuKySoPhatHanhMultipleProps,
 ) => {
   const [isShowProgess, setIsShowProgess] = useState(false);
-  const { _signalrHubProxy, _signalrConnected, createUUID } =
+  const { _signalrConnection, _signalrConnected, createUUID } =
     useCommonContext();
   const { user } = useAuth();
 
@@ -83,67 +83,70 @@ const ChungTuKySoPhatHanhMultiple = (
 
   useEffect(() => {
     if (_signalrConnected) {
-      _signalrHubProxy.on("addMessage", function (eventName: any, data: any) {
-        if (eventName === "SERVER") {
-          const ketquas = data.split("|");
-          const [returnCode, code, signedtext] = ketquas;
-          const hoaDon = _refHoaDon.current.find((x: any) => x.code === code);
-          if (_refHoaDon.current && hoaDon) {
-            // setReRenderkey(createUUID())
-            if (returnCode === "1") {
-              _refHoaDon.current.forEach((x, index) => {
-                if (x.code === code) {
-                  _refHoaDon.current[index] = {
-                    ...x,
-                    signedtext,
-                    status_id: 2,
-                  };
+      _signalrConnection?.on(
+        "addMessage",
+        function (eventName: any, data: any) {
+          if (eventName === "SERVER") {
+            const ketquas = data.split("|");
+            const [returnCode, code, signedtext] = ketquas;
+            const hoaDon = _refHoaDon.current.find((x: any) => x.code === code);
+            if (_refHoaDon.current && hoaDon) {
+              // setReRenderkey(createUUID())
+              if (returnCode === "1") {
+                _refHoaDon.current.forEach((x, index) => {
+                  if (x.code === code) {
+                    _refHoaDon.current[index] = {
+                      ...x,
+                      signedtext,
+                      status_id: 2,
+                    };
+                  }
+                });
+                if (_refProgress.current) {
+                  _refProgress.current.processStatus.steps.forEach(
+                    (step, idx) => {
+                      if (step.id === 2) {
+                        //bước ký số
+                        if (_refProgress.current != null)
+                          _refProgress.current.processStatus.steps[idx] = {
+                            ...step,
+                            data: {
+                              ...step.data,
+                              success: (step.data.success += 1),
+                            },
+                          };
+                      }
+                    },
+                  );
+                  setReRenderkey(createUUID());
                 }
-              });
-              if (_refProgress.current) {
-                _refProgress.current.processStatus.steps.forEach(
-                  (step, idx) => {
-                    if (step.id === 2) {
-                      //bước ký số
-                      if (_refProgress.current != null)
-                        _refProgress.current.processStatus.steps[idx] = {
-                          ...step,
-                          data: {
-                            ...step.data,
-                            success: (step.data.success += 1),
-                          },
-                        };
-                    }
-                  }
-                );
-                setReRenderkey(createUUID());
-              }
-            } else {
-              NotifyHelper.Error("Có lỗi");
-              if (_refProgress.current) {
-                _refProgress.current.processStatus.steps.forEach(
-                  (step, idx) => {
-                    if (step.id === 2) {
-                      //bước ký số
-                      if (_refProgress.current != null)
-                        _refProgress.current.processStatus.steps[idx] = {
-                          ...step,
-                          data: {
-                            ...step.data,
-                            error: (step.data.error += 1),
-                          },
-                        };
-                    }
-                  }
-                );
-                setReRenderkey(createUUID());
+              } else {
+                NotifyHelper.Error("Có lỗi");
+                if (_refProgress.current) {
+                  _refProgress.current.processStatus.steps.forEach(
+                    (step, idx) => {
+                      if (step.id === 2) {
+                        //bước ký số
+                        if (_refProgress.current != null)
+                          _refProgress.current.processStatus.steps[idx] = {
+                            ...step,
+                            data: {
+                              ...step.data,
+                              error: (step.data.error += 1),
+                            },
+                          };
+                      }
+                    },
+                  );
+                  setReRenderkey(createUUID());
+                }
               }
             }
           }
-        }
-      });
+        },
+      );
     }
-  }, [_signalrConnected, _signalrHubProxy]);
+  }, [_signalrConnected, _signalrConnection]);
 
   // if (user && user.is_remote_signing) {
   //   return (

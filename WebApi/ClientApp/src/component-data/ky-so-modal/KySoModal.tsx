@@ -21,7 +21,7 @@ const KySoModal = (props: IKySoModalProps) => {
   const { user } = useAuth();
   const { createUUID } = useCommonContext();
   const {
-    _signalrHubProxy,
+    _signalrConnection,
     _signalrConnected,
     _signalrSelectCert,
     isSignalRReady,
@@ -55,21 +55,14 @@ const KySoModal = (props: IKySoModalProps) => {
     serialNumber,
     user,
   ]);
-  // const {
-  //   _signalrConnected,
-  //   createUUID,
-  //   _signalrHubProxy,
-  //   _signalrSelectCert,
-  //   _signalrSignLogin,
-  //   getMSTFromCertSubject,
-  // } = useCommonContext();
+
   useEffect(() => {
     setSerialNumber(user?.serial_number ?? "");
   }, [user]);
   const [selectedTab, setSelectedTab] = useState<"usb" | "remote_siging">(
     localStorage.getItem("ky_so_mode") === "remote_siging"
       ? "remote_siging"
-      : "usb"
+      : "usb",
   );
   useEffect(() => {
     localStorage.setItem("ky_so_mode", selectedTab);
@@ -85,26 +78,27 @@ const KySoModal = (props: IKySoModalProps) => {
       return false;
     return true;
   }, [selectedTab, user, _signalrConnected]);
+
   useEffect(() => {
-    if (_signalrConnected) {
-      _signalrHubProxy.on("addMessage", function (eventName: any, data: any) {
-        console.log({
-          data,
-        });
-        if (eventName === "SERVER") {
+    if (_signalrConnected && _signalrConnection) {
+      const handler = (sender: string, data: string) => {
+        console.log({ data });
+
+        if (sender === "SERVER") {
           const ketquas = data.split("|");
           const [returnCode, code, signedtext] = ketquas;
 
           if (signedtext === "CertInf") {
             const [nhaCungCap, serial, tuNgay, denNgay, subject] =
               ketquas.slice(3);
+
+            // Lấy issuer từ CN=
             let issuer = nhaCungCap;
             const match = nhaCungCap.match(/CN=([^,]+)/);
             if (match) {
               issuer = match[1];
-            } else {
             }
-            const data: any = {
+            const certData: any = {
               returnCode,
               code,
               signedtext,
@@ -115,12 +109,20 @@ const KySoModal = (props: IKySoModalProps) => {
               subject,
               issuer,
             };
+            console.log("CertData:", certData);
             setSerialNumber(serial);
           }
         }
-      });
+      };
+
+      // Gắn sự kiện
+      _signalrConnection.on("addMessage", handler);
+      // Cleanup remove listener khi unmount/chuyển state
+      return () => {
+        _signalrConnection.off("addMessage", handler);
+      };
     }
-  }, [_signalrConnected, _signalrHubProxy]);
+  }, [_signalrConnected, _signalrConnection]);
 
   const _codeRef = useRef<any>();
   const _codeRefBienBan = useRef<any>();
@@ -146,17 +148,15 @@ const KySoModal = (props: IKySoModalProps) => {
       //   return; // KHÔNG SEND, chờ reconnect
       // }
       // debugger
-      _signalrHubProxy
-        .invoke("send", content)
-        .done(function () {
-          // console.log({
-          //   sendSuccess: content,
-          // });
+      _signalrConnection
+        ?.invoke("Send", content)
+        .then(() => {
+          // Thành công
           CheckAndSendBienBan();
         })
-        .fail(function (error: any) {
+        .catch((error: any) => {
           NotifyHelper.Error("Có lỗi");
-          console.log("Invocation failed. Error: " + error);
+          console.log("Invocation failed:", error);
         });
     } catch (error) {
       window.location.reload();
@@ -177,16 +177,14 @@ const KySoModal = (props: IKySoModalProps) => {
         (props.base64BienBan ?? "") +
         "|XML|NDBBan|NBan";
       // debugger
-      _signalrHubProxy
-        .invoke("send", content)
-        .done(function () {
-          // console.log({
-          //   sendSuccess: content,
-          // });
+      _signalrConnection
+        ?.invoke("Send", content)
+        .then(() => {
+          // console.log({ sendSuccess: content });
         })
-        .fail(function (error: any) {
+        .catch((error: any) => {
           NotifyHelper.Error("Có lỗi");
-          console.log("Invocation failed. Error: " + error);
+          console.log("Invocation failed:", error);
         });
     } catch (error) {
       window.location.reload();
@@ -194,13 +192,11 @@ const KySoModal = (props: IKySoModalProps) => {
   }
 
   useEffect(() => {
-    console.log({
-      _signalrConnected,
-    });
-
-    if (_signalrConnected) {
+    if (_signalrConnected && _signalrConnection) {
       const shownErrorCodes = new Set<string>();
-      _signalrHubProxy.on("addMessage", function (eventName: any, data: any) {
+      const handler = (eventName: any, data: any) => {
+        console.log({ data });
+
         if (eventName === "SERVER") {
           const ketquas = data.split("|");
           const [returnCode, code, signedtext] = ketquas;
@@ -239,9 +235,17 @@ const KySoModal = (props: IKySoModalProps) => {
             }
           }
         }
-      });
+      };
+
+      // Gắn sự kiện
+      _signalrConnection.on("addMessage", handler);
+
+      // Cleanup remove listener khi unmount/chuyển state
+      return () => {
+        _signalrConnection.off("addMessage", handler);
+      };
     }
-  }, [_signalrConnected, _signalrHubProxy]);
+  }, [_signalrConnected, _signalrConnection]);
 
   return (
     <Modal
@@ -354,7 +358,7 @@ const KySoModal = (props: IKySoModalProps) => {
                   onClick={() => {
                     window.open(
                       "https://hsdt.nacencomm.vn/downloads/setup.msi",
-                      "_blank"
+                      "_blank",
                     );
                   }}
                 />

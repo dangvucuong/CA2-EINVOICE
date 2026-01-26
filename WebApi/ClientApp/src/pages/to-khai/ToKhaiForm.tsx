@@ -61,7 +61,7 @@ const defaultTTCPObj = {
   isReadOnly: true,
 };
 export const ToKhaiForm = () => {
-  const { _signalrConnected, createUUID, _signalrHubProxy } =
+  const { _signalrConnected, createUUID, _signalrConnection } =
     useCommonContext();
   const history = useHistory();
   const { id: pId }: any = useParams();
@@ -74,7 +74,7 @@ export const ToKhaiForm = () => {
   const dispatch = useAppDispatch();
   const { status, toKhais } = useAppSelector((x) => x.toKhai.toKhaiReducer);
   const [isLoadingDone, setIsLoadingDone] = useState<boolean>(
-    id > 0 ? false : true
+    id > 0 ? false : true,
   );
 
   const [isSaving, setIsSaving] = useState(false);
@@ -91,7 +91,7 @@ export const ToKhaiForm = () => {
       email_lien_he: user?.donvi.email,
       dien_thoai_lien_he: user?.donvi.dien_thoai,
       list_cts: [],
-    }
+    },
   );
 
   const isAllowPhatHanh = useMemo(() => {
@@ -193,7 +193,7 @@ export const ToKhaiForm = () => {
         ...toKhaiViewModel,
         ngay_lap: moment(toKhaiViewModel.ngay_lap).format("YYYY-MM-DD"),
         ngay_co_hieu_luc: moment(toKhaiViewModel.ngay_co_hieu_luc).format(
-          "YYYY-MM-DD"
+          "YYYY-MM-DD",
         ),
       });
 
@@ -207,7 +207,7 @@ export const ToKhaiForm = () => {
               ...x,
             },
           };
-        })
+        }),
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -247,8 +247,8 @@ export const ToKhaiForm = () => {
     }
   };
   useEffect(() => {
-    if (_signalrConnected) {
-      _signalrHubProxy.on("addMessage", function (eventName: any, data: any) {
+    if (_signalrConnected && _signalrConnection) {
+      _signalrConnection.on("addMessage", function (eventName: any, data: any) {
         console.log({
           data,
         });
@@ -300,14 +300,14 @@ export const ToKhaiForm = () => {
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_signalrConnected, _signalrHubProxy]);
+  }, [_signalrConnected, _signalrConnection]);
 
   useEffect(() => {
     const tokhaimoinhat = toKhais
       ?.filter((x) => x.to_khai_status_id === eToKhaiStatus.CQT_DONG_Y)
       .sort(
         (a, b) =>
-          new Date(b?.ngay_lap).getTime() - new Date(a?.ngay_lap).getTime()
+          new Date(b?.ngay_lap).getTime() - new Date(a?.ngay_lap).getTime(),
       )[0];
 
     if (tokhaimoinhat && id <= 0) {
@@ -431,7 +431,7 @@ export const ToKhaiForm = () => {
               ...x,
             },
           };
-        })
+        }),
       );
 
       setIsLoadingDone(true);
@@ -445,7 +445,7 @@ export const ToKhaiForm = () => {
       ?.filter((x) => x.to_khai_status_id === eToKhaiStatus.CQT_DONG_Y)
       .sort(
         (a, b) =>
-          new Date(b?.ngay_lap).getTime() - new Date(a?.ngay_lap).getTime()
+          new Date(b?.ngay_lap).getTime() - new Date(a?.ngay_lap).getTime(),
       )[0];
 
     if (tokhaimoinhat) {
@@ -526,7 +526,7 @@ export const ToKhaiForm = () => {
         //Nơi lập
         noi_lap: tokhaimoinhat?.noi_lap,
         ngay_co_hieu_luc: moment(tokhaimoinhat?.ngay_co_hieu_luc).format(
-          "YYYY-MM-DD"
+          "YYYY-MM-DD",
         ),
       });
     }
@@ -1010,9 +1010,9 @@ export const ToKhaiForm = () => {
               >
                 <Text
                   text={`${noi_lap}, ngày ${moment().format(
-                    "DD"
+                    "DD",
                   )} tháng ${moment().format("MM")} năm ${moment().format(
-                    "YYYY"
+                    "YYYY",
                   )}`}
                 />
                 <Text

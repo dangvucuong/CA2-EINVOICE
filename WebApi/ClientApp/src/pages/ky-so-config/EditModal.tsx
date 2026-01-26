@@ -29,7 +29,7 @@ const EditModal = (props: IEditModalProps) => {
   const {
     _signalrConnected,
     createUUID,
-    _signalrHubProxy,
+    _signalrConnection,
     _signalrSelectCert,
     _signalrSignLogin,
     getMSTFromCertSubject,
@@ -84,7 +84,7 @@ const EditModal = (props: IEditModalProps) => {
 
         if (mstCert !== user?.donvi_ma_dv) {
           NotifyHelper.Error(
-            "Mã số thuế trên chứng thư số không khớp với mã số thuế người nộp thuế"
+            "Mã số thuế trên chứng thư số không khớp với mã số thuế người nộp thuế",
           );
 
           return;
@@ -122,16 +122,16 @@ const EditModal = (props: IEditModalProps) => {
   }, [props.data]);
 
   useEffect(() => {
-    if (_signalrConnected) {
-      _signalrHubProxy.on("addMessage", handler);
+    if (_signalrConnected && _signalrConnection) {
+      _signalrConnection.on("addMessage", handler);
 
       // ✅ cleanup khi unmount hoặc reconnect
       return () => {
-        _signalrHubProxy.off("addMessage", handler);
+        _signalrConnection.off("addMessage", handler);
       };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_signalrConnected, _signalrHubProxy, getValues, reset]);
+  }, [_signalrConnected, _signalrConnection, getValues, reset]);
 
   const onSubmit = async (data: any) => {
     setIsSaving(true);
@@ -254,7 +254,7 @@ const EditModal = (props: IEditModalProps) => {
                 ...data.cer_info,
                 not_after: moment(data.cer_info.not_after).format("YYYY-MM-DD"),
                 not_before: moment(data.cer_info.not_before).format(
-                  "YYYY-MM-DD"
+                  "YYYY-MM-DD",
                 ),
               });
             }}

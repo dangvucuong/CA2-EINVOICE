@@ -18,7 +18,7 @@ interface IHoaDonKySoPhatHanhMultipleToolProps {
   isHoaDonCungNgay?: boolean;
 }
 const HoaDonKySoPhatHanhMultipleTool = (
-  props: IHoaDonKySoPhatHanhMultipleToolProps
+  props: IHoaDonKySoPhatHanhMultipleToolProps,
 ) => {
   const [isCreatingXml, setIsCreatingXml] = useState(false);
   const [isShowProgess, setIsShowProgess] = useState(false);
@@ -26,7 +26,7 @@ const HoaDonKySoPhatHanhMultipleTool = (
   const { title = "Ký số và gửi cấp mã", isHoaDonCungNgay = true } = props;
 
   const {
-    _signalrHubProxy,
+    _signalrConnection,
     _signalrConnected,
     createUUID,
     signalRConnectionServer,
@@ -113,10 +113,10 @@ const HoaDonKySoPhatHanhMultipleTool = (
           var content =
             code + "|" + serialNumber + "|" + hd.xml_base64 + "|XML";
           // debugger
-          _signalrHubProxy
-            .invoke("send", content)
-            .done(function () {})
-            .fail(function (error: any) {
+          _signalrConnection
+            ?.invoke("send", content)
+            .then(function () {})
+            .catch((error: any) => {
               NotifyHelper.Error("Có lỗi");
               console.log("Invocation failed. Error: " + error);
             });
@@ -129,14 +129,14 @@ const HoaDonKySoPhatHanhMultipleTool = (
               "|" +
               hd.bien_ban_base64 +
               "|XML|NDBBan|NBan";
-            _signalrHubProxy
-              .invoke("send", contentBienBan)
-              .done(function () {
+            _signalrConnection
+              ?.invoke("send", contentBienBan)
+              .then(function () {
                 console.log({
                   sendSuccessBienBan: contentBienBan,
                 });
               })
-              .fail(function (error: any) {
+              .catch((error: any) => {
                 NotifyHelper.Error("Có lỗi");
                 console.log("Invocation failed. Error: " + error);
               });
@@ -148,37 +148,40 @@ const HoaDonKySoPhatHanhMultipleTool = (
   };
   useEffect(() => {
     if (_signalrConnected) {
-      _signalrHubProxy.on("addMessage", function (eventName: any, data: any) {
-        if (eventName === "SERVER") {
-          const ketquas = data.split("|");
-          const [returnCode, code, signedtext] = ketquas;
+      _signalrConnection?.on(
+        "addMessage",
+        function (eventName: any, data: any) {
+          if (eventName === "SERVER") {
+            const ketquas = data.split("|");
+            const [returnCode, code, signedtext] = ketquas;
 
-          if (signedtext === "CertInf") {
-            const [nhaCungCap, serial, tuNgay, denNgay, subject] =
-              ketquas.slice(3);
-            let issuer = nhaCungCap;
-            const match = nhaCungCap.match(/CN=([^,]+)/);
-            if (match) {
-              issuer = match[1];
-            } else {
+            if (signedtext === "CertInf") {
+              const [nhaCungCap, serial, tuNgay, denNgay, subject] =
+                ketquas.slice(3);
+              let issuer = nhaCungCap;
+              const match = nhaCungCap.match(/CN=([^,]+)/);
+              if (match) {
+                issuer = match[1];
+              } else {
+              }
+              const data: any = {
+                returnCode,
+                code,
+                signedtext,
+                nhaCungCap,
+                serial,
+                tuNgay,
+                denNgay,
+                subject,
+                issuer,
+              };
+              setSerialNumber(serial);
             }
-            const data: any = {
-              returnCode,
-              code,
-              signedtext,
-              nhaCungCap,
-              serial,
-              tuNgay,
-              denNgay,
-              subject,
-              issuer,
-            };
-            setSerialNumber(serial);
           }
-        }
-      });
+        },
+      );
     }
-  }, [_signalrConnected, _signalrHubProxy]);
+  }, [_signalrConnected, _signalrConnection]);
   let isUpdatingMessageToolKySo = false;
   const messageQueueToolKySo: any[] = [];
   const processQueueToolKySo = () => {
@@ -194,7 +197,7 @@ const HoaDonKySoPhatHanhMultipleTool = (
       const isCodeBienBan = code.endsWith("_BB");
       hoaDonCode = code.replace("_BB", "");
       const hoaDonIdx = _refHoaDon.current.findIndex(
-        (x: any) => x.code === hoaDonCode
+        (x: any) => x.code === hoaDonCode,
       );
       const hoaDon = hoaDonIdx >= 0 ? _refHoaDon.current[hoaDonIdx] : undefined;
       if (returnCode === "1" && hoaDon) {
@@ -229,7 +232,7 @@ const HoaDonKySoPhatHanhMultipleTool = (
                   handleUpdateKySoSuccss(
                     hoaDon.id,
                     hoaDonUpdated.signedtext,
-                    hoaDonUpdated.bienBanSignedText
+                    hoaDonUpdated.bienBanSignedText,
                   );
                 }
               }
@@ -245,73 +248,76 @@ const HoaDonKySoPhatHanhMultipleTool = (
   };
   useEffect(() => {
     if (_signalrConnected) {
-      _signalrHubProxy.on("addMessage", function (eventName: any, data: any) {
-        // debugger
-        if (eventName === "SERVER") {
-          const ketquas = data.split("|");
-          messageQueueToolKySo.push(ketquas);
-          processQueueToolKySo();
-          // const [returnCode, code, signedtext] = ketquas;
-          // let hoaDonCode = code;
-          // const isCodeBienBan = code.endsWith("_BB");
-          // hoaDonCode = code.replace("_BB", "");
-          // const hoaDonIdx = _refHoaDon.current.findIndex((x: any) => x.code === hoaDonCode);
-          // const hoaDon = hoaDonIdx >= 0 ? _refHoaDon.current[hoaDonIdx] : undefined;
-          // if (returnCode === "1" && hoaDon) {
-          //   if (isCodeBienBan) {
-          //     _refHoaDon.current[hoaDonIdx] = {
-          //       ...hoaDon,
-          //       bienBanSignedText: signedtext
-          //     }
-          //   } else {
-          //     _refHoaDon.current[hoaDonIdx] = {
-          //       ...hoaDon,
-          //       status_id: 2,
-          //       signedtext
-          //     }
-          //   }
-          //   const hoaDonUpdated = hoaDonIdx >= 0 ? _refHoaDon.current[hoaDonIdx] : undefined;
-          //   if (hoaDonUpdated) {
-          //     if (hoaDonUpdated.status_id === 2) {
-          //       if (hoaDonUpdated.hoa_don_base64 && hoaDonUpdated.signedtext) {
-          //         if (!hoaDonUpdated.bien_ban_base64) {
-          //           handleUpdateKySoSuccss(hoaDon.id, signedtext);
-          //         } else {
-          //           if (hoaDonUpdated.bienBanSignedText) {
-          //             handleUpdateKySoSuccss(hoaDon.id, signedtext, hoaDonUpdated.bienBanSignedText);
-          //           }
-          //         }
-          //       }
-          //     }
-          //   }
-          //   setReRenderkey(createUUID());
-          // }
+      _signalrConnection?.on(
+        "addMessage",
+        function (eventName: any, data: any) {
           // debugger
-          // if (_refHoaDon.current && hoaDon) {
-          //   if (returnCode === "1") {
-          //     _refHoaDon.current = _refHoaDon.current.map((x: any) => {
-          //       if (x.code === code) {
-          //         return {
-          //           ...x,
-          //           signedtext,
-          //           status_id: 2,
-          //         };
-          //       }
-          //       return {
-          //         ...x,
-          //       };
-          //     });
-          //     setReRenderkey(createUUID());
+          if (eventName === "SERVER") {
+            const ketquas = data.split("|");
+            messageQueueToolKySo.push(ketquas);
+            processQueueToolKySo();
+            // const [returnCode, code, signedtext] = ketquas;
+            // let hoaDonCode = code;
+            // const isCodeBienBan = code.endsWith("_BB");
+            // hoaDonCode = code.replace("_BB", "");
+            // const hoaDonIdx = _refHoaDon.current.findIndex((x: any) => x.code === hoaDonCode);
+            // const hoaDon = hoaDonIdx >= 0 ? _refHoaDon.current[hoaDonIdx] : undefined;
+            // if (returnCode === "1" && hoaDon) {
+            //   if (isCodeBienBan) {
+            //     _refHoaDon.current[hoaDonIdx] = {
+            //       ...hoaDon,
+            //       bienBanSignedText: signedtext
+            //     }
+            //   } else {
+            //     _refHoaDon.current[hoaDonIdx] = {
+            //       ...hoaDon,
+            //       status_id: 2,
+            //       signedtext
+            //     }
+            //   }
+            //   const hoaDonUpdated = hoaDonIdx >= 0 ? _refHoaDon.current[hoaDonIdx] : undefined;
+            //   if (hoaDonUpdated) {
+            //     if (hoaDonUpdated.status_id === 2) {
+            //       if (hoaDonUpdated.hoa_don_base64 && hoaDonUpdated.signedtext) {
+            //         if (!hoaDonUpdated.bien_ban_base64) {
+            //           handleUpdateKySoSuccss(hoaDon.id, signedtext);
+            //         } else {
+            //           if (hoaDonUpdated.bienBanSignedText) {
+            //             handleUpdateKySoSuccss(hoaDon.id, signedtext, hoaDonUpdated.bienBanSignedText);
+            //           }
+            //         }
+            //       }
+            //     }
+            //   }
+            //   setReRenderkey(createUUID());
+            // }
+            // debugger
+            // if (_refHoaDon.current && hoaDon) {
+            //   if (returnCode === "1") {
+            //     _refHoaDon.current = _refHoaDon.current.map((x: any) => {
+            //       if (x.code === code) {
+            //         return {
+            //           ...x,
+            //           signedtext,
+            //           status_id: 2,
+            //         };
+            //       }
+            //       return {
+            //         ...x,
+            //       };
+            //     });
+            //     setReRenderkey(createUUID());
 
-          //     handleUpdateKySoSuccss(hoaDon.id, signedtext);
-          //   } else {
-          //     NotifyHelper.Error("Có lỗi");
-          //   }
-          // }
-        }
-      });
+            //     handleUpdateKySoSuccss(hoaDon.id, signedtext);
+            //   } else {
+            //     NotifyHelper.Error("Có lỗi");
+            //   }
+            // }
+          }
+        },
+      );
     }
-  }, [_signalrConnected, _signalrHubProxy]);
+  }, [_signalrConnected, _signalrConnection]);
 
   const progressSource = useMemo(() => {
     console.log({
@@ -430,7 +436,7 @@ const HoaDonKySoPhatHanhMultipleTool = (
           });
           messageQueue.push(message);
           processQueue();
-        }
+        },
       );
     }
   }, [signalRConnectionServer]);
@@ -438,7 +444,7 @@ const HoaDonKySoPhatHanhMultipleTool = (
   const handleUpdateKySoSuccss = async (
     hoaDonId: number,
     signedtext: string,
-    bienBanSignedText?: string
+    bienBanSignedText?: string,
   ) => {
     const res = await hoaDonApi.updateKySoSuccess({
       signed_text: signedtext,

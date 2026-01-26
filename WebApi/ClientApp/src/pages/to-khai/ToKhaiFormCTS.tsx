@@ -30,7 +30,7 @@ const ToKhaiFormCTS = (props: ToKhaiFormCTSProps) => {
   const {
     _signalrConnected,
     createUUID,
-    _signalrHubProxy,
+    _signalrConnection,
     _signalrSelectCert,
     _signalrSignLogin,
     getMSTFromCertSubject,
@@ -99,13 +99,13 @@ const ToKhaiFormCTS = (props: ToKhaiFormCTSProps) => {
 
           if (mstCert !== user?.donvi_ma_dv) {
             NotifyHelper.Error(
-              "Mã số thuế trên chứng thư số không khớp với mã số thuế người nộp thuế"
+              "Mã số thuế trên chứng thư số không khớp với mã số thuế người nộp thuế",
             );
             return cerFiles;
           }
 
           const existingCertIndex = cerFiles.findIndex(
-            (cert) => cert.cer_info.serial_number === serial
+            (cert) => cert.cer_info.serial_number === serial,
           );
 
           if (existingCertIndex >= 0) {
@@ -124,16 +124,16 @@ const ToKhaiFormCTS = (props: ToKhaiFormCTSProps) => {
   };
 
   useEffect(() => {
-    if (_signalrConnected) {
-      _signalrHubProxy.on("addMessage", handler);
+    if (_signalrConnected && _signalrConnection) {
+      _signalrConnection.on("addMessage", handler);
 
       // ✅ cleanup khi unmount hoặc reconnect
       return () => {
-        _signalrHubProxy.off("addMessage", handler);
+        _signalrConnection.off("addMessage", handler);
       };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_signalrConnected, _signalrHubProxy, cerFiles]);
+  }, [_signalrConnected, _signalrConnection, cerFiles]);
   return (
     <Box
       sx={{
@@ -197,7 +197,7 @@ const ToKhaiFormCTS = (props: ToKhaiFormCTSProps) => {
                         variant="invisible"
                         onClick={() => {
                           setCerFiles(
-                            cerFiles.filter((x) => x.url !== cerFile.url)
+                            cerFiles.filter((x) => x.url !== cerFile.url),
                           );
                         }}
                       />

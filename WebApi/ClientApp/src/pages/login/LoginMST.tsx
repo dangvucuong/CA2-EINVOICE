@@ -17,7 +17,7 @@ const LoginMST = () => {
   const {
     _signalrConnected,
     createUUID,
-    _signalrHubProxy,
+    _signalrConnection,
     _signalrSelectCert,
     _signalrSignLogin,
     getMSTFromCertSubject,
@@ -52,7 +52,7 @@ const LoginMST = () => {
           mst: formData.mst,
           serial: formData.serial,
           signed_text: formData.signedtext,
-        })
+        }),
       );
     }
   };
@@ -79,7 +79,7 @@ const LoginMST = () => {
           mst: formData.mst,
           serial: formData.serial,
           signed_text: _signedText,
-        })
+        }),
       );
     }
   }, [formData, _signedText]);
@@ -91,11 +91,11 @@ const LoginMST = () => {
   }, [_signalrConnected]);
   useEffect(() => {
     if (_signalrConnected) {
-      _signalrHubProxy.on("addMessage", function (eventName: any, data: any) {
+      _signalrConnection?.on("addMessage", (sender: string, data: string) => {
         console.log({
           data,
         });
-        if (eventName === "SERVER") {
+        if (sender === "SERVER") {
           const ketquas = data.split("|");
           const [returnCode, code, signedtext] = ketquas;
 
@@ -133,7 +133,10 @@ const LoginMST = () => {
         }
       });
     }
-  }, [_signalrConnected, _signalrHubProxy]);
+  }, [_signalrConnected, _signalrConnection]);
+
+  console.log(_signalrConnected);
+
   return (
     <Box>
       {!_signalrConnected && (

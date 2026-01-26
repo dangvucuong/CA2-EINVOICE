@@ -90,7 +90,7 @@ const HoaDonPage = () => {
         search_key: undefined,
         sort_by: "",
         sort_mode: eSortMode.DESC,
-      })
+      }),
     );
   }, []);
   const dispatch = useAppDispatch();
@@ -111,7 +111,7 @@ const HoaDonPage = () => {
           ...filter,
           hoa_don_hinh_thuc_code: "M",
           hoa_don_trang_thai_ids: [eHoaDonTrangThai.NHAP],
-        })
+        }),
       );
     }
     if (!tab || tab === "da-phat-hanh") {
@@ -123,7 +123,7 @@ const HoaDonPage = () => {
             eHoaDonTrangThai.DA_PHAT_HANH,
             eHoaDonTrangThai.DA_GUI_CQT_CHUA_PHAN_HOI,
           ],
-        })
+        }),
       );
     }
     if (tab === "cho-phat-hanh") {
@@ -132,7 +132,7 @@ const HoaDonPage = () => {
           ...filter,
           hoa_don_hinh_thuc_code: "M",
           hoa_don_trang_thai_ids: [eHoaDonTrangThai.CHUA_GUI_CQT],
-        })
+        }),
       );
     }
     if (tab === "phat-hanh-loi") {
@@ -147,7 +147,7 @@ const HoaDonPage = () => {
             eHoaDonTrangThai.KHONG_HOP_LE,
             eHoaDonTrangThai.LOI_THONG_DIEP,
           ],
-        })
+        }),
       );
     }
     if (tab === "da-huy") {
@@ -156,7 +156,7 @@ const HoaDonPage = () => {
           ...filter,
           hoa_don_hinh_thuc_code: "M",
           hoa_don_trang_thai_ids: [eHoaDonTrangThai.DA_HUY],
-        })
+        }),
       );
     }
   }, [tab]);
@@ -165,7 +165,7 @@ const HoaDonPage = () => {
       dispatch(
         hoaDonAction.loadStart({
           ...filter,
-        })
+        }),
       );
     }
   }, [filter]);
@@ -178,7 +178,7 @@ const HoaDonPage = () => {
         dispatch(
           hoaDonAction.loadStart({
             ...filter,
-          })
+          }),
         );
       }
     }
@@ -223,7 +223,7 @@ const HoaDonPage = () => {
   };
   const handleDeletesHoaDon = async (
     isHuyNoiBo: boolean,
-    hoaDonId?: number
+    hoaDonId?: number,
   ) => {
     if (
       await confirm({
@@ -238,7 +238,7 @@ const HoaDonPage = () => {
     ) {
       setIsSaving(true);
       const res = await hoaDonApi.deletes({
-        ids: hoaDonId ? [hoaDonId] : hoaDonSelectedIds ?? [],
+        ids: hoaDonId ? [hoaDonId] : (hoaDonSelectedIds ?? []),
       });
       setIsSaving(false);
       if (res.is_success) {
@@ -247,7 +247,7 @@ const HoaDonPage = () => {
         dispatch(
           hoaDonAction.loadStart({
             ...filter,
-          })
+          }),
         );
       } else {
         NotifyHelper.Error(res.message ?? "Error");
@@ -297,7 +297,9 @@ const HoaDonPage = () => {
               <HoaDonSort
                 sortBy={{
                   field:
-                    (filter.sort_by ?? "") !== "" ? filter.sort_by ?? "" : "id",
+                    (filter.sort_by ?? "") !== ""
+                      ? (filter.sort_by ?? "")
+                      : "id",
                   mode: filter.sort_mode ?? eSortMode.DESC,
                 }}
                 onValueChanged={(data) => {
@@ -306,7 +308,7 @@ const HoaDonPage = () => {
                       ...filter,
                       sort_by: data.field,
                       sort_mode: data.mode,
-                    })
+                    }),
                   );
                 }}
               />
@@ -331,7 +333,7 @@ const HoaDonPage = () => {
                   dispatch(
                     hoaDonAction.loadStart({
                       ...filter,
-                    })
+                    }),
                   );
                 }}
               />
@@ -432,7 +434,7 @@ const HoaDonPage = () => {
                               dispatch(
                                 hoaDonAction.loadStart({
                                   ...filter,
-                                })
+                                }),
                               );
                             }}
                             title={
@@ -482,7 +484,7 @@ const HoaDonPage = () => {
                             //   ","
                             // )}`}
                             href={`${
-                              process.env.REACT_APP_API_BASE_URL
+                              process.env.VITE_API_BASE_URL
                             }/hoa-don/pdfs?hoaDonIds=${hoaDonSelectedIds?.join(
                               ","
                             )}`}
@@ -502,12 +504,12 @@ const HoaDonPage = () => {
                               if (!ids || ids.length === 0) return;
                               if (ids.length > 20) {
                                 NotifyHelper.Error(
-                                  "Không được tải xuống quá 20 hóa đơn cùng lúc"
+                                  "Không được tải xuống quá 20 hóa đơn cùng lúc",
                                 );
                                 return;
                               }
                               const url = `${
-                                process.env.REACT_APP_API_BASE_URL
+                                process.env.VITE_API_BASE_URL
                               }/hoa-don/pdfs?hoaDonIds=${ids.join(",")}`;
                               window.open(url, "_blank");
                             }}
@@ -524,9 +526,9 @@ const HoaDonPage = () => {
                               //   ","
                               // )}`}
                               href={`${
-                                process.env.REACT_APP_API_BASE_URL
+                                process.env.VITE_API_BASE_URL
                               }/hoa-don/xmls?hoaDonIds=${hoaDonSelectedIds?.join(
-                                ","
+                                ",",
                               )}`}
                             >
                               <ActionList.LeadingVisual>
@@ -547,7 +549,7 @@ const HoaDonPage = () => {
                           "Ký hiệu": x.hoa_don_dang_ky_phat_hanh_ky_hieu,
                           "Loại hóa đơn": x.ten_hoa_don,
                           "Ngày hóa đơn": moment(x.ngay_hoa_don).format(
-                            "DD/MM/YYYY"
+                            "DD/MM/YYYY",
                           ),
                           "Mã số hóa đơn": x.ma_so_hoa_don,
                           "Người mua": x.nguoi_mua_ten_donvi,
@@ -591,7 +593,7 @@ const HoaDonPage = () => {
                       ...filter,
                       page_index: 0,
                       search_key: key,
-                    })
+                    }),
                   );
                 },
               }}
@@ -605,7 +607,7 @@ const HoaDonPage = () => {
                       ...filter,
                       sort_by: key,
                       sort_mode: sort_mode,
-                    })
+                    }),
                   );
                 },
               }}
@@ -615,7 +617,7 @@ const HoaDonPage = () => {
                     hoaDonAction.changeFilter({
                       ...filter,
                       page_index: pageIndex,
-                    })
+                    }),
                   );
                 },
                 pageCount: paging_res?.page_count ?? 1,
@@ -708,8 +710,8 @@ const HoaDonPage = () => {
                               } else {
                                 dispatch(
                                   rootAction.hoaDon.hoaDonAction.showDeleteConfirm(
-                                    row
-                                  )
+                                    row,
+                                  ),
                                 );
                               }
                             }}
@@ -743,7 +745,7 @@ const HoaDonPage = () => {
                                   <ActionList.Item
                                     onSelect={() => {
                                       history.push(
-                                        `../../hoa-don-mtt/form/${row.id}`
+                                        `../../hoa-don-mtt/form/${row.id}`,
                                       );
                                     }}
                                   >
@@ -758,8 +760,8 @@ const HoaDonPage = () => {
                                   onSelect={() => {
                                     dispatch(
                                       rootAction.hoaDon.hoaDonAction.showLogModal(
-                                        row
-                                      )
+                                        row,
+                                      ),
                                     );
                                   }}
                                 >
@@ -789,7 +791,7 @@ const HoaDonPage = () => {
                                       // variant="danger"
                                       onSelect={() => {
                                         history.push(
-                                          `../../hoa-don-mtt/form/0?hinh_thuc_id=3&hoa_don_goc_id=${row.id}`
+                                          `../../hoa-don-mtt/form/0?hinh_thuc_id=3&hoa_don_goc_id=${row.id}`,
                                         );
                                       }}
                                     >
@@ -801,7 +803,7 @@ const HoaDonPage = () => {
                                     <ActionList.Item
                                       onSelect={() => {
                                         history.push(
-                                          `../../hoa-don-mtt/form/0?hinh_thuc_id=2&hoa_don_goc_id=${row.id}`
+                                          `../../hoa-don-mtt/form/0?hinh_thuc_id=2&hoa_don_goc_id=${row.id}`,
                                         );
                                       }}
                                     >
@@ -814,7 +816,7 @@ const HoaDonPage = () => {
                                       variant="danger"
                                       onSelect={() => {
                                         history.push(
-                                          `../../hoa-don-mtt/form/0?hinh_thuc_id=2&hoa_don_goc_id=${row.id}`
+                                          `../../hoa-don-mtt/form/0?hinh_thuc_id=2&hoa_don_goc_id=${row.id}`,
                                         );
                                       }}
                                     >
@@ -830,7 +832,7 @@ const HoaDonPage = () => {
                                         dispatch(
                                           hoaDonAction.changeSelectedId([
                                             row.id,
-                                          ])
+                                          ]),
                                         );
                                         setisShowSendEmailConfirm(true);
                                       }}
@@ -869,8 +871,8 @@ const HoaDonPage = () => {
                                       } else {
                                         dispatch(
                                           rootAction.hoaDon.hoaDonAction.showDeleteConfirm(
-                                            row
-                                          )
+                                            row,
+                                          ),
                                         );
                                       }
                                     }}
@@ -1075,7 +1077,9 @@ const HoaDonPage = () => {
           isSaving={status === eReducerStatusBase.is_deleting}
           onConfirm={() => {
             dispatch(
-              rootAction.hoaDon.hoaDonAction.deleteStart(hoaDonEditing?.id ?? 0)
+              rootAction.hoaDon.hoaDonAction.deleteStart(
+                hoaDonEditing?.id ?? 0,
+              ),
             );
           }}
         />
