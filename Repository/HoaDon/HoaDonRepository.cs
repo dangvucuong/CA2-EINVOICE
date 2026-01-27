@@ -321,7 +321,7 @@ namespace Repository.HoaDon
 
         public async Task<IEnumerable<HoaDonPdfInforResponse>> SelectByMaSoHoaDonRangeAsync(string donvi_ma_dv, string ky_hieu, int fromMaSo, int toMaSo)
         {
-            var sql = @"SELECT id, ma_so_hoa_don, hoa_don_dang_ky_phat_hanh_ky_hieu 
+            var sql = @"SELECT id, ma_so_hoa_don, hoa_don_dang_ky_phat_hanh_ky_hieu, hoa_don_dang_ky_phat_hanh_mau_so, nguoi_mua_mst
                 FROM hoa_don 
                 WHERE donvi_ma_dv = @donvi_ma_dv 
                 AND hoa_don_dang_ky_phat_hanh_ky_hieu = @ky_hieu
