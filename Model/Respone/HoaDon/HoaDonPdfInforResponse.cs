@@ -7,5 +7,9 @@ namespace Model.Respone.HoaDon
         public string hoa_don_dang_ky_phat_hanh_ky_hieu { get; set; }
         public string file_name { get; set; }
         public string html { get; set; }
+        public string nguoi_mua_mst { get; set; }
+        public string hoa_don_dang_ky_phat_hanh_mau_so { get; set; }
+
+
     }
 }

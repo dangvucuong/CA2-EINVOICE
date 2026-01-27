@@ -321,8 +321,7 @@ namespace WebApi.Controllers
                     return hoaDon;
                 }
 
-                // var base64Html = Convert.ToBase64String(Encoding.UTF8.GetBytes(html));
-                var fileName = $"{hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu}_{(hoaDon.ma_so_hoa_don > 0 ? hoaDon.ma_so_hoa_don.ToString() : $"Nhap{hoaDon.id}")}.html";
+                var fileName = $"{hoaDon.nguoi_mua_mst}_{hoaDon.hoa_don_dang_ky_phat_hanh_mau_so}_{hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu}_{(hoaDon.ma_so_hoa_don.ConvertToInt() > 0 ? hoaDon.ma_so_hoa_don.ToString() : $"Nhap{hoaDon.id}")}.pdf";
 
                 hoaDon.file_name = fileName;
                 hoaDon.html = html;

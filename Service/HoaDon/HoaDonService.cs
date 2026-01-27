@@ -1144,7 +1144,9 @@ namespace Service.HoaDon
                             dia_chi = obj.nguoi_ban_dia_chi,
                             stk = obj.nguoi_ban_stk,
                             ngan_hang = obj.nguoi_ban_ngan_hang,
-                            email = obj.nguoi_ban_email
+                            email = obj.nguoi_ban_email,
+                            fax = obj.nguoi_ban_fax.ConvertToString() != "" ? obj.nguoi_ban_fax : null,
+                            website = obj.nguoi_ban_website.ConvertToString() != "" ? obj.nguoi_ban_website : null
                         },
                         nguoi_mua = new Model.Request.Xml.NguoiMua()
                         {
