@@ -11,7 +11,6 @@ namespace Contracts.Repository.Base
         Task<IEnumerable<T>> SelectAsync<T>(string StoreProcedueName, DynamicParameters param);
         Task<T> SelectFirstOrDefaultAsync<T>(string StoreProcedueName);
         Task<T> SelectFirstOrDefaultAsync<T>(string StoreProcedueName, DynamicParameters param);
-        Task<IEnumerable<T>> QueryAsync<T>(string sql, object param = null);
     }
 }
 

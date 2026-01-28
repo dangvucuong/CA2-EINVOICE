@@ -298,45 +298,6 @@ namespace WebApi.Controllers
         }
 
 
-        [HttpPost("pdfs-infor")]
-        public async Task<IActionResult> GetInforPdfs([FromBody] HoaDonPdfInforRequest request)
-        {
-            var hoaDons = await _hoaDonService.SelectByMaSoHoaDonRangeAsync(
-                request.donvi_ma_dv,
-                request.ky_hieu,
-                request.fromMaSo,
-                request.toMaSo
-            );
-
-            if (hoaDons.Count() > 500) return this.BadRequest("Tối đa 500 hóa đơn 1 lần");
-
-            var tasks = hoaDons.Select(async hoaDon =>
-            {
-                var htmlResult = await _hoaDonService.GetHtmlForDownloadAsync(hoaDon.id);
-                var html = htmlResult.data;
-
-                if (string.IsNullOrEmpty(html))
-                {
-                    hoaDon.file_name = null;
-                    hoaDon.html = null;
-                    return hoaDon;
-                }
-
-                var fileName = $"{hoaDon.nguoi_mua_mst}_{hoaDon.hoa_don_dang_ky_phat_hanh_mau_so}_{hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu}_{(hoaDon.ma_so_hoa_don.ConvertToInt() > 0 ? hoaDon.ma_so_hoa_don.ToString() : $"Nhap{hoaDon.id}")}.pdf";
-
-                hoaDon.file_name = fileName;
-                hoaDon.html = html;
-
-                return hoaDon;
-            }).ToList();
-
-            var results = await Task.WhenAll(tasks);
-
-            return Ok(results);
-        }
-
-
-
     }
 }
 
