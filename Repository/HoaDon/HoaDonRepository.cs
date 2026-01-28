@@ -318,5 +318,25 @@ namespace Repository.HoaDon
             param.Add("@hoa_don_trang_thai_id", hoa_don_trang_thai_id);
             return _dbConnection.ExecuteAsync("hoa_don_update_trang_thai", param);
         }
+
+        public async Task<IEnumerable<HoaDonPdfInforResponse>> SelectByMaSoHoaDonRangeAsync(string donvi_ma_dv, string ky_hieu, int fromMaSo, int toMaSo)
+        {
+            var sql = @"SELECT id, ma_so_hoa_don, hoa_don_dang_ky_phat_hanh_ky_hieu, hoa_don_dang_ky_phat_hanh_mau_so, nguoi_mua_mst
+                FROM hoa_don 
+                WHERE donvi_ma_dv = @donvi_ma_dv 
+                AND hoa_don_dang_ky_phat_hanh_ky_hieu = @ky_hieu
+                AND ma_so_hoa_don BETWEEN @fromMaSo AND @toMaSo
+                AND is_deleted = 0 
+                ";
+
+            var param = new DynamicParameters();
+            param.Add("@donvi_ma_dv", donvi_ma_dv.ConvertToString());
+            param.Add("@ky_hieu", ky_hieu.ConvertToString());
+            param.Add("@fromMaSo", fromMaSo);
+            param.Add("@toMaSo", toMaSo);
+
+            return await _dbConnection.QueryAsync<HoaDonPdfInforResponse>(sql, param);
+
+        }
     }
 }

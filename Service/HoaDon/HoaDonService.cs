@@ -2587,6 +2587,11 @@ namespace Service.HoaDon
             return _repositoryWrapper.HoaDon.HoaDon.SelectByIdsAsync(ids);
         }
 
+        public Task<IEnumerable<HoaDonPdfInforResponse>> SelectByMaSoHoaDonRangeAsync(string donvi_ma_dv, string ky_hieu, int fromMaSo, int toMaSo)
+        {
+            return _repositoryWrapper.HoaDon.HoaDon.SelectByMaSoHoaDonRangeAsync(donvi_ma_dv, ky_hieu, fromMaSo, toMaSo);
+        }
+
         public async Task<FunctionResult<HoaDonPhatHanhRespone>> PhatHanhMTTAsync(HoaDonPhatHanhRequest request,
             hoa_don hoaDon, int user_id_phathanh = 0)
         {
