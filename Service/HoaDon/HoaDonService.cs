@@ -1097,7 +1097,7 @@ namespace Service.HoaDon
                             ngan_hang = obj.nguoi_ban_ngan_hang,
                             email = obj.nguoi_ban_email,
                             fax = obj.nguoi_ban_fax.ConvertToString() != "" ? obj.nguoi_ban_fax : null,
-                            website = obj.nguoi_ban_website.ConvertToString() != "" ? obj.nguoi_ban_website : null
+                            website = obj.nguoi_ban_website.ConvertToString() != "" ? obj.nguoi_ban_website : null,
                         },
                         nguoi_mua = new Model.Request.Xml.NguoiMua()
                         {
@@ -1927,12 +1927,12 @@ namespace Service.HoaDon
                                 await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
                             });
 
-                            var duLieuHoaDonMoi = await this.SelectByIdAsync(hoaDon.id);
+                            // var duLieuHoaDonMoi = await this.SelectByIdAsync(hoaDon.id);
 
-                            if (duLieuHoaDonMoi.hoa_don_trang_thai_id != (int)e_hoa_don_trang_thai.DA_PHAT_HANH)
-                            {
-                                await _repositoryWrapper.HoaDon.HoaDon.UpdateTrangThaiAsync(hoaDon.id, (int)e_hoa_don_trang_thai.DA_GUI_CQT_CHUA_PHAN_HOI);
-                            }
+                            // if (duLieuHoaDonMoi.hoa_don_trang_thai_id != (int)e_hoa_don_trang_thai.DA_PHAT_HANH)
+                            // {
+                            //     await _repositoryWrapper.HoaDon.HoaDon.UpdateTrangThaiAsync(hoaDon.id, (int)e_hoa_don_trang_thai.DA_GUI_CQT_CHUA_PHAN_HOI);
+                            // }
                         }
                         else
                         {

@@ -441,6 +441,8 @@ namespace Service.HoaDon
 
         public async Task<FunctionResult<string>> ImportDataHocPhiAsync(HoaDonImportRequest upload)
         {
+
+
             var user = this.GetCurrentUser();
             DataTable dt = await _serviceWrapper.Cache.GetDataAsync<DataTable>(upload.url);
             if (dt == null)

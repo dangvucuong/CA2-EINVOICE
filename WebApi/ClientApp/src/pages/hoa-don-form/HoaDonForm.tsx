@@ -698,6 +698,10 @@ const HoaDonForm = () => {
         ? ConvertTienChu(data.tong_tien_thue, loaiTien)
         : tongTienChu;
 
+    const so_tien_tang_giam = data.so_tien_tang_giam ?? 0;
+    const so_tien_tang_giam_tien_hang = data.so_tien_tang_giam_tien_hang ?? 0;
+    const so_tien_tang_giam_tien_thue = data.so_tien_tang_giam_tien_thue ?? 0;
+
     return {
       ...data,
       ...thongTinHoaDonGoc,
@@ -723,7 +727,13 @@ const HoaDonForm = () => {
 
       tong_tien_chu: isDieuChinhThue
         ? ConvertTienChu(data.tong_tien_thue, loaiTien)
-        : ConvertTienChu(tongTienData?.tong_thanh_tien ?? 0, loaiTien),
+        : ConvertTienChu(
+            tongTienData.tong_thanh_tien +
+              so_tien_tang_giam +
+              so_tien_tang_giam_tien_hang +
+              so_tien_tang_giam_tien_thue,
+            loaiTien,
+          ),
       tong_tien_truong_thue: isDieuChinhThue
         ? 0
         : (tongTienData?.tong_thanh_tien ?? 0) -
