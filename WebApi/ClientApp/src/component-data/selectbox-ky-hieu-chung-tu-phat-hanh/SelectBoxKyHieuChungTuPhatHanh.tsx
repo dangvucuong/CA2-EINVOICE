@@ -72,7 +72,12 @@ const SelectBoxKyHieuChungTuPhatHanh = (
 
         setSelected(selectedOption);
       } else {
-        setSelected(null);
+        if (opts.length === 1) {
+          onValueChanged(opts[0].value);
+          setSelected(opts[0]);
+        } else {
+          setSelected(null);
+        }
       }
     } else {
     }

@@ -64,6 +64,7 @@ namespace Repository.Base
         {
             return SqlMapper.QueryFirstOrDefaultAsync<T>(GetConnection(), StoreProcedueName, param, commandType: System.Data.CommandType.StoredProcedure);
         }
+
     }
 }
 

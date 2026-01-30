@@ -318,5 +318,6 @@ namespace Repository.HoaDon
             param.Add("@hoa_don_trang_thai_id", hoa_don_trang_thai_id);
             return _dbConnection.ExecuteAsync("hoa_don_update_trang_thai", param);
         }
+
     }
 }

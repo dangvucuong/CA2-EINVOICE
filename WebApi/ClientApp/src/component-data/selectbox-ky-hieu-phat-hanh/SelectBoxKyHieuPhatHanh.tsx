@@ -43,7 +43,7 @@ const SelectBoxKyHieuPhatHanh = (props: ISelectBoxKyHieuPhatHanhProps) => {
   const location = useLocation();
 
   const { hoaDonDangKyPhatHanhs, status } = useAppSelector(
-    (x) => x.hoaDon.hoaDonDangKyPhatHanhReducer
+    (x) => x.hoaDon.hoaDonDangKyPhatHanhReducer,
   );
   const [filter, setFilter] = useState("");
   const dispatch = useDispatch();
@@ -55,7 +55,7 @@ const SelectBoxKyHieuPhatHanh = (props: ISelectBoxKyHieuPhatHanhProps) => {
         (x) =>
           // x.hoa_don_dang_ky_phat_hanh_trang_thai_id === 1 &&
           x.loai_hoa_don_ct_id === props.loai_hoa_don_ct_id &&
-          x.mau_so === props.mau_so
+          x.mau_so === props.mau_so,
       )
       .map((x) => ({ id: x.ky_hieu, text: x.ky_hieu }))
       .forEach((item) => {
@@ -77,7 +77,7 @@ const SelectBoxKyHieuPhatHanh = (props: ISelectBoxKyHieuPhatHanhProps) => {
   }, [hoaDonDangKyPhatHanhs, props.loai_hoa_don_ct_id, props.mau_so]);
   const filterdData = useMemo(() => {
     const data = dataSource.filter((item) =>
-      item.text.toLowerCase().includes(filter.toLowerCase())
+      item.text.toLowerCase().includes(filter.toLowerCase()),
     );
 
     if (!isShowKyHieuTheoNam) return data;
@@ -95,6 +95,7 @@ const SelectBoxKyHieuPhatHanh = (props: ISelectBoxKyHieuPhatHanhProps) => {
       return true;
     });
   }, [dataSource, filter, isShowKyHieuTheoNam]);
+
   const _selectedData = useMemo(() => {
     const result = dataSource.find((item) => item.id === props.value);
 
@@ -110,13 +111,14 @@ const SelectBoxKyHieuPhatHanh = (props: ISelectBoxKyHieuPhatHanhProps) => {
 
     return result;
   }, [props.value, dataSource]);
+
   useEffect(() => {
     if (props.value === "") {
-      if (dataSource.length === 1) {
-        props.onValueChanged(dataSource[0].id);
+      if (filterdData.length === 1) {
+        props.onValueChanged(filterdData[0].id);
       }
     }
-  }, [props.value, dataSource]);
+  }, [props.value, filterdData]);
 
   return (
     <>
