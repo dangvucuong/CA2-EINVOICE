@@ -10,7 +10,7 @@ namespace Model.Request.Account
         public string username { get; set; }
         [SwaggerSchema(Description = "Mật khẩu")]
         public string password { get; set; }
-        [SwaggerSchema(Description = "reCaptchaToken= 6Lcd-VssAAAAAFj9tKxc4mVPy5GKOAANDUb9lbXk")]
+        [SwaggerSchema(Description = "reCaptchaToken= 6LfRAYApAAAAAO6tYfzdtFmuRNOtCOH3BxTy9pCM")]
         public string? reCaptchaToken { get; set; }
         public LoginRequest()
         {
