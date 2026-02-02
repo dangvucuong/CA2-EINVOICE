@@ -1060,7 +1060,7 @@ namespace Service.HoaDon
             var xsltArgument = new XsltArgumentList();
             xsltArgument.AddParam("paramlien", "", "0");
 
-            if (hoaDon.hoa_don_trang_thai_id == (int)e_hoa_don_trang_thai.DA_PHAT_HANH)
+            if (hoaDon.hoa_don_trang_thai_id == (int)e_hoa_don_trang_thai.DA_PHAT_HANH || hoaDon.hoa_don_trang_thai_id == (int)e_hoa_don_trang_thai.CHUA_GUI_CQT)
             {
                 var isCoMa = hoaDon.hoa_don_hinh_thuc_code == "C";
                 var hoaDongLogs = await _serviceWrapper.HoaDon.HoaDonLog.SelectByHoaDonAsync(hoaDon.id);
