@@ -183,18 +183,18 @@ namespace portal
             });
             var check = env.IsDevelopment();
             // if (!env.IsDevelopment() && !AppSettings.FixedValue.ShowSwaggerUI)
-            if (true)
-            {
-                app.UseSpa(spa =>
-                {
-                    spa.Options.SourcePath = "ClientApp";
+            // if (true)
+            // {
+            //     app.UseSpa(spa =>
+            //     {
+            //         spa.Options.SourcePath = "ClientApp";
 
-                    if (env.IsDevelopment())
-                    {
-                        spa.UseReactDevelopmentServer(npmScript: "start");
-                    }
-                });
-            }
+            //         if (env.IsDevelopment())
+            //         {
+            //             spa.UseReactDevelopmentServer(npmScript: "start");
+            //         }
+            //     });
+            // }
 
 
         }

@@ -58,8 +58,7 @@ namespace Contracts.Service.HoaDon
         Task<FunctionResult<int>> UpdateHoaDonPhatHanhLoiChuaPhatHanhAsync();
         Task<FunctionResult<int>> SaoChepHoaDonNghichDaoAsync();
         Task<FunctionResult<int>> XuLyLoiMaKhongLienTiepAsync();
-
-        Task<IEnumerable<HoaDonPdfInforResponse>> SelectByMaSoHoaDonRangeAsync(string donvi_ma_dv, string ky_hieu, int fromMaSo, int toMaSo);
+        Task<bool> InsertThueSuatHoaDonAsync(int hoaDonId, List<ThueSuatModel> dsThue);
 
 
     }

@@ -34,8 +34,10 @@ namespace Contracts.Repository.HoaDon
         Task<bool> UpdateMaSoHoaDonAsync(int id, int ma_so_hoa_don);
         Task<DateTime?> GetNgayHoaDonPhatHanhMaxAsynsc(string donvi_ma_dv, string hoa_don_dang_ky_phat_hanh_mau_so, string hoa_don_dang_ky_phat_hanh_ky_hieu);
         Task<bool> UpdateTrangThaiAsync(int id, int hoa_don_trang_thai_id);
+        Task<bool> InsertThueSuatHoaDonAsync(int id, IEnumerable<ThueSuatModel> dsThue);
 
-        Task<IEnumerable<HoaDonPdfInforResponse>> SelectByMaSoHoaDonRangeAsync(string donvi_ma_dv, string ky_hieu, int fromMaSo, int toMaSo);
+        Task<IEnumerable<ThueSuatModel>> SelectThueSuatHoaDonByHoaDonIdAsync(int hoaDonId);
+
 
 
 

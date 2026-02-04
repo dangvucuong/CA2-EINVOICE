@@ -7,6 +7,7 @@ import {
 } from "@primer/octicons-react";
 import {
   Box,
+  Checkbox,
   Flash,
   FormControl,
   IconButton,
@@ -803,6 +804,8 @@ const HoaDonForm = () => {
         ...x,
         stt: idx + 1,
       })),
+      hoa_don_danh_cho_khu_phi_thue_quan:
+        formData.hoa_don_danh_cho_khu_phi_thue_quan,
     };
   };
 
@@ -1353,7 +1356,43 @@ const HoaDonForm = () => {
                   }}
                 />
               </FormGroupInline>
+
+              {isHoaDonBanHang && (
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    mt: 2,
+                  }}
+                >
+                  <Checkbox
+                    checked={
+                      formData.hoa_don_danh_cho_khu_phi_thue_quan === "1"
+                    }
+                    onChange={(e) => {
+                      // hoa_don_danh_cho_khu_phi_thue_quan
+                      setFormData({
+                        ...formData,
+                        hoa_don_danh_cho_khu_phi_thue_quan: e.target.checked
+                          ? "1"
+                          : "0",
+                      });
+                    }}
+                  />
+                  <Box
+                    sx={{
+                      ml: 1,
+                      fontWeight: "400",
+                      fontSize: "14px",
+                    }}
+                  >
+                    Dành cho tổ chức, cá nhân trong khu phi thuế quan
+                  </Box>
+                </Box>
+              )}
             </Box>
+
             <PaperFormGroup
               label="Đơn vị bán hàng"
               style={{

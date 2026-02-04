@@ -5,10 +5,12 @@ using Dapper;
 using Model.FuncResult;
 using Model.Request.HoaDon;
 using Model.Request.ThongKe;
+using Model.Request.Xml;
 using Model.Respone.HoaDon;
 using Model.Respone.ThongKe;
 using Model.Table;
 using Repository.Base;
+using System.Data;
 
 namespace Repository.HoaDon
 {
@@ -319,27 +321,44 @@ namespace Repository.HoaDon
             return _dbConnection.ExecuteAsync("hoa_don_update_trang_thai", param);
         }
 
-        public async Task<IEnumerable<HoaDonPdfInforResponse>> SelectByMaSoHoaDonRangeAsync(string donvi_ma_dv, string ky_hieu, int fromMaSo, int toMaSo)
+        public Task<bool> InsertThueSuatHoaDonAsync(int id, IEnumerable<ThueSuatModel> dsThue)
         {
-            var sql = @"SELECT id, ma_so_hoa_don, hoa_don_dang_ky_phat_hanh_ky_hieu, hoa_don_dang_ky_phat_hanh_mau_so, nguoi_mua_mst
-                FROM hoa_don 
-                WHERE donvi_ma_dv = @donvi_ma_dv 
-                AND hoa_don_dang_ky_phat_hanh_ky_hieu = @ky_hieu
-                AND ma_so_hoa_don BETWEEN @fromMaSo AND @toMaSo
-                AND is_deleted = 0 
-                ";
+            // Tên trong ngoặc DataTable này thường để cho rõ nghĩa, quan trọng là cấu trúc cột
+            var table = new DataTable("dbo.thue_suat_hd_type");
+
+            // Thêm cột PHẢI ĐÚNG THỨ TỰ như trong SQL Type (TSuat -> ThTien -> TThue)
+            table.Columns.Add("TSuat", typeof(string));
+            table.Columns.Add("ThTien", typeof(decimal));
+            table.Columns.Add("TThue", typeof(decimal));
+
+            foreach (var item in dsThue)
+            {
+                table.Rows.Add(
+                    item.TSuat,
+                    item.ThTien,
+                    item.TThue
+                );
+            }
 
             var param = new DynamicParameters();
-            param.Add("@donvi_ma_dv", donvi_ma_dv.ConvertToString());
-            param.Add("@ky_hieu", ky_hieu.ConvertToString());
-            param.Add("@fromMaSo", fromMaSo);
-            param.Add("@toMaSo", toMaSo);
+            param.Add("@HoaDonId", id);
+            // Truyền đúng tên Type đã định nghĩa trong SQL
+            param.Add("@ThueList", table.AsTableValuedParameter("dbo.thue_suat_hd_type"));
 
-            return await _dbConnection.QueryAsync<HoaDonPdfInforResponse>(sql, param);
-
+            // Gọi theo kiểu 2 tham số như các hàm InsertsAsync khác của bạn
+            return _dbConnection.ExecuteAsync("InsertThueSuatHoaDon", param);
         }
 
 
+        public Task<IEnumerable<ThueSuatModel>> SelectThueSuatHoaDonByHoaDonIdAsync(int hoaDonId)
+        {
+            var param = new DynamicParameters();
+            param.Add("@HoaDonId", hoaDonId);
+
+            // Sử dụng SelectAsync (hoặc QueryAsync tùy vào wrapper của bạn) 
+            // để lấy toàn bộ danh sách các cột TSuat, ThTien, TThue
+            return _dbConnection.SelectAsync<ThueSuatModel>("GetThueSuatHoaDonByHoaDonId", param);
+        }
 
     }
 }

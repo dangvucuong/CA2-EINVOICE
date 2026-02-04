@@ -87,4 +87,7 @@ export interface IHoaDon {
   TenTau?: string;
   SoThamChieu?: string;
   NoiDiNoiDen?: string;
+
+  // hoa_don_danh_cho_khu_phi_thue_quan
+  hoa_don_danh_cho_khu_phi_thue_quan?: string;
 }

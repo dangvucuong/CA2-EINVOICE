@@ -409,6 +409,9 @@ namespace Service.HoaDon
                 }
             }
 
+
+
+            await SaveThueSuatHoaDon(model, user.id);
             await this.SaveHangHoas(model, user.id, !insert);
             await this.SaveLoaiPhis(model, user.id, !insert);
 
@@ -623,6 +626,8 @@ namespace Service.HoaDon
             return true;
         }
 
+
+
         private async Task<bool> SaveHangHoaToDanhMucAsync(HoaDonAddOrEditModel model)
         {
             try
@@ -757,6 +762,76 @@ namespace Service.HoaDon
 
             return true;
         }
+
+        private async Task<bool> SaveThueSuatHoaDon(HoaDonAddOrEditModel model, int user_id)
+        {
+            if (model.hoang_hoas == null || !model.hoang_hoas.Any()) return true;
+
+            var isAllChietKhau = !model.hoang_hoas.Where(x => x.hang_hoa_tinh_chat_id != 4)
+                                                  .Any(x => x.hang_hoa_tinh_chat_id != 3);
+
+            var dsThue = model.hoang_hoas
+                .Where(x => x.hang_hoa_tinh_chat_id != 4)
+                .Where(x => !string.IsNullOrEmpty(x.thue_vat) &&
+                           (x.thue_vat.Contains("%") || x.thue_vat == "KCT" || x.thue_vat == "KKKNT"))
+                .GroupBy(x => x.thue_vat)
+                .Select(g =>
+                {
+                    string tenThue = g.Key;
+                    double phanTram = tenThue.Replace("KHAC:", "").Replace("%", "").Trim().ConvertToDouble(2);
+
+                    var thanh_tien = g.Where(x => x.hang_hoa_tinh_chat_id == 1).Sum(x => x.thanh_tien);
+                    var thanh_tien_ck = g.Where(x => x.hang_hoa_tinh_chat_id == 3).Sum(x => x.thanh_tien);
+
+                    if (isAllChietKhau) thanh_tien = -1 * thanh_tien;
+
+                    decimal thTienFinal = (phanTram == 0) ? thanh_tien : (thanh_tien - thanh_tien_ck);
+
+                    decimal tThueFinal;
+                    if (phanTram == 0)
+                    {
+                        tThueFinal = (decimal)thanh_tien * (decimal)phanTram / 100;
+                    }
+                    else
+                    {
+                        tThueFinal = ((decimal)thanh_tien - (decimal)thanh_tien_ck) * (decimal)phanTram / 100;
+                    }
+
+                    // Làm tròn nếu là VND
+                    if (model.loai_tien != null && model.loai_tien.ToUpper() == "VND")
+                    {
+                        thTienFinal = Math.Round(thTienFinal, 0, MidpointRounding.AwayFromZero);
+                        tThueFinal = Math.Round(tThueFinal, 0, MidpointRounding.AwayFromZero);
+                    }
+
+                    return new ThueSuatModel
+                    {
+                        TSuat = tenThue,
+                        ThTien = thTienFinal,
+                        TThue = tThueFinal
+                    };
+                }).ToList();
+
+            // Logic 5 đồng tăng giảm (Chỉ áp dụng nếu có 1 mức thuế duy nhất)
+            if (dsThue.Count == 1 && model.so_tien_tang_giam_tien_thue != 0)
+            {
+                dsThue[0].TThue += model.so_tien_tang_giam_tien_thue;
+                // Nếu là VND thì làm tròn lại lần nữa
+                if (model.loai_tien != null && model.loai_tien.ToUpper() == "VND")
+                {
+                    dsThue[0].TThue = Math.Round(dsThue[0].TThue, 0, MidpointRounding.AwayFromZero);
+                }
+            }
+
+            return await _serviceWrapper.HoaDon.HoaDon.InsertThueSuatHoaDonAsync(model.id, dsThue);
+        }
+
+        public async Task<bool> InsertThueSuatHoaDonAsync(int hoaDonId, List<ThueSuatModel> dsThue)
+        {
+            return await _repositoryWrapper.HoaDon.HoaDon.InsertThueSuatHoaDonAsync(hoaDonId, dsThue);
+        }
+
+
 
         public Task<PagingResult<IEnumerable<hoa_don_vm>>> SelectByDonViAsync(string donvi_ma_dv,
             HoaDonSelectPagingRequest pagingRequest)
@@ -969,89 +1044,825 @@ namespace Service.HoaDon
             return new SuccessResult<Model.Request.Xml.HoaDon>(model);
         }
 
+        // private async Task<Model.Request.Xml.HoaDon> CreateHoaDonXmlObjectCu(hoa_don obj)
+        // {
+
+        //     var thueSuatTuDb = await _repositoryWrapper.HoaDon.HoaDon.SelectThueSuatHoaDonByHoaDonIdAsync(obj.id);
+
+        //     var hangHoas = await _serviceWrapper.HoaDon.HoaDonHangHoa.SelectByHoaDonIdAsync(obj.id);
+        //     var thue_suats = hangHoas.Where(x => x.hang_hoa_tinh_chat_id != 4).Select(x => x.thue_vat).Distinct().Where(x => x.Contains("%") || x == "KCT" || x == "KKKNT").ToList()
+        //         .Select(x => new LTSuat()
+        //         {
+        //             ten_thue_suat = x
+        //         }).ToList();
+
+
+        //     var loaiPhis = await _serviceWrapper.HoaDon.HoaDonLoaiPhi.SelectByHoaDonAsync(obj.id);
+        //     var isApDungDieuChinh5DongVaoThueSuat = thue_suats.Count == 1;
+        //     var isAllChietKhau = !hangHoas.Where(x => x.hang_hoa_tinh_chat_id != 4).Any(x => x.hang_hoa_tinh_chat_id != 3);
+        //     foreach (var thue_suat in thue_suats)
+        //     {
+        //         var phanTramThue = thue_suat.ten_thue_suat.Replace("KHAC:", "").Replace("%", "").Trim().ConvertToDouble(2);
+
+        //         var thanh_tien = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat && x.hang_hoa_tinh_chat_id == 1).Select(x => x.thanh_tien)
+        //             .Sum();
+        //         var thanh_tien_ck = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat && x.hang_hoa_tinh_chat_id == 3).Select(x => x.thanh_tien)
+        //           .Sum();
+
+        //         // KHông làm tròn thành tiền
+        //         // var thanh_tien = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat && x.hang_hoa_tinh_chat_id == 1).Select(x => x.don_gia * x.so_luong)
+        //         //     .Sum();
+        //         // var thanh_tien_ck = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat && x.hang_hoa_tinh_chat_id == 3).Select(x => x.don_gia * x.so_luong)
+        //         //          .Sum();
+
+        //         if (isAllChietKhau)
+        //         {
+        //             thanh_tien = -1 * thanh_tien;
+        //         }
+
+        //         if (phanTramThue == 0)
+        //         {
+        //             thue_suat.thanh_tien = (thanh_tien).ConvertToStringAndRemoveZeroPart();
+
+        //         }
+        //         else
+        //         {
+        //             thue_suat.thanh_tien = (thanh_tien - thanh_tien_ck).ConvertToStringAndRemoveZeroPart();
+
+        //         }
+        //         if (obj.loai_tien == "VND")
+        //         {
+        //             if (phanTramThue == 0)
+        //             {
+
+        //                 thue_suat.tien_thue = ((decimal)thanh_tien * (decimal)phanTramThue / 100).ConvertToStringAndRemoveZeroPart();
+
+        //             }
+        //             else
+        //             {
+        //                 thue_suat.tien_thue = (((decimal)thanh_tien - (decimal)thanh_tien_ck) * (decimal)phanTramThue / 100).ConvertToStringAndRemoveZeroPart();
+        //             }
+        //         }
+        //         else
+        //         {
+        //             if (phanTramThue == 0)
+        //             {
+        //                 thue_suat.tien_thue = ((decimal)thanh_tien * (decimal)phanTramThue / 100).ConvertToStringAndRemoveZeroPart();
+
+        //             }
+        //             else
+        //             {
+        //                 thue_suat.tien_thue = (((decimal)thanh_tien - (decimal)thanh_tien_ck) * (decimal)phanTramThue / 100).ConvertToStringAndRemoveZeroPart();
+        //             }
+        //         }
+
+        //         // thue_suat.tien_thue = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat)
+        //         // .Select(x => Math.Round(x.thanh_tien * phanTramThue / 100, 0, MidpointRounding.AwayFromZero))
+        //         // .Sum().ConvertToStringAndRemoveZeroPart();
+        //         if (isApDungDieuChinh5DongVaoThueSuat && obj.so_tien_tang_giam_tien_thue != 0)
+        //         {
+        //             thue_suat.tien_thue += obj.so_tien_tang_giam_tien_thue;
+        //         }
+        //         if (obj.loai_tien == "VND")
+        //         {
+        //             thue_suat.tien_thue = thue_suat.tien_thue.ConvertToDecimal().ConvertToStringAndRemoveZeroPart();
+        //             thue_suat.thanh_tien = thue_suat.thanh_tien.ConvertToDecimal().ConvertToStringAndRemoveZeroPart();
+
+        //         }
+        //     }
+
+        //     var tong_tien_thanh_toan_bang_so = obj.tong_tien_thanh_toan;
+        //     ;
+        //     if (obj.loai_tien == "VND")
+        //     {
+        //         // tong_tien_thanh_toan_bang_so = (obj.tong_tien_truong_thue + obj.tong_tien_thue).ConvertToDouble(0).ConvertToDecimal();
+        //     }
+        //     // var test = obj.nguoi_mua_mst.ConvertToString() != ""
+        //     //                ? (obj.nguoi_mua_ten_donvi.ConvertToString() != "" ? obj.nguoi_mua_ten_donvi.ConvertToString() : obj.nguoi_mua_ten)
+        //     //                : obj.nguoi_mua_ten_donvi;
+
+
+
+        //     var thongTinThanhToan = new Model.Request.Xml.ThongTinThanhToan()
+        //     {
+        //         tong_tien_thanh_toan_bang_chu = "",
+        //         tong_tien_thanh_toan_bang_so = tong_tien_thanh_toan_bang_so.ConvertToStringAndRemoveZeroPart(),
+        //         tong_tien_chiet_khau = obj.tong_tien_chiet_khau.ConvertToStringAndRemoveZeroPart(),
+        //         thong_tin_phis = loaiPhis.Count() > 0
+        //                       ? new DSLPhi()
+        //                       {
+        //                           loai_phis = loaiPhis.Select(lp =>
+        //                           {
+        //                               return new LPhi()
+        //                               {
+        //                                   ten_loai_phi = lp.ten_le_phi,
+        //                                   tien_phi = lp.so_tien.ConvertToStringAndRemoveZeroPart()
+        //                               };
+        //                           }).ToList()
+        //                       }
+        //                       : null
+        //     };
+
+
+
+        //     // --- NẾU MẪU SỐ KHÁC 2 THÌ THÊM THUẾ SUẤT ---
+        //     if (obj.hoa_don_dang_ky_phat_hanh_mau_so != "2")
+        //     {
+        //         thongTinThanhToan.thong_tin_thue_suat = new Model.Request.Xml.THTTLTSuat()
+        //         {
+        //             thue_suats = thue_suats
+        //         };
+        //         thongTinThanhToan.tong_tien_chua_thue = obj.tong_tien_truong_thue.ConvertToStringAndRemoveZeroPart();
+        //         thongTinThanhToan.tong_tien_thue = obj.tong_tien_thue.ConvertToStringAndRemoveZeroPart();
+        //     }
+
+
+
+
+
+        //     var model = new Model.Request.Xml.HoaDon()
+        //     {
+        //         du_lieu_hoa_don = new Model.Request.Xml.DuLieuHoaDon()
+        //         {
+        //             id = "_" + obj.id.ToString(),
+        //             thong_tin_chung = new Model.Request.Xml.ThongTinChung()
+        //             {
+        //                 phien_ban = "2.1.0",
+        //                 ten_hoa_don = obj.ten_hoa_don,
+        //                 ky_hieu_mau_so_hoa_don = obj.hoa_don_dang_ky_phat_hanh_mau_so,
+        //                 ky_hieu_hoa_don = obj.hoa_don_dang_ky_phat_hanh_ky_hieu,
+        //                 don_vi_tien_te = obj.loai_tien,
+        //                 ty_gia = (obj.loai_tien.ConvertToString() != "VND" && obj.loai_tien.ConvertToString() != "")
+        //                     ? obj.ty_gia.ConvertToStringAndRemoveZeroPart()
+        //                     : null,
+        //                 hinh_thuc_thanh_toan = obj.hinh_thuc_tt,
+        //                 ma_so_thue_co_quan_quan_ly = AppSettings.FixedValue.MNNhan,
+        //                 ngay_lap = obj.ngay_hoa_don.ToString("yyyy-MM-dd") ?? "",
+        //                 so_hoa_don = obj.ma_so_hoa_don.ToString(),
+        //                 thong_tin_khac = new Model.Request.Xml.ThongTinKhac()
+        //                 {
+        //                     thong_tin_khac_noi_dung = new List<Model.Request.Xml.ThongTinKhacNoiDung>()
+        //                     {
+        //                         new Model.Request.Xml.ThongTinKhacNoiDung()
+        //                         {
+        //                             thong_tin_truong = "MTCuu",
+        //                             kieu_du_lieu = "string",
+        //                             du_lieu = obj.ma_tra_cuu.ToString(),
+        //                         }
+        //                     }
+        //                 }
+        //             },
+        //             noi_dung_hoa_don = new Model.Request.Xml.NoiDungHoaDon()
+        //             {
+        //                 nguoi_ban = new Model.Request.Xml.NguoiBan()
+        //                 {
+        //                     ten_nguoi_ban = obj.nguoi_ban_ten_donvi,
+        //                     dien_thoai = obj.nguoi_ban_dien_thoai.Trim(),
+        //                     mst = obj.nguoi_ban_mst,
+        //                     dia_chi = obj.nguoi_ban_dia_chi,
+        //                     stk = obj.nguoi_ban_stk,
+        //                     ngan_hang = obj.nguoi_ban_ngan_hang,
+        //                     email = obj.nguoi_ban_email,
+        //                     fax = obj.nguoi_ban_fax.ConvertToString() != "" ? obj.nguoi_ban_fax : null,
+        //                     website = obj.nguoi_ban_website.ConvertToString() != "" ? obj.nguoi_ban_website : null,
+        //                 },
+        //                 nguoi_mua = new Model.Request.Xml.NguoiMua()
+        //                 {
+        //                 },
+        //                 danh_sach_hang_hoa_dich_vu = new Model.Request.Xml.DanhSachHangHoaDichVu()
+        //                 {
+        //                 },
+        //                 thong_tin_thanh_toan = thongTinThanhToan,
+        //             },
+        //         },
+        //         // qr_code = AppSettings.FixedValue.QRCode,
+        //         qr_code = obj.CreateQRCode(),
+        //         danh_sach_chu_ky_so = new Model.Request.Xml.DanhSachChuKySo()
+        //         {
+        //             nguoi_ban = new Model.Request.Xml.CKSNguoiBan() { },
+        //             nguoi_mua = new Model.Request.Xml.CKSNguoiMua() { }
+        //         }
+        //     };
+        //     if (obj.hoa_don_dang_ky_phat_hanh_mau_so.ConvertToString() == "7")
+        //     {
+        //         model.du_lieu_hoa_don.noi_dung_hoa_don.thong_tin_thanh_toan = new Model.Request.Xml.ThongTinThanhToan()
+        //         {
+        //             tong_tien_thanh_toan_bang_chu = "",
+        //             tong_tien_thanh_toan_bang_so = tong_tien_thanh_toan_bang_so.ToString(),
+
+        //         };
+        //     }
+        //     if (obj.giam_thue_ghi_chu.ConvertToString() != "")
+        //     {
+        //         model.du_lieu_hoa_don.thong_tin_chung.thong_tin_khac.thong_tin_khac_noi_dung.Add(
+        //             new ThongTinKhacNoiDung()
+        //             {
+        //                 thong_tin_truong = "GhiChu",
+        //                 kieu_du_lieu = "string",
+        //                 du_lieu = obj.giam_thue_ghi_chu.ConvertToString(),
+        //             });
+        //     }
+
+        //     var nguoi_mua = model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_mua;
+
+        //     if (obj.hoa_don_hinh_thuc_code != "M")
+        //     {
+        //         //-	Hóa đơn thường
+        //         if (obj.nguoi_mua_mst.ConvertToString() != "")
+        //         {
+        //             // •Đối với người mua là doanh nghiệp/ tổ chức/ hộ kinh doanh có Mã số thuế : bắt buộc phải có thông tin MST, Tên, Đia chỉ 
+        //             // và gen thẻ xml tương ứng <MST>, <Ten>, <DChi>.
+        //             //  Nếu có nhập thêm cả tên người mua hàng thì gen thêm thẻ <HVTNMHang>.
+        //             //bắt buộc
+        //             nguoi_mua.ten_don_vi = obj.nguoi_mua_ten_donvi;
+        //             nguoi_mua.dia_chi = obj.nguoi_mua_dia_chi.ConvertToString();
+        //             nguoi_mua.mst = obj.nguoi_mua_mst.ConvertToString();
+        //             //option
+        //             if (obj.nguoi_mua_ten.ConvertToString() != "") nguoi_mua.ho_ten_nguoi_mua_hang = obj.nguoi_mua_ten;
+        //             if (obj.nguoi_mua_dien_thoai.ConvertToString() != "") nguoi_mua.dien_thoai = obj.nguoi_mua_dien_thoai;
+        //             if (obj.nguoi_mua_stk.ConvertToString() != "") nguoi_mua.stk = obj.nguoi_mua_stk;
+        //             if (obj.nguoi_mua_ngan_hang.ConvertToString() != "") nguoi_mua.ngan_hang = obj.nguoi_mua_ngan_hang;
+        //             if (obj.nguoi_mua_email.ConvertToString() != "") nguoi_mua.email = obj.nguoi_mua_email;
+        //             if (obj.ma_dv_ngan_sach.ConvertToString() != "") nguoi_mua.ma_dv_ngan_sach = obj.ma_dv_ngan_sach;
+        //             if (obj.nguoi_mua_cccd.ConvertToString() != "") nguoi_mua.cccd = obj.nguoi_mua_cccd;
+        //             if (obj.so_ho_chieu.ConvertToString() != "") nguoi_mua.so_ho_chieu = obj.so_ho_chieu;
+        //         }
+        //         else
+        //         {
+        //             // •Đối với người mua là cá nhân hoặc khách lẻ không lấy hóa đơn:
+        //             //  yêu cầu nhập thông tin Họ tên người mua hàng  gen vào  thẻ < HVTNMHang >, 
+        //             // các thông tin khác nếu có nhập vào giá trị thì gen thẻ tương ứng, 
+        //             // không có giá trị thì không gen thẻ xml.
+
+
+        //             if (obj.nguoi_mua_ten_donvi.ConvertToString() != "") nguoi_mua.ten_don_vi = obj.nguoi_mua_ten_donvi.ConvertToString();
+        //             if (obj.nguoi_mua_dia_chi.ConvertToString() != "") nguoi_mua.dia_chi = obj.nguoi_mua_dia_chi.ConvertToString();
+        //             if (obj.nguoi_mua_mst.ConvertToString() != "") nguoi_mua.mst = obj.nguoi_mua_mst.ConvertToString();
+        //             if (obj.nguoi_mua_ten.ConvertToString() != "") nguoi_mua.ho_ten_nguoi_mua_hang = obj.nguoi_mua_ten;
+
+        //             if (obj.nguoi_mua_dien_thoai.ConvertToString() != "") nguoi_mua.dien_thoai = obj.nguoi_mua_dien_thoai;
+        //             if (obj.nguoi_mua_stk.ConvertToString() != "") nguoi_mua.stk = obj.nguoi_mua_stk;
+        //             if (obj.nguoi_mua_ngan_hang.ConvertToString() != "") nguoi_mua.ngan_hang = obj.nguoi_mua_ngan_hang;
+        //             if (obj.nguoi_mua_email.ConvertToString() != "") nguoi_mua.email = obj.nguoi_mua_email;
+        //             if (obj.nguoi_mua_cccd.ConvertToString() != "") nguoi_mua.cccd = obj.nguoi_mua_cccd;
+        //             if (obj.so_ho_chieu.ConvertToString() != "") nguoi_mua.so_ho_chieu = obj.so_ho_chieu;
+        //             if (obj.ma_dv_ngan_sach.ConvertToString() != "") nguoi_mua.ma_dv_ngan_sach = obj.ma_dv_ngan_sach;
+        //         }
+        //     }
+
+        //     if (obj.hoa_don_hinh_thuc_code == "M")
+        //     {
+        //         //hóa đơn MTT
+        //         if (obj.nguoi_mua_mst.ConvertToString() != "")
+        //         {
+        //             // •Đối với người mua là doanh nghiệp/ tổ chức/ hộ kinh doanh có Mã số thuế : 
+        //             // bắt buộc phải có thông tin MST, Tên, Đia chỉ và gen thẻ xml tương ứng <MST>, <Ten>, <DChi>.
+        //             // Nếu có nhập thêm cả tên người mua hàng thì gen thêm thẻ TTKhac theo cấu trúc HVTNMHang:
+        //             //bắt buộc
+        //             nguoi_mua.ten_don_vi = obj.nguoi_mua_ten_donvi;
+        //             nguoi_mua.dia_chi = obj.nguoi_mua_dia_chi.ConvertToString();
+        //             nguoi_mua.mst = obj.nguoi_mua_mst.ConvertToString();
+
+
+        //             //option
+        //             if (obj.nguoi_mua_dien_thoai.ConvertToString() != "") nguoi_mua.dien_thoai = obj.nguoi_mua_dien_thoai;
+        //             if (obj.ma_dv_ngan_sach.ConvertToString() != "") nguoi_mua.ma_dv_ngan_sach = obj.ma_dv_ngan_sach;
+        //             if (obj.nguoi_mua_cccd.ConvertToString() != "") nguoi_mua.cccd = obj.nguoi_mua_cccd;
+        //             if (obj.so_ho_chieu.ConvertToString() != "") nguoi_mua.so_ho_chieu = obj.so_ho_chieu;
+
+        //             if (model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_mua.thong_tin_khac == null)
+        //             {
+        //                 model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_mua.thong_tin_khac = new ThongTinKhac()
+        //                 {
+        //                     thong_tin_khac_noi_dung = new List<ThongTinKhacNoiDung>()
+        //                 };
+        //             }
+        //             if (obj.nguoi_mua_email.ConvertToString() != "")
+        //             {
+        //                 model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_mua.thong_tin_khac.thong_tin_khac_noi_dung.Add(
+        //                     new ThongTinKhacNoiDung()
+        //                     {
+        //                         du_lieu = obj.nguoi_mua_email.ConvertToString(),
+        //                         kieu_du_lieu = "string",
+        //                         thong_tin_truong = "DCTDTu",
+        //                     }
+        //                 );
+        //             }
+        //             if (obj.nguoi_mua_stk.ConvertToString() != "")
+        //             {
+        //                 model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_mua.thong_tin_khac.thong_tin_khac_noi_dung.Add(
+        //                     new ThongTinKhacNoiDung()
+        //                     {
+        //                         du_lieu = obj.nguoi_mua_stk.ConvertToString(),
+        //                         kieu_du_lieu = "string",
+        //                         thong_tin_truong = "STKNHang",
+        //                     }
+        //                 );
+        //             }
+        //             if (obj.nguoi_mua_ngan_hang.ConvertToString() != "")
+        //             {
+        //                 model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_mua.thong_tin_khac.thong_tin_khac_noi_dung.Add(
+        //                     new ThongTinKhacNoiDung()
+        //                     {
+        //                         du_lieu = obj.nguoi_mua_ngan_hang.ConvertToString(),
+        //                         kieu_du_lieu = "string",
+        //                         thong_tin_truong = "TNHang",
+        //                     }
+        //                 );
+        //             }
+
+        //             if (obj.nguoi_mua_ten.ConvertToString() != "")
+        //             {
+
+        //                 nguoi_mua.ho_ten_nguoi_mua_hang = obj.nguoi_mua_ten.ConvertToString();
+        //             }
+        //         }
+        //         else
+        //         {
+        //             // •Đối với người mua là cá nhân hoặc khách lẻ không lấy hóa đơn:
+        //             //  yêu cầu nhập thông tin Tên người mua hàng  gen vào  thẻ <Ten>, 
+        //             // Gen thêm thẻ TTKhac theo cấu trúc bên dưới.
+        //             // Các thông tin khác nếu có nhập giá trị thì gen thẻ tương ứng và đặt trong cặp thẻ TTKhac.
+        //             //  Mỗi thông tin nằm trong 1 cặp thẻ <TTin> như hình bên dưới
+        //             //bắt buộc
+        //             // nguoi_mua.ten_don_vi = obj.nguoi_mua_ten_donvi.ConvertToString() != ""
+        //             //     ? obj.nguoi_mua_ten_donvi.ConvertToString() //tổ chức hành chinh
+        //             //     : obj.nguoi_mua_ten.ConvertToString();
+
+        //             //option
+        //             if (obj.nguoi_mua_ten_donvi.ConvertToString() != "") nguoi_mua.ten_don_vi = obj.nguoi_mua_ten_donvi.ConvertToString();
+        //             if (obj.nguoi_mua_dia_chi.ConvertToString() != "") nguoi_mua.dia_chi = obj.nguoi_mua_dia_chi.ConvertToString();
+        //             if (obj.nguoi_mua_cccd.ConvertToString() != "") nguoi_mua.cccd = obj.nguoi_mua_cccd;
+        //             if (obj.so_ho_chieu.ConvertToString() != "") nguoi_mua.so_ho_chieu = obj.so_ho_chieu;
+        //             if (obj.nguoi_mua_ten.ConvertToString() != "") nguoi_mua.ho_ten_nguoi_mua_hang = obj.nguoi_mua_ten;
+        //             if (obj.nguoi_mua_dien_thoai.ConvertToString() != "") nguoi_mua.dien_thoai = obj.nguoi_mua_dien_thoai;
+        //             if (obj.ma_dv_ngan_sach.ConvertToString() != "") nguoi_mua.ma_dv_ngan_sach = obj.ma_dv_ngan_sach;
+        //             if (model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_mua.thong_tin_khac == null)
+        //             {
+        //                 model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_mua.thong_tin_khac = new ThongTinKhac()
+        //                 {
+        //                     thong_tin_khac_noi_dung = new List<ThongTinKhacNoiDung>()
+        //                 };
+        //             }
+
+
+
+        //             if (obj.nguoi_mua_ten.ConvertToString() != "" && obj.nguoi_mua_ten_donvi.ConvertToString() == "")
+        //             {
+        //                 model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_mua.thong_tin_khac.thong_tin_khac_noi_dung.Add(
+        //                     new ThongTinKhacNoiDung()
+        //                     {
+        //                         du_lieu = obj.nguoi_mua_ten.ConvertToString(),
+        //                         kieu_du_lieu = "string",
+        //                         thong_tin_truong = "TenNMHCNHan",
+        //                     }
+        //                 );
+        //             }
+
+        //             if (obj.nguoi_mua_email.ConvertToString() != "")
+        //             {
+        //                 model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_mua.thong_tin_khac.thong_tin_khac_noi_dung.Add(
+        //                     new ThongTinKhacNoiDung()
+        //                     {
+        //                         du_lieu = obj.nguoi_mua_email.ConvertToString(),
+        //                         kieu_du_lieu = "string",
+        //                         thong_tin_truong = "DCTDTu",
+        //                     }
+        //                 );
+        //             }
+
+        //             if (obj.nguoi_mua_stk.ConvertToString() != "")
+        //             {
+        //                 model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_mua.thong_tin_khac.thong_tin_khac_noi_dung.Add(
+        //                     new ThongTinKhacNoiDung()
+        //                     {
+        //                         du_lieu = obj.nguoi_mua_stk.ConvertToString(),
+        //                         kieu_du_lieu = "string",
+        //                         thong_tin_truong = "STKNHang",
+        //                     }
+        //                 );
+        //             }
+
+        //             if (obj.nguoi_mua_ngan_hang.ConvertToString() != "")
+        //             {
+        //                 model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_mua.thong_tin_khac.thong_tin_khac_noi_dung.Add(
+        //                     new ThongTinKhacNoiDung()
+        //                     {
+        //                         du_lieu = obj.nguoi_mua_ngan_hang.ConvertToString(),
+        //                         kieu_du_lieu = "string",
+        //                         thong_tin_truong = "TNHang",
+        //                     }
+        //                 );
+        //             }
+        //         }
+        //     }
+
+        //     // if (nguoi_mua.ten_don_vi.ConvertToString() == "" )
+        //     // {
+        //     //     if (obj.nguoi_mua_ten_donvi.ConvertToString() != "")
+        //     //     {
+        //     //         nguoi_mua.ten_don_vi = obj.nguoi_mua_ten_donvi;
+        //     //     }
+        //     //     else
+        //     //     {
+        //     //         if (obj.nguoi_mua_ten.ConvertToString() != "")
+        //     //             nguoi_mua.ten_don_vi = obj.nguoi_mua_ten.ConvertToString();
+        //     //     }
+        //     // }
+
+        //     // if (nguoi_mua.ho_ten_nguoi_mua_hang.ConvertToString() == "")
+        //     // {
+        //     //     if (obj.nguoi_mua_ten.ConvertToString() != "")
+        //     //         nguoi_mua.ho_ten_nguoi_mua_hang = obj.nguoi_mua_ten.ConvertToString();
+        //     // }
+
+        //     if (nguoi_mua.dien_thoai.ConvertToString() == "")
+        //     {
+        //         if (obj.nguoi_mua_dien_thoai.ConvertToString() != "")
+        //             nguoi_mua.dien_thoai = obj.nguoi_mua_dien_thoai.ConvertToString();
+        //     }
+
+        //     if (nguoi_mua.dia_chi.ConvertToString() == "")
+        //     {
+        //         if (obj.nguoi_mua_dia_chi.ConvertToString() != "")
+        //             nguoi_mua.dia_chi = obj.nguoi_mua_dia_chi.ConvertToString();
+        //     }
+
+        //     if (nguoi_mua.stk.ConvertToString() == "")
+        //     {
+        //         if (obj.nguoi_mua_stk.ConvertToString() != "") nguoi_mua.stk = obj.nguoi_mua_stk.ConvertToString();
+        //     }
+
+        //     if (nguoi_mua.ngan_hang.ConvertToString() == "")
+        //     {
+        //         if (obj.nguoi_mua_ngan_hang.ConvertToString() != "")
+        //             nguoi_mua.ngan_hang = obj.nguoi_mua_ngan_hang.ConvertToString();
+        //     }
+
+        //     if (nguoi_mua.email.ConvertToString() == "")
+        //     {
+        //         if (obj.nguoi_mua_email.ConvertToString() != "")
+        //             nguoi_mua.email = obj.nguoi_mua_email.ConvertToString();
+        //     }
+
+        //     if (nguoi_mua.cccd.ConvertToString() == "")
+        //     {
+        //         if (obj.nguoi_mua_cccd.ConvertToString() != "") nguoi_mua.cccd = obj.nguoi_mua_cccd.ConvertToString();
+        //     }
+        //     if (nguoi_mua.so_ho_chieu.ConvertToString() == "")
+        //     {
+        //         if (obj.so_ho_chieu.ConvertToString() != "") nguoi_mua.so_ho_chieu = obj.so_ho_chieu.ConvertToString();
+        //     }
+
+        //     if (nguoi_mua.ma_dv_ngan_sach.ConvertToString() == "")
+        //     {
+        //         if (obj.ma_dv_ngan_sach.ConvertToString() != "")
+        //             nguoi_mua.ma_dv_ngan_sach = obj.ma_dv_ngan_sach.ConvertToString();
+        //     }
+
+        //     if (obj.loai_tien == "VND")
+        //     {
+        //         model.du_lieu_hoa_don.noi_dung_hoa_don.thong_tin_thanh_toan.tong_tien_thanh_toan_bang_chu =
+        //             obj.tong_tien_chu.ConvertToString() != ""
+        //             ? obj.tong_tien_chu
+        //             : await tong_tien_thanh_toan_bang_so.ConvertToTextAsync(
+        //                 obj.loai_tien.ConvertToString() != "" ? obj.loai_tien.ConvertToString() : "VND"
+        //             );
+        //     }
+        //     else
+        //     {
+        //         model.du_lieu_hoa_don.noi_dung_hoa_don.thong_tin_thanh_toan.tong_tien_thanh_toan_bang_chu =
+        //             obj.tong_tien_chu.ConvertToString() != ""
+        //             ? obj.tong_tien_chu
+        //             : await tong_tien_thanh_toan_bang_so.ConvertToTextAsync(
+        //                 obj.loai_tien.ConvertToString() != "" ? obj.loai_tien.ConvertToString() : "VND"
+        //             );
+
+        //     }
+        //     // 1	Hóa đơn điện tử theo Nghị định 123/2020/NĐ-CP
+        //     // 2	Hóa đơn điện tử có mã xác thực của cơ quan thuế theo Quyết định số 1209/QĐ-BTC ngày 23 tháng 6 năm 2015 và Quyết định số 2660/QĐ-BTC ngày 14 tháng 12 năm 2016 của Bộ Tài chính (Hóa đơn có mã xác thực của CQT theo Nghị định số 51/2010/NĐ-CP và Nghị định số 04/2014/NĐ-CP)
+        //     // 3	Các loại hóa đơn theo Nghị định số 51/2010/NĐ-CP và Nghị định số 04/2014/NĐ-CP (Trừ hóa đơn điện tử có mã xác thực của cơ quan thuế theo Quyết định số 1209/QĐ-BTC và Quyết định số 2660/QĐ-BTC)
+        //     // 4	Hóa đơn đặt in theo Nghị định 123/2020/NĐ-CP
+
+        //     if (obj.hoa_don_dang_ky_phat_hanh_ky_hieu_goc.ConvertToString() != "" && obj.ngay_hoa_don_goc.HasValue)
+        //     {
+        //         // var hoaDonGoc = await this.SelectByIdAsync(obj.hoa_don_id_goc);
+        //         model.du_lieu_hoa_don.thong_tin_chung.thong_tin_lien_quan = new ThongTinLienQuan()
+        //         {
+        //             KHHDCLQuan = obj.hoa_don_dang_ky_phat_hanh_ky_hieu_goc,
+        //             KHMSHDCLQuan = obj.hoa_don_dang_ky_phat_hanh_mau_so_goc,
+        //             LHDCLQuan = obj.hoa_don_nghi_dinh_id_goc == 123 ? "1" : "3",
+        //             NLHDCLQuan = obj.ngay_hoa_don_goc.HasValue
+        //                 ? obj.ngay_hoa_don_goc.Value.ToString("yyyy-MM-dd")
+        //                 : null,
+        //             SHDCLQuan = obj.ma_so_hoa_don_goc.ToString(),
+        //             TCHDon = obj.hoa_don_hinh_thuc_id == 3 ? "2" : "1",
+        //         };
+        //     }
+
+        //     if (obj.hoa_don_dang_ky_phat_hanh_mau_so == "2")
+        //     {
+        //         model.du_lieu_hoa_don.thong_tin_chung.HDDCKPTQuan = "0";
+        //     }
+
+        //     // Phiếu xuất kho
+        //     if (obj.hoa_don_dang_ky_phat_hanh_mau_so == "6")
+        //     {
+        //         //Phiếu xuất kho kiêm vận chuyển nội bộ
+        //         if (obj.loai_hoa_don_ct_id == 9)
+        //         {
+        //             model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.LDDNBo = obj.xuat_kho_vc_lenh_dieu_dong_noi_bo;
+        //             model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.PTVChuyen = obj.xuat_kho_phuong_tien_van_chuyen;
+
+        //             model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.HDSo = obj.xuat_kho_hop_dong_so;
+        //             model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.HVTNXHang = obj.xuat_kho_nguoi_xuat_hang;
+        //             model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.TNVChuyen = obj.xuat_kho_nguoi_van_chuyen;
+        //             model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.dia_chi = obj.xuat_kho_dia_chi;
+        //         }
+
+        //         //Phiếu xuất kho đại lý
+        //         if (obj.loai_hoa_don_ct_id == 10)
+        //         {
+        //             model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.HDKTSo = obj.xuat_kho_dl_hop_dong_kinh_te_so;
+        //             if (obj.xuat_kho_dl_hop_dong_ngay.HasValue)
+        //                 model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.HDKTNgay =
+        //                     obj.xuat_kho_dl_hop_dong_ngay.Value.ToString("yyyy-MM-dd");
+        //             model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.PTVChuyen = obj.xuat_kho_phuong_tien_van_chuyen;
+
+        //             model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.HDSo = obj.xuat_kho_hop_dong_so;
+        //             model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.HVTNXHang = obj.xuat_kho_nguoi_xuat_hang;
+        //             model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.TNVChuyen = obj.xuat_kho_nguoi_van_chuyen;
+        //             model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.dia_chi = obj.xuat_kho_dia_chi;
+        //             model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_mua.HVTNNHang = obj.nguoi_mua_ten;
+        //             model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_mua.ho_ten_nguoi_mua_hang = null;
+        //         }
+        //     }
+
+        //     if (obj.hoa_don_hinh_thuc_code == "M")
+        //     {
+        //         model.ma_co_quan_thue = obj.ma_so_hoa_don_mtt;
+        //     }
+
+        //     foreach (var item in hangHoas)
+        //     {
+        //         var objItem = new Model.Request.Xml.HangHoaDichVu()
+        //         {
+        //             tinh_chat = item.hang_hoa_tinh_chat_id,
+        //             stt = item.stt > 0 ? item.stt.ToString() : string.Empty,
+        //             don_gia = item.don_gia != 0 ? item.don_gia.ConvertToStringAndRemoveZeroPart() : null,
+        //             don_vi_tinh = item.dvt,
+        //             ma_hang_hoa_dich_vu = item.ma_hang,
+        //             so_luong = item.so_luong != 0 ? item.so_luong.ConvertToStringAndRemoveZeroPart() : null,
+        //             ten_hang_hoa_dich_vu = item.ten_hang,
+        //             thanh_tien = obj.loai_tien == "VND" ? ((decimal)item.thanh_tien.ConvertToDouble(0)).ConvertToStringAndRemoveZeroPart() :
+        //              item.thanh_tien.ConvertToStringAndRemoveZeroPart(),
+        //             thue_suat = obj.hoa_don_dang_ky_phat_hanh_mau_so != "2"
+        //             ? item.thue_vat
+        //             : null,
+        //         };
+        //         if (item.ty_le_chiet_khau.ConvertToString() != "")
+        //         {
+        //             objItem.ty_le_chiet_khau = item.ty_le_chiet_khau.ConvertToStringAndRemoveZeroPart();
+        //             objItem.so_tien_chiet_khau = item.tien_chiet_khau.ConvertToStringAndRemoveZeroPart();
+        //         }
+        //         if (item.hang_hoa_tinh_chat_id == 5 && item.hang_hoa_dac_trung_json.ConvertToString() != "")
+        //         {
+        //             if (objItem.TTHHDTrung == null)
+        //             {
+        //                 objItem.TTHHDTrung = new TTHHDTrung();
+        //                 objItem.TTHHDTrung.TTHHDTrungTTins = new List<TTHHDTrungTTin>();
+        //             }
+        //             //lấy tất cả các field và giá trị từ hoaDon.thong_tin_khac_json (đang kiểu string)
+        //             var jsonStr = item.hang_hoa_dac_trung_json.ConvertToString();
+        //             try
+        //             {
+        //                 var objTTHHDTrung = Newtonsoft.Json.JsonConvert.DeserializeObject<TTHHDTrungInfo>(jsonStr);
+        //                 if (objTTHHDTrung != null)
+        //                 {
+        //                     // Lấy tất cả property của object
+        //                     foreach (var prop in objTTHHDTrung.GetType().GetProperties())
+        //                     {
+        //                         string propName = prop.Name;
+        //                         var propValue = prop.GetValue(objTTHHDTrung, null).ConvertToString();
+        //                         if (propValue != "" && propName != "LHHDTrung")
+        //                         {
+        //                             objItem.TTHHDTrung.TTHHDTrungTTins.Add(new TTHHDTrungTTin()
+        //                             {
+        //                                 LHHDTrung = objTTHHDTrung.LHHDTrung,
+        //                                 TTruong = propName,
+        //                                 DLieu = propValue
+        //                             });
+        //                         }
+
+        //                     }
+        //                 }
+
+        //             }
+        //             catch (Exception ex)
+        //             {
+        //                 // Log lỗi nếu JSON sai format
+        //                 Console.WriteLine("Lỗi parse hang_hoa_dac_trung_json: " + ex.Message);
+        //             }
+        //         }
+
+        //         model.du_lieu_hoa_don.noi_dung_hoa_don.danh_sach_hang_hoa_dich_vu.hang_hoa_dich_vus.Add(objItem);
+        //     }
+
+        //     //hóa đơn nước
+        //     if (obj.tt_nuoc_ma_bill.ConvertToString().Trim() != string.Empty)
+        //     {
+        //         if (model.du_lieu_hoa_don.thong_tin_chung.thong_tin_khac.thong_tin_khac_noi_dung == null)
+        //         {
+        //             model.du_lieu_hoa_don.thong_tin_chung.thong_tin_khac.thong_tin_khac_noi_dung =
+        //                 new List<ThongTinKhacNoiDung>();
+        //         }
+        //     }
+
+        //     if (obj.tt_nuoc_ma_bill.ConvertToString().Trim() != string.Empty)
+        //         model.du_lieu_hoa_don.thong_tin_chung.thong_tin_khac.thong_tin_khac_noi_dung.Add(
+        //             new ThongTinKhacNoiDung()
+        //             {
+        //                 du_lieu = obj.tt_nuoc_ma_bill.ConvertToString().Trim(),
+        //                 kieu_du_lieu = "string",
+        //                 thong_tin_truong = "MaBill"
+        //             });
+        //     if (obj.tt_nuoc_ngay_doc_thang_nay.ConvertToString().Trim() != string.Empty)
+        //         model.du_lieu_hoa_don.thong_tin_chung.thong_tin_khac.thong_tin_khac_noi_dung.Add(
+        //             new ThongTinKhacNoiDung()
+        //             {
+        //                 du_lieu = obj.tt_nuoc_ngay_doc_thang_nay.ConvertToString().Trim(),
+        //                 kieu_du_lieu = "string",
+        //                 thong_tin_truong = "NgayDocThangNay"
+        //             });
+        //     if (obj.tt_nuoc_ngay_doc_thang_truoc.ConvertToString().Trim() != string.Empty)
+        //         model.du_lieu_hoa_don.thong_tin_chung.thong_tin_khac.thong_tin_khac_noi_dung.Add(
+        //             new ThongTinKhacNoiDung()
+        //             {
+        //                 du_lieu = obj.tt_nuoc_ngay_doc_thang_truoc.ConvertToString().Trim(),
+        //                 kieu_du_lieu = "string",
+        //                 thong_tin_truong = "NgayDocThangTruoc"
+        //             });
+        //     if (obj.tt_nuoc_so_cuong.ConvertToString().Trim() != string.Empty)
+        //         model.du_lieu_hoa_don.thong_tin_chung.thong_tin_khac.thong_tin_khac_noi_dung.Add(
+        //             new ThongTinKhacNoiDung()
+        //             {
+        //                 du_lieu = obj.tt_nuoc_so_cuong.ConvertToString().Trim(),
+        //                 kieu_du_lieu = "string",
+        //                 thong_tin_truong = "SoCuong"
+        //             });
+        //     if (obj.tt_nuoc_ma_nguoi_mua.ConvertToString().Trim() != string.Empty)
+        //         model.du_lieu_hoa_don.thong_tin_chung.thong_tin_khac.thong_tin_khac_noi_dung.Add(
+        //             new ThongTinKhacNoiDung()
+        //             {
+        //                 du_lieu = obj.tt_nuoc_ma_nguoi_mua.ConvertToString().Trim(),
+        //                 kieu_du_lieu = "string",
+        //                 thong_tin_truong = "MaNguoiMua"
+        //             });
+        //     if (obj.tt_nuoc_chi_so_thang_ngay.ConvertToString().Trim() != string.Empty)
+        //         model.du_lieu_hoa_don.thong_tin_chung.thong_tin_khac.thong_tin_khac_noi_dung.Add(
+        //             new ThongTinKhacNoiDung()
+        //             {
+        //                 du_lieu = obj.tt_nuoc_chi_so_thang_ngay.ConvertToString().Trim(),
+        //                 kieu_du_lieu = "string",
+        //                 thong_tin_truong = "ChiSoDHThangNay"
+        //             });
+        //     if (obj.tt_nuoc_chi_so_thang_truoc.ConvertToString().Trim() != string.Empty)
+        //         model.du_lieu_hoa_don.thong_tin_chung.thong_tin_khac.thong_tin_khac_noi_dung.Add(
+        //             new ThongTinKhacNoiDung()
+        //             {
+        //                 du_lieu = obj.tt_nuoc_chi_so_thang_truoc.ConvertToString().Trim(),
+        //                 kieu_du_lieu = "string",
+        //                 thong_tin_truong = "ChiSoDHThangTruoc"
+        //             });
+        //     if (obj.tt_nuoc_ma_nuoc.ConvertToString().Trim() != string.Empty)
+        //         model.du_lieu_hoa_don.thong_tin_chung.thong_tin_khac.thong_tin_khac_noi_dung.Add(
+        //             new ThongTinKhacNoiDung()
+        //             {
+        //                 du_lieu = obj.tt_nuoc_ma_nuoc.ConvertToString().Trim(),
+        //                 kieu_du_lieu = "string",
+        //                 thong_tin_truong = "MaNuoc"
+        //             });
+        //     if (obj.tt_nuoc_tong_so_ngay.ConvertToString().Trim() != string.Empty)
+        //         model.du_lieu_hoa_don.thong_tin_chung.thong_tin_khac.thong_tin_khac_noi_dung.Add(
+        //             new ThongTinKhacNoiDung()
+        //             {
+        //                 du_lieu = obj.tt_nuoc_tong_so_ngay.ConvertToString().Trim(),
+        //                 kieu_du_lieu = "string",
+        //                 thong_tin_truong = "TongSoNgay"
+        //             });
+        //     if (obj.tt_nuoc_tong_tieu_thu.ConvertToString().Trim() != string.Empty)
+        //         model.du_lieu_hoa_don.thong_tin_chung.thong_tin_khac.thong_tin_khac_noi_dung.Add(
+        //             new ThongTinKhacNoiDung()
+        //             {
+        //                 du_lieu = obj.tt_nuoc_tong_tieu_thu.ConvertToString().Trim(),
+        //                 kieu_du_lieu = "string",
+        //                 thong_tin_truong = "Tieuthu"
+        //             });
+        //     if (obj.tt_nuoc_so_ho.ConvertToString().Trim() != string.Empty)
+        //         model.du_lieu_hoa_don.thong_tin_chung.thong_tin_khac.thong_tin_khac_noi_dung.Add(
+        //             new ThongTinKhacNoiDung()
+        //             {
+        //                 du_lieu = obj.tt_nuoc_so_ho.ConvertToString().Trim(),
+        //                 kieu_du_lieu = "string",
+        //                 thong_tin_truong = "SoHo"
+        //             });
+        //     if (obj.tt_nuoc_serial_dong_ho.ConvertToString().Trim() != string.Empty)
+        //         model.du_lieu_hoa_don.thong_tin_chung.thong_tin_khac.thong_tin_khac_noi_dung.Add(
+        //             new ThongTinKhacNoiDung()
+        //             {
+        //                 du_lieu = obj.tt_nuoc_serial_dong_ho.ConvertToString().Trim(),
+        //                 kieu_du_lieu = "string",
+        //                 thong_tin_truong = "SeriDongHo"
+        //             });
+
+        //     //thong tin khac
+        //     if (obj.thong_tin_khac_json.ConvertToString() != "")
+        //     {
+        //         if (model.du_lieu_hoa_don.thong_tin_chung.thong_tin_khac == null)
+        //         {
+        //             model.du_lieu_hoa_don.thong_tin_chung.thong_tin_khac = new ThongTinKhac();
+        //             model.du_lieu_hoa_don.thong_tin_chung.thong_tin_khac.thong_tin_khac_noi_dung = new List<ThongTinKhacNoiDung>();
+        //         }
+        //         //lấy tất cả các field và giá trị từ hoaDon.thong_tin_khac_json (đang kiểu string)
+        //         var jsonStr = obj.thong_tin_khac_json.ConvertToString();
+        //         try
+        //         {
+        //             // Giả định JSON có cấu trúc dạng: { "field1": "value1", "field2": "value2", ... }
+        //             var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonStr);
+
+        //             foreach (var kv in dict)
+        //             {
+        //                 if (kv.Value.ConvertToString() != "")
+        //                     model.du_lieu_hoa_don.thong_tin_chung.thong_tin_khac.thong_tin_khac_noi_dung.Add(new ThongTinKhacNoiDung()
+        //                     {
+        //                         thong_tin_truong = kv.Key,
+        //                         kieu_du_lieu = "string",
+        //                         du_lieu = kv.Value
+        //                     });
+        //             }
+        //         }
+        //         catch (Exception ex)
+        //         {
+        //             // Log lỗi nếu JSON sai format
+        //             Console.WriteLine("Lỗi parse thong_tin_khac_json: " + ex.Message);
+        //         }
+        //     }
+        //     if (obj.hoa_don_dang_ky_phat_hanh_mau_so == "6")
+        //     {
+        //         //phiếu xuất kho
+        //         var tong_tien_thanh_toan_bang_chu = model.du_lieu_hoa_don.noi_dung_hoa_don.thong_tin_thanh_toan != null
+        //         ? model.du_lieu_hoa_don.noi_dung_hoa_don.thong_tin_thanh_toan.tong_tien_thanh_toan_bang_chu
+        //         : await tong_tien_thanh_toan_bang_so.ConvertToTextAsync(
+        //                 obj.loai_tien.ConvertToString() != "" ? obj.loai_tien.ConvertToString() : "VND"
+        //             ); ;
+        //         model.du_lieu_hoa_don.noi_dung_hoa_don.thong_tin_thanh_toan = null;
+        //         if (model.du_lieu_hoa_don.thong_tin_khac == null)
+        //         {
+        //             model.du_lieu_hoa_don.thong_tin_khac = new ThongTinKhac();
+        //             model.du_lieu_hoa_don.thong_tin_khac.thong_tin_khac_noi_dung = new List<ThongTinKhacNoiDung>();
+        //         }
+        //         model.du_lieu_hoa_don.thong_tin_khac.thong_tin_khac_noi_dung.Add(
+        //             new ThongTinKhacNoiDung()
+        //             {
+        //                 du_lieu = tong_tien_thanh_toan_bang_so.ConvertToStringAndRemoveZeroPart(),
+        //                 kieu_du_lieu = "numeric",
+        //                 thong_tin_truong = "TgTTTBSo"
+        //             });
+        //         model.du_lieu_hoa_don.thong_tin_khac.thong_tin_khac_noi_dung.Add(
+        //             new ThongTinKhacNoiDung()
+        //             {
+        //                 du_lieu = tong_tien_thanh_toan_bang_chu,
+        //                 kieu_du_lieu = "string",
+        //                 thong_tin_truong = "TgTTTBChu"
+        //             });
+        //     }
+        //     model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.stk = obj.nguoi_ban_stk;
+        //     model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.email = obj.nguoi_ban_email;
+        //     model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.dien_thoai = obj.nguoi_ban_dien_thoai;
+        //     model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_mua.stk = obj.nguoi_mua_stk;
+        //     model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_mua.ngan_hang = obj.nguoi_mua_ngan_hang;
+        //     return model;
+        // }
+
+
+
         private async Task<Model.Request.Xml.HoaDon> CreateHoaDonXmlObject(hoa_don obj)
         {
-            var hangHoas = await _serviceWrapper.HoaDon.HoaDonHangHoa.SelectByHoaDonIdAsync(obj.id);
-            var thue_suats = hangHoas.Where(x => x.hang_hoa_tinh_chat_id != 4).Select(x => x.thue_vat).Distinct().Where(x => x.Contains("%") || x == "KCT" || x == "KKKNT").ToList()
-                .Select(x => new LTSuat()
-                {
-                    ten_thue_suat = x
-                }).ToList();
 
+            var thueSuatTuDb = await _repositoryWrapper.HoaDon.HoaDon.SelectThueSuatHoaDonByHoaDonIdAsync(obj.id);
+
+            var hangHoas = await _serviceWrapper.HoaDon.HoaDonHangHoa.SelectByHoaDonIdAsync(obj.id);
+
+            var thue_suats = thueSuatTuDb.Select(x => new LTSuat()
+            {
+                ten_thue_suat = x.TSuat, // Bê nguyên từ DB lên (đã là "8%", "KCT"...)
+                thanh_tien = x.ThTien.ConvertToStringAndRemoveZeroPart(),
+                tien_thue = x.TThue.ConvertToStringAndRemoveZeroPart()
+            }).ToList();
 
             var loaiPhis = await _serviceWrapper.HoaDon.HoaDonLoaiPhi.SelectByHoaDonAsync(obj.id);
             var isApDungDieuChinh5DongVaoThueSuat = thue_suats.Count == 1;
             var isAllChietKhau = !hangHoas.Where(x => x.hang_hoa_tinh_chat_id != 4).Any(x => x.hang_hoa_tinh_chat_id != 3);
-            foreach (var thue_suat in thue_suats)
-            {
-                var phanTramThue = thue_suat.ten_thue_suat.Replace("KHAC:", "").Replace("%", "").Trim().ConvertToDouble(2);
-
-                var thanh_tien = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat && x.hang_hoa_tinh_chat_id == 1).Select(x => x.thanh_tien)
-                    .Sum();
-                var thanh_tien_ck = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat && x.hang_hoa_tinh_chat_id == 3).Select(x => x.thanh_tien)
-                  .Sum();
-
-                // KHông làm tròn thành tiền
-                // var thanh_tien = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat && x.hang_hoa_tinh_chat_id == 1).Select(x => x.don_gia * x.so_luong)
-                //     .Sum();
-                // var thanh_tien_ck = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat && x.hang_hoa_tinh_chat_id == 3).Select(x => x.don_gia * x.so_luong)
-                //          .Sum();
-
-                if (isAllChietKhau)
-                {
-                    thanh_tien = -1 * thanh_tien;
-                }
-
-                if (phanTramThue == 0)
-                {
-                    thue_suat.thanh_tien = (thanh_tien).ConvertToStringAndRemoveZeroPart();
-
-                }
-                else
-                {
-                    thue_suat.thanh_tien = (thanh_tien - thanh_tien_ck).ConvertToStringAndRemoveZeroPart();
-
-                }
-                if (obj.loai_tien == "VND")
-                {
-                    if (phanTramThue == 0)
-                    {
-
-                        thue_suat.tien_thue = ((decimal)thanh_tien * (decimal)phanTramThue / 100).ConvertToStringAndRemoveZeroPart();
-
-                    }
-                    else
-                    {
-                        thue_suat.tien_thue = (((decimal)thanh_tien - (decimal)thanh_tien_ck) * (decimal)phanTramThue / 100).ConvertToStringAndRemoveZeroPart();
-                    }
-                }
-                else
-                {
-                    if (phanTramThue == 0)
-                    {
-                        thue_suat.tien_thue = ((decimal)thanh_tien * (decimal)phanTramThue / 100).ConvertToStringAndRemoveZeroPart();
-
-                    }
-                    else
-                    {
-                        thue_suat.tien_thue = (((decimal)thanh_tien - (decimal)thanh_tien_ck) * (decimal)phanTramThue / 100).ConvertToStringAndRemoveZeroPart();
-                    }
-                }
-
-                // thue_suat.tien_thue = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat)
-                // .Select(x => Math.Round(x.thanh_tien * phanTramThue / 100, 0, MidpointRounding.AwayFromZero))
-                // .Sum().ConvertToStringAndRemoveZeroPart();
-                if (isApDungDieuChinh5DongVaoThueSuat && obj.so_tien_tang_giam_tien_thue != 0)
-                {
-                    thue_suat.tien_thue += obj.so_tien_tang_giam_tien_thue;
-                }
-                if (obj.loai_tien == "VND")
-                {
-                    thue_suat.tien_thue = thue_suat.tien_thue.ConvertToDecimal().ConvertToStringAndRemoveZeroPart();
-                    thue_suat.thanh_tien = thue_suat.thanh_tien.ConvertToDecimal().ConvertToStringAndRemoveZeroPart();
-
-                }
-            }
 
             var tong_tien_thanh_toan_bang_so = obj.tong_tien_thanh_toan;
             ;
@@ -1062,7 +1873,6 @@ namespace Service.HoaDon
             // var test = obj.nguoi_mua_mst.ConvertToString() != ""
             //                ? (obj.nguoi_mua_ten_donvi.ConvertToString() != "" ? obj.nguoi_mua_ten_donvi.ConvertToString() : obj.nguoi_mua_ten)
             //                : obj.nguoi_mua_ten_donvi;
-
 
 
             var thongTinThanhToan = new Model.Request.Xml.ThongTinThanhToan()
@@ -1085,8 +1895,6 @@ namespace Service.HoaDon
                               : null
             };
 
-
-
             // --- NẾU MẪU SỐ KHÁC 2 THÌ THÊM THUẾ SUẤT ---
             if (obj.hoa_don_dang_ky_phat_hanh_mau_so != "2")
             {
@@ -1097,10 +1905,6 @@ namespace Service.HoaDon
                 thongTinThanhToan.tong_tien_chua_thue = obj.tong_tien_truong_thue.ConvertToStringAndRemoveZeroPart();
                 thongTinThanhToan.tong_tien_thue = obj.tong_tien_thue.ConvertToStringAndRemoveZeroPart();
             }
-
-
-
-
 
             var model = new Model.Request.Xml.HoaDon()
             {
@@ -1484,7 +2288,8 @@ namespace Service.HoaDon
 
             if (obj.hoa_don_dang_ky_phat_hanh_mau_so == "2")
             {
-                model.du_lieu_hoa_don.thong_tin_chung.HDDCKPTQuan = "0";
+                // Hóa đơn dành cho khu phi thuế quan
+                // model.du_lieu_hoa_don.thong_tin_chung.HDDCKPTQuan = "0";
             }
 
             // Phiếu xuất kho
@@ -1765,6 +2570,8 @@ namespace Service.HoaDon
             model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_mua.ngan_hang = obj.nguoi_mua_ngan_hang;
             return model;
         }
+
+
 
         public async Task<FunctionResult<string>> CreateXmlKySoAsync(int id, bool isPreview = false)
         {
@@ -2634,12 +3441,6 @@ namespace Service.HoaDon
         public Task<IEnumerable<hoa_don>> SelectByIdsAsync(List<int> ids)
         {
             return _repositoryWrapper.HoaDon.HoaDon.SelectByIdsAsync(ids);
-        }
-
-
-        public Task<IEnumerable<HoaDonPdfInforResponse>> SelectByMaSoHoaDonRangeAsync(string donvi_ma_dv, string ky_hieu, int fromMaSo, int toMaSo)
-        {
-            return _repositoryWrapper.HoaDon.HoaDon.SelectByMaSoHoaDonRangeAsync(donvi_ma_dv, ky_hieu, fromMaSo, toMaSo);
         }
 
         public async Task<FunctionResult<HoaDonPhatHanhRespone>> PhatHanhMTTAsync(HoaDonPhatHanhRequest request,
