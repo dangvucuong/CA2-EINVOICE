@@ -101,7 +101,7 @@ namespace Service.HoaDon
                 }
 
 
-                var ngayHoaDonMax = await _repositoryWrapper.HoaDon.HoaDon.GetMaxNgayHoaDon(model.donvi_ma_dv, model.hoa_don_dang_ky_phat_hanh_mau_so, model.hoa_don_dang_ky_phat_hanh_ky_hieu);
+                var ngayHoaDonMax = await _repositoryWrapper.HoaDon.HoaDon.GetNgayHoaDonPhatHanhMaxAsynsc(model.donvi_ma_dv, model.hoa_don_dang_ky_phat_hanh_mau_so, model.hoa_don_dang_ky_phat_hanh_ky_hieu);
                 if (ngayHoaDonMax != null && model.ngay_hoa_don < ngayHoaDonMax.Value)
                 {
                     return new ErrorResult<int>(
@@ -308,7 +308,7 @@ namespace Service.HoaDon
                         );
                     }
 
-                    var ngayHoaDonMax = await _repositoryWrapper.HoaDon.HoaDon.GetMaxNgayHoaDon(model.donvi_ma_dv, model.hoa_don_dang_ky_phat_hanh_mau_so, model.hoa_don_dang_ky_phat_hanh_ky_hieu);
+                    var ngayHoaDonMax = await _repositoryWrapper.HoaDon.HoaDon.GetNgayHoaDonPhatHanhMaxAsynsc(model.donvi_ma_dv, model.hoa_don_dang_ky_phat_hanh_mau_so, model.hoa_don_dang_ky_phat_hanh_ky_hieu);
                     if (ngayHoaDonMax != null && model.ngay_hoa_don < ngayHoaDonMax.Value)
                     {
                         return new ErrorResult<int>(
