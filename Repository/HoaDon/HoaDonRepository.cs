@@ -360,5 +360,29 @@ namespace Repository.HoaDon
             return _dbConnection.SelectAsync<ThueSuatModel>("GetThueSuatHoaDonByHoaDonId", param);
         }
 
+
+        public Task<bool> InsertHoaDonThongTinBoSungAsync(int id, HoaDonThongTinBoSung info)
+        {
+            var param = new DynamicParameters();
+
+            // Ánh xạ chính xác tên biến với các tham số trong Stored Procedure
+            param.Add("@HoaDonId", id);
+            param.Add("@IsHdBanTaiSanCong", info.IsHdBanTaiSanCong);
+            param.Add("@SoQuyetDinh", info.SoQuyetDinh);
+            param.Add("@NgayQuyetDinh", info.NgayQuyetDinh);
+            param.Add("@CoQuanBanHanhQD", info.CoQuanBanHanhQD);
+            param.Add("@HinhThucBan", info.HinhThucBan);
+            param.Add("@DiaDiemVCHangDen", info.DiaDiemVCHangDen);
+            param.Add("@TgianVCHangDenTu", info.TgianVCHangDenTu);
+            param.Add("@TgianVCHangDenDen", info.TgianVCHangDenDen);
+            param.Add("@IsHdPhiThueQuan", info.IsHdPhiThueQuan);
+
+            // Sử dụng ExecuteAsync để chạy Procedure
+            return _dbConnection.ExecuteAsync("HoaDonThongTinBoSung", param);
+
+        }
+
+
+
     }
 }

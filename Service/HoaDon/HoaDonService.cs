@@ -101,7 +101,7 @@ namespace Service.HoaDon
                 }
 
 
-                var ngayHoaDonMax = await _repositoryWrapper.HoaDon.HoaDon.GetMaxNgayHoaDon(model.donvi_ma_dv, model.hoa_don_dang_ky_phat_hanh_mau_so, model.hoa_don_dang_ky_phat_hanh_ky_hieu);
+                var ngayHoaDonMax = await _repositoryWrapper.HoaDon.HoaDon.GetNgayHoaDonPhatHanhMaxAsynsc(model.donvi_ma_dv, model.hoa_don_dang_ky_phat_hanh_mau_so, model.hoa_don_dang_ky_phat_hanh_ky_hieu);
                 if (ngayHoaDonMax != null && model.ngay_hoa_don < ngayHoaDonMax.Value)
                 {
                     return new ErrorResult<int>(
@@ -308,7 +308,7 @@ namespace Service.HoaDon
                         );
                     }
 
-                    var ngayHoaDonMax = await _repositoryWrapper.HoaDon.HoaDon.GetMaxNgayHoaDon(model.donvi_ma_dv, model.hoa_don_dang_ky_phat_hanh_mau_so, model.hoa_don_dang_ky_phat_hanh_ky_hieu);
+                    var ngayHoaDonMax = await _repositoryWrapper.HoaDon.HoaDon.GetNgayHoaDonPhatHanhMaxAsynsc(model.donvi_ma_dv, model.hoa_don_dang_ky_phat_hanh_mau_so, model.hoa_don_dang_ky_phat_hanh_ky_hieu);
                     if (ngayHoaDonMax != null && model.ngay_hoa_don < ngayHoaDonMax.Value)
                     {
                         return new ErrorResult<int>(
@@ -410,6 +410,7 @@ namespace Service.HoaDon
             }
 
 
+            await InsertHoaDonThongTinBoSungAsync(model, user.id)
 
             await SaveThueSuatHoaDon(model, user.id);
             await this.SaveHangHoas(model, user.id, !insert);
@@ -829,6 +830,34 @@ namespace Service.HoaDon
         public async Task<bool> InsertThueSuatHoaDonAsync(int hoaDonId, List<ThueSuatModel> dsThue)
         {
             return await _repositoryWrapper.HoaDon.HoaDon.InsertThueSuatHoaDonAsync(hoaDonId, dsThue);
+        }
+
+        private async Task<bool> SaveHoaDonThongTinBoSung(HoaDonAddOrEditModel model, int user_id)
+        {
+            // HoaDonThongTinBoSung
+            var infor = new HoaDonThongTinBoSung()
+            {
+                IsHdBanTaiSanCong = model.is_hd_ban_tai_san_cong,
+                SoQuyetDinh = model.so_quyet_dinh,
+                NgayQuyetDinh = model.ngay_quyet_dinh,
+                CoQuanBanHanhQD = model.co_quan_ban_hanh_qd,
+                HinhThucBan = model.hinh_thuc_ban,
+                DiaDiemVCHangDen = model.dia_diem_vc_hang_den,
+                TgianVCHangDenTu = model.tgian_vc_hang_den_tu,
+                TgianVCHangDenDen = model.tgian_vc_hang_den_den,
+                IsHdPhiThueQuan = model.is_ph
+            };
+
+
+            return await _serviceWrapper.HoaDon.HoaDon.InsertHoaDonThongTinBoSungAsync(model.id, dsThue);
+        }
+
+
+
+
+        public async Task<bool> InsertHoaDonThongTinBoSungAsync(int hoaDonId, HoaDonThongTinBoSung infor)
+        {
+            return await _repositoryWrapper.HoaDon.HoaDon.InsertHoaDonThongTinBoSungAsync(hoaDonId, infor);
         }
 
 
