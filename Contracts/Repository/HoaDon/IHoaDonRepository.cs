@@ -2,6 +2,7 @@ using Contracts.Repository.Base;
 using Model.FuncResult;
 using Model.Request.HoaDon;
 using Model.Request.ThongKe;
+using Model.Request.Xml;
 using Model.Respone.HoaDon;
 using Model.Respone.ThongKe;
 using Model.Table;
@@ -37,9 +38,7 @@ namespace Contracts.Repository.HoaDon
         Task<bool> InsertThueSuatHoaDonAsync(int id, IEnumerable<ThueSuatModel> dsThue);
         Task<bool> InsertHoaDonThongTinBoSungAsync(int id, HoaDonThongTinBoSung infor);
         Task<IEnumerable<ThueSuatModel>> SelectThueSuatHoaDonByHoaDonIdAsync(int hoaDonId);
-
-
-
+        Task<hd_thong_tin_bo_sung> SelectHoaDonThongTinBoSungByHoaDonIdAsync(int hoaDonId);
 
     }
 }

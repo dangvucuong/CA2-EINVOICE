@@ -837,15 +837,15 @@ namespace Service.HoaDon
             // HoaDonThongTinBoSung
             var infor = new HoaDonThongTinBoSung()
             {
-                // IsHdBanTaiSanCong = model.is_hd_ban_tai_san_cong,
-                // SoQuyetDinh = model.so_quyet_dinh,
-                // NgayQuyetDinh = model.ngay_quyet_dinh,
-                // CoQuanBanHanhQD = model.co_quan_ban_hanh_qd,
-                // HinhThucBan = model.hinh_thuc_ban,
-                // DiaDiemVCHangDen = model.dia_diem_vc_hang_den,
-                // TgianVCHangDenTu = model.tgian_vc_hang_den_tu,
-                // TgianVCHangDenDen = model.tgian_vc_hang_den_den,
-                IsHdPhiThueQuan = model.hoa_don_danh_cho_khu_phi_thue_quan
+                IsHdBanTaiSanCong = model.IsHdBanTaiSanCong ?? 0,
+                SoQuyetDinh = model.SoQuyetDinh ?? "",
+                NgayQuyetDinh = model.NgayQuyetDinh ?? "",
+                CoQuanBanHanhQD = model.CoQuanBanHanhQD ?? "",
+                HinhThucBan = model.HinhThucBan ?? "",
+                DiaDiemVCHangDen = model.DiaDiemVCHangDen ?? "",
+                TgianVCHangDenTu = model.TgianVCHangDenTu ?? "",
+                TgianVCHangDenDen = model.TgianVCHangDenDen ?? "",
+                IsHdPhiThueQuan = model.IsHdPhiThueQuan ?? 0,
             };
 
 
@@ -873,9 +873,17 @@ namespace Service.HoaDon
             var obj = await this.SelectByIdAsync(id);
             if (obj != null)
             {
+
                 var item = obj.Map<hoa_don_vm>();
                 item.hang_hoas = (await _serviceWrapper.HoaDon.HoaDonHangHoa.SelectByHoaDonIdAsync(id)).ToList();
                 item.loai_phis = (await _serviceWrapper.HoaDon.HoaDonLoaiPhi.SelectByHoaDonAsync(id)).ToList();
+
+                if (obj.hoa_don_dang_ky_phat_hanh_mau_so == "2" || obj.hoa_don_dang_ky_phat_hanh_mau_so == "3")
+                {
+                    item.thong_tin_bo_sungs = await _repositoryWrapper.HoaDon.HoaDon.SelectHoaDonThongTinBoSungByHoaDonIdAsync(obj.id);
+                }
+
+
                 return item;
             }
 
@@ -2315,11 +2323,49 @@ namespace Service.HoaDon
                 };
             }
 
-            if (obj.hoa_don_dang_ky_phat_hanh_mau_so == "2")
+            if (obj.hoa_don_dang_ky_phat_hanh_mau_so == "2" || obj.hoa_don_dang_ky_phat_hanh_mau_so == "3")
             {
-                // Hóa đơn dành cho khu phi thuế quan
-                // model.du_lieu_hoa_don.thong_tin_chung.HDDCKPTQuan = "0";
+
+                hd_thong_tin_bo_sung obj_ttbosung = await _repositoryWrapper.HoaDon.HoaDon.SelectHoaDonThongTinBoSungByHoaDonIdAsync(obj.id);
+
+
+                if (obj.hoa_don_dang_ky_phat_hanh_mau_so == "2")
+                {
+
+                    model.du_lieu_hoa_don.thong_tin_chung.HDDCKPTQuan = obj_ttbosung.is_hd_phi_thue_quan.ToString();
+
+
+                }
+                if (obj.hoa_don_dang_ky_phat_hanh_mau_so == "3")
+                {
+
+                    static string? ToIsoDateOrNull(string? value)
+                    {
+                        if (string.IsNullOrWhiteSpace(value))
+                            return null;
+
+                        if (!DateTime.TryParse(value, out var dt))
+                            return null;
+
+                        // DB default "ngày rỗng"
+                        if (dt.Date == new DateTime(1900, 1, 1))
+                            return null;
+
+                        return dt.ToString("yyyy-MM-dd");
+                    }
+
+                    //hoa don ban tai san cong
+                    model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.SoQuyetdinh = obj_ttbosung.so_quyet_dinh;
+                    model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.NgayQuyetdinh = ToIsoDateOrNull(obj_ttbosung.ngay_quyet_dinh);
+                    model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.CoQuanBHQDinh = obj_ttbosung.co_quan_ban_hanh_qd;
+                    model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.HThucban = obj_ttbosung.hinh_thuc_ban;
+
+                    model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_mua.DiadiemVCHDen = obj_ttbosung.dia_diem_vc_hang_den;
+                    model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_mua.TGianVCTu = ToIsoDateOrNull(obj_ttbosung.tgian_vc_hang_den_tu);
+                    model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_mua.TGianVCDen = ToIsoDateOrNull(obj_ttbosung.tgian_vc_hang_den_den);
+                }
             }
+
 
             // Phiếu xuất kho
             if (obj.hoa_don_dang_ky_phat_hanh_mau_so == "6")

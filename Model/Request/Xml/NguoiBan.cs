@@ -18,7 +18,7 @@ namespace Model.Request.Xml
 
         [XmlElement(ElementName = "STKNHang")]
         public string stk { get; set; }
-        
+
         [XmlElement(ElementName = "DCTDTu")]
         public string email { get; set; }
 
@@ -85,6 +85,21 @@ namespace Model.Request.Xml
 
         [XmlElement(ElementName = "HDKTNgay")]
         public string HDKTNgay { get; set; }
+
+
+
+        //hoa don ban tai san cong
+        [XmlElement(ElementName = "SQDinh")]
+        public string SoQuyetdinh { get; set; }
+
+        [XmlElement(ElementName = "NQDinh")]
+        public string NgayQuyetdinh { get; set; }
+
+        [XmlElement(ElementName = "CQBHQDinh")]
+        public string CoQuanBHQDinh { get; set; }
+
+        [XmlElement(ElementName = "HTBan")]
+        public string HThucban { get; set; }
 
     }
 

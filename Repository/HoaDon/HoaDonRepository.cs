@@ -382,6 +382,15 @@ namespace Repository.HoaDon
 
         }
 
+        public Task<hd_thong_tin_bo_sung> SelectHoaDonThongTinBoSungByHoaDonIdAsync(int hoaDonId)
+        {
+            var param = new DynamicParameters();
+            param.Add("@HoaDonId", hoaDonId);
+            return _dbConnection.SelectFirstOrDefaultAsync<hd_thong_tin_bo_sung>("GetHoaDonThongTinBoSungByHoaDonId", param);
+        }
+
+
+
 
 
     }

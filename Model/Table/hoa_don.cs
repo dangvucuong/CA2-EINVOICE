@@ -3,6 +3,7 @@ using Model.Base;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Swashbuckle.AspNetCore.Annotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Model.Table
 {
@@ -231,12 +232,6 @@ namespace Model.Table
     public int giam_thue_ty_le { get; set; }
     [SwaggerSchema(Description = "Số tiền giảm thuế")]
     public decimal giam_thue_thanh_tien { get; set; }
-
-
-    //hoa_don_danh_cho_khu_phi_thue_quan
-    [SwaggerSchema(Description = "Hóa đơn dành cho khu phi thuế quan")]
-    public int hoa_don_danh_cho_khu_phi_thue_quan { get; set; }
-
 
     [JsonConverter(typeof(ThongTinKhacJsonConverter))]
     [JsonProperty("thong_tin_khac")]

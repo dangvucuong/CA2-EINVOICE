@@ -22,7 +22,7 @@ export function parseSoapResponse(soapXmlString: string) {
   const xmlDoc = parser.parseFromString(soapXmlString, "text/xml");
 
   const resultNode = Array.from(xmlDoc.getElementsByTagName("*")).find((node) =>
-    node.nodeName.endsWith("Result")
+    node.nodeName.endsWith("Result"),
   );
 
   if (!resultNode || !resultNode.textContent) {
@@ -65,7 +65,7 @@ export function formatXml(xmlString: string): string {
 export function ConvertTienChu(
   number: number,
   loaiTien = "VND",
-  addUnit = true
+  addUnit = true,
 ): string {
   // validate input
   if (number === null || number === undefined) return "";
@@ -264,3 +264,9 @@ export function ConvertTienChu(
 
   return result;
 }
+
+export const toIsoDateOrEmpty = (value: string) => {
+  if (!value) return "";
+  if (moment(value).isSame("1900-01-01", "day")) return "";
+  return moment(value).format("YYYY-MM-DD");
+};

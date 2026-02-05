@@ -88,6 +88,16 @@ export interface IHoaDon {
   SoThamChieu?: string;
   NoiDiNoiDen?: string;
 
-  // hoa_don_danh_cho_khu_phi_thue_quan
-  hoa_don_danh_cho_khu_phi_thue_quan?: string;
+  // Hóa đơn thông tin bổ sung
+  IsHdPhiThueQuan?: number;
+  IsHdBanTaiSanCong?: number;
+  SoQuyetDinh?: string;
+  NgayQuyetDinh?: string;
+  CoQuanBanHanhQD?: string;
+  HinhThucBan?: string;
+  DiaDiemVCHangDen?: string;
+  TgianVCHangDenTu?: string;
+  TgianVCHangDenDen?: string;
+
+  thong_tin_bo_sungs?: any;
 }
