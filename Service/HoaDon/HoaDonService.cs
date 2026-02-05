@@ -410,7 +410,7 @@ namespace Service.HoaDon
             }
 
 
-            await InsertHoaDonThongTinBoSungAsync(model, user.id)
+            await SaveHoaDonThongTinBoSung(model, user.id);
 
             await SaveThueSuatHoaDon(model, user.id);
             await this.SaveHangHoas(model, user.id, !insert);
@@ -837,19 +837,19 @@ namespace Service.HoaDon
             // HoaDonThongTinBoSung
             var infor = new HoaDonThongTinBoSung()
             {
-                IsHdBanTaiSanCong = model.is_hd_ban_tai_san_cong,
-                SoQuyetDinh = model.so_quyet_dinh,
-                NgayQuyetDinh = model.ngay_quyet_dinh,
-                CoQuanBanHanhQD = model.co_quan_ban_hanh_qd,
-                HinhThucBan = model.hinh_thuc_ban,
-                DiaDiemVCHangDen = model.dia_diem_vc_hang_den,
-                TgianVCHangDenTu = model.tgian_vc_hang_den_tu,
-                TgianVCHangDenDen = model.tgian_vc_hang_den_den,
-                IsHdPhiThueQuan = model.is_ph
+                // IsHdBanTaiSanCong = model.is_hd_ban_tai_san_cong,
+                // SoQuyetDinh = model.so_quyet_dinh,
+                // NgayQuyetDinh = model.ngay_quyet_dinh,
+                // CoQuanBanHanhQD = model.co_quan_ban_hanh_qd,
+                // HinhThucBan = model.hinh_thuc_ban,
+                // DiaDiemVCHangDen = model.dia_diem_vc_hang_den,
+                // TgianVCHangDenTu = model.tgian_vc_hang_den_tu,
+                // TgianVCHangDenDen = model.tgian_vc_hang_den_den,
+                IsHdPhiThueQuan = model.hoa_don_danh_cho_khu_phi_thue_quan
             };
 
 
-            return await _serviceWrapper.HoaDon.HoaDon.InsertHoaDonThongTinBoSungAsync(model.id, dsThue);
+            return await _serviceWrapper.HoaDon.HoaDon.InsertHoaDonThongTinBoSungAsync(model.id, infor);
         }
 
 
