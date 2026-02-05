@@ -4,6 +4,7 @@ import { memo } from "react";
 import SelectBoxMauSoChungTuPhatHanh from "../../component-data/selectbox-mau-so-chung-tu-phat-hanh";
 import SelectBoxKyHieuChungTuPhatHanh from "../../component-data/selectbox-ky-hieu-chung-tu-phat-hanh";
 import TuNgayDenNgayInput from "../../component-ui/tu-ngay-den-ngay-input/TuNgayDenNgayInput";
+import SelectBoxKyHieuChungTuQuanLy from "../../component-data/selectbox-ky-hieu-chung-tu-quan-ly";
 
 const ChungTuFilter = ({
   dataFilter,
@@ -18,7 +19,7 @@ const ChungTuFilter = ({
       ky_hieu: string;
       tu_ngay: string;
       den_ngay: string;
-    }>
+    }>,
   ) => void;
 }) => {
   return (
@@ -53,7 +54,7 @@ const ChungTuFilter = ({
         />
       </Box>
       <Box>
-        <SelectBoxKyHieuChungTuPhatHanh
+        <SelectBoxKyHieuChungTuQuanLy
           value={dataFilter.ky_hieu}
           onValueChanged={(value: string) => {
             setValueFilter({ ...dataFilter, ky_hieu: value });

@@ -944,6 +944,7 @@ namespace Service.HoaDon
                 }
                 var soTrang = hangHoas.Count() / soHoaDonTrenTrang;
                 if (soTrang * soHoaDonTrenTrang < hangHoas.Count()) soTrang += 1;
+                if (soTrang <= 0) soTrang = 1;
                 for (int trang = 0; trang < soTrang; trang++)
                 {
                     var xsltContentTrang = xsltContent.Replace("paramlien", (trang + 1).ToString());

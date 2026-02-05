@@ -125,6 +125,7 @@ const HoaDonForm = () => {
     ty_gia: 0,
     ngay_hoa_don: moment().format("YYYY-MM-DD"),
   });
+
   const isDieuChinhThue =
     formData?.hoa_don_ly_do_dieu_chinh_id === eLyDoDieuChinh.DIEU_CHINH_THUE
       ? true
@@ -634,6 +635,10 @@ const HoaDonForm = () => {
   };
 
   const getAddOrEditFormModel = (data: any): IIHoaDonAddOrEditModel => {
+    if (hoaDonId === 0) {
+      delete data.id;
+    }
+
     const newHangHoas = hangHoas.map((item) => ({
       ...item,
       ma_hang: item.ma_hang ?? "",
