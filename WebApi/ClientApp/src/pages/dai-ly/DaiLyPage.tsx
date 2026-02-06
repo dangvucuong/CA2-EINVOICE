@@ -18,6 +18,7 @@ import { IDaiLy } from "../../models/responses/category/IDaiLy";
 import { rootAction } from "../../state/actions/rootAction";
 import { eReducerStatusBase } from "../../state/reducer-models/eReducerStatusBase";
 import DaiLyEditFormModal from "./DaiLyEditFormModal";
+import DaiLyImportButton from "./DaiLyImportButton";
 
 const DaiLyPage = () => {
   const {
@@ -85,6 +86,15 @@ const DaiLyPage = () => {
                 apiAuthorized={DAI_LY_API_ENDPOIT}
                 onClick={() => {
                   dispatch(rootAction.category.daiLyAction.showEditModal());
+                }}
+              />
+              <DaiLyImportButton
+                onSuccess={() => {
+                  dispatch(
+                    rootAction.category.daiLyAction.loadStart({
+                      ...filter,
+                    })
+                  );
                 }}
               />
               <ExportToExcelBtn
