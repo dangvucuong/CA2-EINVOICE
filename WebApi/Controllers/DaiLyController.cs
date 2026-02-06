@@ -70,6 +70,34 @@ namespace WebApi.Controllers
             if (isDeleted) await this.SaveLogAsync($"Xóa đại lý: {obj.ten_dai_ly}", null);
             return isDeleted ? this.OK(obj) : this.BadRequest();
         }
+        [HttpPost]
+        [Route("import/valid")]
+        [MustAuthorized("[POST]api/khach-hang")]
+        [ApiExplorerSettings(IgnoreApi = true)]
+
+        public async Task<ContentResult> ReadAndValidImportData([FromBody] UploadRespone upload)
+        {
+            var result = await _serviceWrapper.Category.DaiLy.ReadAndValidImportDataAsync(upload);
+            if (result.is_success)
+            {
+                return this.OK(result.data);
+            }
+            return this.BadRequest(result.message);
+        }
+        [HttpPost]
+        [Route("import")]
+        [MustAuthorized("[POST]api/khach-hang")]
+        [ApiExplorerSettings(IgnoreApi = true)]
+
+        public async Task<ContentResult> ImportData([FromBody] HoaDonImportRequest upload)
+        {
+            var result = await _serviceWrapper.Category.DaiLy.ImportDataAsync(upload);
+            if (result.is_success)
+            {
+                return this.OK(result.data);
+            }
+            return this.BadRequest(result.message);
+        }
 
     }
 }
