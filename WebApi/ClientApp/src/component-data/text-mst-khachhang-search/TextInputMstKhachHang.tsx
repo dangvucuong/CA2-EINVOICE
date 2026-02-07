@@ -24,7 +24,7 @@ const TextInputMstKhachHang = (props: ITextInputMstKhachHangProps) => {
   const [open, setOpen] = useState(false);
   const textRef = useRef<any>(null);
   const [khachHangs, setKhachHangs] = useState<IKhachHang[]>([]);
-  const [delayFilter] = useDebounce(filter, 500);
+  const [delayFilter] = useDebounce(filter, 1000);
   const dataSource = khachHangs.map((x) => ({
     id: x.id,
     text: x.mst,
@@ -33,11 +33,17 @@ const TextInputMstKhachHang = (props: ITextInputMstKhachHangProps) => {
   useEffect(() => {
     setFilter(props.value?.toString() ?? "");
   }, [props.value]);
+  // useEffect(() => {
+  //   if (open || delayFilter === "") {
+  //     handleLoadKhachHangAsync();
+  //   }
+  // }, [delayFilter]);
+
   useEffect(() => {
-    if (open || delayFilter === "") {
+    if (open) {
       handleLoadKhachHangAsync();
     }
-  }, [delayFilter]);
+  }, [delayFilter, open]);
 
   const handleLoadKhachHangAsync = async () => {
     const res = await khachHangApi.getByDonViPaging({
@@ -57,7 +63,7 @@ const TextInputMstKhachHang = (props: ITextInputMstKhachHangProps) => {
       <TextInput
         ref={textRef}
         value={filter}
-        {...props}
+        // {...props}
         onClick={() => {
           setOpen(true);
         }}
@@ -68,24 +74,47 @@ const TextInputMstKhachHang = (props: ITextInputMstKhachHangProps) => {
           setOpen(true);
           setFilter(e.target.value);
         }}
+        onBlur={(e) => {
+          // nếu blur ra ngoài panel thì mới đóng
+          if (!e.relatedTarget) {
+            setOpen(false);
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && dataSource.length > 0) {
+            const first = dataSource[0];
+            setFilter(first.text);
+            props.onValueChanged({
+              text: first.text,
+              khach_hang: first.khachHang,
+            });
+            setOpen(false);
+          }
+        }}
       />
       {true && (
         <SelectPanel
           renderAnchor={null}
           anchorRef={textRef}
           placeholderText="Tìm theo MST, đơn vị, người mua hàng"
-          title={
-            <>
-              <Button
-                text="Áp dụng mã số thuế đang nhập"
-                onClick={() => {
-                  setFilter(filter);
-                  props.onValueChanged({ text: filter });
-                  setOpen(false);
-                }}
-              />
-            </>
-          }
+          // title={
+          //   <>
+          //     <Button
+          //       text="Áp dụng mã số thuế đang nhập"
+          //       onClick={() => {
+          //         setFilter(filter);
+          //         props.onValueChanged({ text: filter });
+          //         setOpen(false);
+          //       }}
+          //     />
+          //   </>
+          // }
+          title={"Chọn mã số thuế"}
+          textInputProps={{
+            sx: {
+              display: "none", // 👈 ẨN INPUT CỦA PANEL
+            },
+          }}
           open={open}
           renderItem={(data: any) => {
             return (
