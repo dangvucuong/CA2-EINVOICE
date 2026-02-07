@@ -5,6 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 using Model.Request.Base;
 using Model.Table;
 using WebApi.Filters;
+using Common;
+using Model.Respone.Upload;
+using Model.Request.HoaDon;
+
 
 namespace WebApi.Controllers
 {
@@ -72,7 +76,7 @@ namespace WebApi.Controllers
         }
         [HttpPost]
         [Route("import/valid")]
-        [MustAuthorized("[POST]api/khach-hang")]
+        [MustAuthorized("[POST]api/dai-ly")]
         [ApiExplorerSettings(IgnoreApi = true)]
 
         public async Task<ContentResult> ReadAndValidImportData([FromBody] UploadRespone upload)
@@ -86,7 +90,7 @@ namespace WebApi.Controllers
         }
         [HttpPost]
         [Route("import")]
-        [MustAuthorized("[POST]api/khach-hang")]
+        [MustAuthorized("[POST]api/dai-ly")]
         [ApiExplorerSettings(IgnoreApi = true)]
 
         public async Task<ContentResult> ImportData([FromBody] HoaDonImportRequest upload)

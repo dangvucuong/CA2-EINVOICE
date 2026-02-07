@@ -1,6 +1,11 @@
+using System.Data;
+using Common;
 using Contracts.Service.Category;
+using Model.Base;
 using Model.FuncResult;
 using Model.Request.Base;
+using Model.Request.Upload;
+using Model.Respone.Upload;
 using Model.Table;
 using Service.Base;
 
@@ -31,8 +36,8 @@ namespace Service.Category
                 {
                     donvi_ma_dv = user.donvi_ma_dv,
                     email = row["email"].ConvertToString(),
-                    mst = row["mst"].ConvertToString(),
-                    stk = row["stk"].ConvertToString(),
+                    ma_dai_ly = row["ma_dai_ly"].ConvertToString(),
+                    so_tai_khoan = row["so_tai_khoan"].ConvertToString(),
                     ten_dai_ly = row["ten_dai_ly"].ConvertToString(),
                 };
                 obj.SetInsertInfo(user.id);
@@ -54,11 +59,9 @@ namespace Service.Category
                 return new ErrorResult<DataTable>("Không được được nội dung file excel");
             }
             DataTable dt = new DataTable();
-            dt.Columns.Add("ten_khach_hang", typeof(string));
-            dt.Columns.Add("ten_don_vi", typeof(string));
-            dt.Columns.Add("dia_chi", typeof(string));
-            dt.Columns.Add("stk", typeof(string));
-            dt.Columns.Add("mst", typeof(string));
+            dt.Columns.Add("ten_dai_ly", typeof(string));
+            dt.Columns.Add("ma_dai_ly", typeof(string));
+            dt.Columns.Add("so_tai_khoan", typeof(string));
             dt.Columns.Add("email", typeof(string));
             dt.Columns.Add("ma_loi", typeof(string));
 
@@ -67,24 +70,21 @@ namespace Service.Category
                 DataRow data = excelDatas.Rows[i];
                 DataRow row = dt.NewRow();
                 var maLois = new List<string>();
-                row["ten_khach_hang"] = excelDatas.Columns.Contains("Tên người mua hàng") ? data["Tên người mua hàng"].ConvertToString() : "";
-                row["ten_don_vi"] = excelDatas.Columns.Contains("Tên đơn vị") ? data["Tên đơn vị"].ConvertToString() : "";
-                row["dia_chi"] = excelDatas.Columns.Contains("Địa chỉ") ? data["Địa chỉ"].ConvertToString() : "";
+                row["ten_dai_ly"] = excelDatas.Columns.Contains("Tên đại lý") ? data["Tên đại lý"].ConvertToString() : "";
+                row["so_tai_khoan"] = excelDatas.Columns.Contains("Số tài khoản") ? data["Số tài khoản"].ConvertToString() : "";
 
-                row["stk"] = excelDatas.Columns.Contains("Số tài khoản") ? data["Số tài khoản"].ConvertToString() : "";
-                row["mst"] = excelDatas.Columns.Contains("Mã số thuế") ? data["Mã số thuế"].ConvertToString() : "";
-                row["dia_chi"] = excelDatas.Columns.Contains("dia_chi") ? data["dia_chi"].ConvertToString() : "";
-                row["email"] = excelDatas.Columns.Contains("email") ? data["email"].ConvertToString() : "";
+                row["ma_dai_ly"] = excelDatas.Columns.Contains("Mã đại lý") ? data["Mã đại lý"].ConvertToString() : "";
 
-                if (row["ten_khach_hang"].ConvertToString() == "" && row["ten_don_vi"].ConvertToString() == "")
+                row["email"] = excelDatas.Columns.Contains("Email") ? data["Email"].ConvertToString() : "";
+
+                if (row["ten_dai_ly"].ConvertToString() == "" && row["ma_dai_ly"].ConvertToString() == "")
                 {
-                    maLois.Add("Vui lòng điền tên đơn vị hoặc tên khách hàng");
+                    maLois.Add("Vui lòng điền tên hoặc mã đại lý");
                 }
 
                 row["ma_loi"] = maLois.Join(";\n");
                 dt.Rows.Add(row);
             }
-
 
 
 

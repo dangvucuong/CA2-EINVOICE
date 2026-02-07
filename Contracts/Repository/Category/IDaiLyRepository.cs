@@ -9,5 +9,7 @@ namespace Contracts.Repository.Category
     {
         Task<PagingResult<IEnumerable<dai_ly>>> SelectByDonViAsync(string donvi_ma_dv, PagingRequest pagingRequest);
         Task<IEnumerable<dai_ly>> SelectByDonViHaveEmailAsync(string donvi_ma_dv);
+        Task<bool> InsertsAsync(IEnumerable<dai_ly> dailys);
+
     }
 }
