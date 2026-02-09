@@ -2858,12 +2858,12 @@ namespace Service.HoaDon
                                 await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
                             });
 
-                            var duLieuHoaDonMoi = await this.SelectByIdAsync(hoaDon.id);
+                            // var duLieuHoaDonMoi = await this.SelectByIdAsync(hoaDon.id);
 
-                            if (duLieuHoaDonMoi.hoa_don_trang_thai_id != (int)e_hoa_don_trang_thai.DA_PHAT_HANH)
-                            {
-                                await _repositoryWrapper.HoaDon.HoaDon.UpdateTrangThaiAsync(hoaDon.id, (int)e_hoa_don_trang_thai.DA_GUI_CQT_CHUA_PHAN_HOI);
-                            }
+                            // if (duLieuHoaDonMoi.hoa_don_trang_thai_id != (int)e_hoa_don_trang_thai.DA_PHAT_HANH)
+                            // {
+                            //     await _repositoryWrapper.HoaDon.HoaDon.UpdateTrangThaiAsync(hoaDon.id, (int)e_hoa_don_trang_thai.DA_GUI_CQT_CHUA_PHAN_HOI);
+                            // }
                         }
                         else
                         {
@@ -3517,7 +3517,6 @@ namespace Service.HoaDon
         {
             return _repositoryWrapper.HoaDon.HoaDon.SelectByIdsAsync(ids);
         }
-
         public async Task<FunctionResult<HoaDonPhatHanhRespone>> PhatHanhMTTAsync(HoaDonPhatHanhRequest request,
             hoa_don hoaDon, int user_id_phathanh = 0)
         {

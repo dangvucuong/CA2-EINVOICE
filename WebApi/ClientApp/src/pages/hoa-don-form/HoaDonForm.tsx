@@ -128,6 +128,7 @@ const HoaDonForm = () => {
     ty_gia: 0,
     ngay_hoa_don: moment().format("YYYY-MM-DD"),
   });
+
   const isDieuChinhThue =
     formData?.hoa_don_ly_do_dieu_chinh_id === eLyDoDieuChinh.DIEU_CHINH_THUE
       ? true
@@ -722,6 +723,10 @@ const HoaDonForm = () => {
   };
 
   const getAddOrEditFormModel = (data: any): IIHoaDonAddOrEditModel => {
+    if (hoaDonId === 0) {
+      delete data.id;
+    }
+
     const newHangHoas = hangHoas.map((item) => ({
       ...item,
       ma_hang: item.ma_hang ?? "",
@@ -786,6 +791,10 @@ const HoaDonForm = () => {
         ? ConvertTienChu(data.tong_tien_thue, loaiTien)
         : tongTienChu;
 
+    const so_tien_tang_giam = data.so_tien_tang_giam ?? 0;
+    const so_tien_tang_giam_tien_hang = data.so_tien_tang_giam_tien_hang ?? 0;
+    const so_tien_tang_giam_tien_thue = data.so_tien_tang_giam_tien_thue ?? 0;
+
     return {
       ...data,
       ...thongTinHoaDonGoc,
@@ -805,9 +814,19 @@ const HoaDonForm = () => {
       nguoi_mua_mst: data?.nguoi_mua_mst?.trim() ?? "",
       nguoi_mua_ten: data?.nguoi_mua_ten?.trim() ?? "",
 
+      // tong_tien_chu: isDieuChinhThue
+      //   ? ConvertTienChu(data.tong_tien_thue, loaiTien)
+      //   : tongTienChuKhongDong,
+
       tong_tien_chu: isDieuChinhThue
         ? ConvertTienChu(data.tong_tien_thue, loaiTien)
-        : tongTienChuKhongDong,
+        : ConvertTienChu(
+            tongTienData.tong_thanh_tien +
+              so_tien_tang_giam +
+              so_tien_tang_giam_tien_hang +
+              so_tien_tang_giam_tien_thue,
+            loaiTien,
+          ),
       tong_tien_truong_thue: isDieuChinhThue
         ? 0
         : (tongTienData?.tong_thanh_tien ?? 0) -

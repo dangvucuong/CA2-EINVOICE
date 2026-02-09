@@ -150,6 +150,21 @@ namespace WebApi.Controllers
             return this.BadRequest(result.message);
 
         }
+
+
+        [HttpDelete("{id}")]
+        [MustAuthorized]
+        public async Task<ContentResult> DeleteAsync([FromRoute] int id)
+        {
+            var obj = await _userService.SelectByIdAsync(id);
+            if (obj == null) return this.BadRequest();
+            var isDeleted = await _userService.DeleteAsync(obj.id);
+            if (isDeleted)
+            {
+                await this.SaveLogAsync($"Xóa user: {obj.username}", null);
+            }
+            return isDeleted ? this.OK(obj) : this.BadRequest();
+        }
     }
 
 
