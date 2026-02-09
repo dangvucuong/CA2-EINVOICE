@@ -23,6 +23,7 @@ namespace Contract.Service.User
         Task<FunctionResult<bool>> UpdateSerialNumberAsync(UserUpdateSerialNumberRequest model);
         Task<PagingResult<IEnumerable<user>>> SelectByDonViAsync(string donvi_ma_dv, PagingRequest pagingRequest);
         Task<bool> SyncFromCtsAsync(don_vi_cts obj);
+        Task<FunctionResult<string>> RemoveUserAsync(int id);
     }
 }
 

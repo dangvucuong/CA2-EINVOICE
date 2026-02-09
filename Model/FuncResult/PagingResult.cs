@@ -31,4 +31,10 @@ namespace Model.FuncResult
         }
     }
 
+    public class UserDeleteResult
+    {
+        public int StatusCode { get; set; }
+        public string Message { get; set; }
+    }
+
 }

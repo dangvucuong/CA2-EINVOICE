@@ -222,6 +222,30 @@ namespace Service.User
             }
             return new SuccessResult<bool>();
         }
+
+
+        // RemoveUserAsync
+        public async Task<FunctionResult<string>> RemoveUserAsync(int id)
+        {
+            var currentUserId = this.GetCurrentUserId();
+
+            UserDeleteResult res =
+                await _userRepository.RemoveUserAsync(id, currentUserId);
+
+            switch (res.StatusCode)
+            {
+                case 0:
+                    return new SuccessResult<string>(message: res.Message);
+
+                case 1:
+                case 2:
+                case 99:
+                    return new ErrorResult<string>(res.Message);
+
+                default:
+                    return new ErrorResult<string>("Lỗi không xác định.");
+            }
+        }
     }
 }
 

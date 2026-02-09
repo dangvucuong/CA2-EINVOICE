@@ -6,6 +6,8 @@ using Model.FuncResult;
 using Model.Request.Base;
 using Model.Table;
 using Repository.Base;
+using System.Data;
+
 
 namespace Repository.User
 {
@@ -91,6 +93,39 @@ namespace Repository.User
         {
             return _dbConnection.SelectAsync<user>("user_select_to_update_pw_from_v1");
         }
+
+        public async Task<UserDeleteResult> RemoveUserAsync(int id, int user_id)
+        {
+            try
+            {
+                var param = new DynamicParameters();
+                param.Add("@id", id);
+                param.Add("@user_id", user_id);
+
+                var result = await _dbConnection
+                    .SelectFirstOrDefaultAsync<UserDeleteResult>(
+                        "user_delete_2026",
+                        param
+                    );
+
+                // SP luôn SELECT StatusCode + Message
+                // nhưng vẫn phòng hờ null
+                return result ?? new UserDeleteResult
+                {
+                    StatusCode = 99,
+                    Message = "Có lỗi."
+                };
+            }
+            catch (Exception ex)
+            {
+                return new UserDeleteResult
+                {
+                    StatusCode = 99,
+                    Message = ex.Message
+                };
+            }
+        }
+
     }
 }
 

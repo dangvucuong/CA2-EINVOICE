@@ -157,13 +157,19 @@ namespace WebApi.Controllers
         public async Task<ContentResult> DeleteAsync([FromRoute] int id)
         {
             var obj = await _userService.SelectByIdAsync(id);
-            if (obj == null) return this.BadRequest();
-            var isDeleted = await _userService.DeleteAsync(obj.id);
-            if (isDeleted)
+            if (obj == null)
+                return this.BadRequest();
+
+            // Gọi hàm mới dùng SP
+            var result = await _userService.RemoveUserAsync(id);
+
+            if (result.is_success)
             {
                 await this.SaveLogAsync($"Xóa user: {obj.username}", null);
+                return this.OK(result.message);
             }
-            return isDeleted ? this.OK(obj) : this.BadRequest();
+
+            return this.BadRequest(result.message);
         }
     }
 
