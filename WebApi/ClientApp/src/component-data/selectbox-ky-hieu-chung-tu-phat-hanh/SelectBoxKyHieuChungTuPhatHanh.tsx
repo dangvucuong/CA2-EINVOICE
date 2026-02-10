@@ -15,7 +15,7 @@ interface ISelectBoxKyHieuChungTuPhatHanhProps {
 }
 
 const SelectBoxKyHieuChungTuPhatHanh = (
-  props: ISelectBoxKyHieuChungTuPhatHanhProps,
+  props: ISelectBoxKyHieuChungTuPhatHanhProps
 ) => {
   const { value, mau_so } = props;
   const [open, setOpen] = useState(false);
@@ -50,7 +50,7 @@ const SelectBoxKyHieuChungTuPhatHanh = (
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      },
+      }
     );
 
     const parseRes = parseSoapResponse(res);

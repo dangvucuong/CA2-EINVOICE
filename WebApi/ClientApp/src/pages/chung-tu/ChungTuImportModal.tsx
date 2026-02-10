@@ -191,7 +191,7 @@ const ChungTuImportModal = (props: IChungTuImportModalProps) => {
                       onValueChanged={(value: string) => {
                         setDataFilter({ ...dataFilter, ky_hieu: value });
                       }}
-                      mau_so={dataFilter.mau_so}
+                      mau_so={"03/TNCN"}
                     />
                   </FormControl>
                 </Box>

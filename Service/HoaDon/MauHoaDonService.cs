@@ -35,7 +35,7 @@ namespace Service.HoaDon
             {
                 Indent = false,         // Không xuống dòng
                 OmitXmlDeclaration = false, // bao gồm khai báo XML
-                NewLineChars = "",      // Không thêm dòng mới
+                //NewLineChars = "",      // Không thêm dòng mới
                 Encoding = Encoding.UTF8    // Sử dụng UTF-8
             };
 
@@ -1162,7 +1162,8 @@ namespace Service.HoaDon
                     {
                         return new FunctionResult<string>(false, "File XML không tồn tại");
                     }
-                    var doc = XDocument.Load(xmlDataFile.file_thong_diep_url);
+                    //var doc = XDocument.Load(xmlDataFile.file_thong_diep_url);
+                    var doc = XDocument.Load(xmlDataFile.file_thong_diep_url, LoadOptions.PreserveWhitespace);
                     if (hoaDon.hoa_don_hinh_thuc_code == "M")
                     {
                         // chỉ giữ lại thẻ <HDon></HDon>
@@ -1208,7 +1209,7 @@ namespace Service.HoaDon
                             {
                                 hangHoasDataTrenTrang.Add(new XElement(item));
                             }
-                            var docTrang = XDocument.Load(xmlDataFile.file_thong_diep_url);
+                            var docTrang = XDocument.Load(xmlDataFile.file_thong_diep_url, LoadOptions.PreserveWhitespace);
                             var SignatureElementValueMTT = "";
                             if (hoaDon.hoa_don_hinh_thuc_code == "M")
                             {
