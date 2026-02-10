@@ -156,13 +156,17 @@ namespace Service.HoaDon
                 if (result.is_success)
                 {
                     var input = result.data;
-                    string searchString = "<html"; //
-                    int index = result.data.IndexOf(searchString);
-                    if (index != -1)
+
+                    int startIndex = input.IndexOf("<html", StringComparison.OrdinalIgnoreCase);
+                    int endIndex = input.IndexOf("</html>", StringComparison.OrdinalIgnoreCase);
+
+                    if (startIndex != -1 && endIndex != -1)
                     {
-                        return input.Substring(index);
+                        endIndex += "</html>".Length;
+                        return input.Substring(startIndex, endIndex - startIndex);
                     }
-                    return result.data;
+
+                    return input;
                 }
             }
 
@@ -178,13 +182,17 @@ namespace Service.HoaDon
                 if (result.is_success)
                 {
                     var input = result.data;
-                    string searchString = "<html"; //
-                    int index = result.data.IndexOf(searchString);
-                    if (index != -1)
+
+                    int startIndex = input.IndexOf("<html", StringComparison.OrdinalIgnoreCase);
+                    int endIndex = input.IndexOf("</html>", StringComparison.OrdinalIgnoreCase);
+
+                    if (startIndex != -1 && endIndex != -1)
                     {
-                        return input.Substring(index);
+                        endIndex += "</html>".Length;
+                        return input.Substring(startIndex, endIndex - startIndex);
                     }
-                    return result.data;
+
+                    return input;
                 }
             }
 
