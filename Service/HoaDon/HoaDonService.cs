@@ -937,7 +937,7 @@ namespace Service.HoaDon
             {
                 var phanTramThue = thue_suat.ten_thue_suat.Replace("KHAC:", "").Replace("%", "").Trim().ConvertToDouble(2);
 
-                var thanh_tien = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat && x.hang_hoa_tinh_chat_id == 1).Select(x => x.thanh_tien)
+                var thanh_tien = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat && (x.hang_hoa_tinh_chat_id == 1 || x.hang_hoa_tinh_chat_id == 5)).Select(x => x.thanh_tien)
                     .Sum();
                 var thanh_tien_ck = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat && x.hang_hoa_tinh_chat_id == 3).Select(x => x.thanh_tien)
                   .Sum();
