@@ -2840,8 +2840,37 @@ namespace Service.HoaDon
                     await _semaphore.WaitAsync();
                     try
                     {
-                        var guiThongDiepResult = await client.Guithongdiep2024Async(authHeader, base64thongdiep, 1);
-                        if (guiThongDiepResult.Guithongdiep2024Result.ConvertToString().Length > 2)
+                        int maxAttempts = 3;
+                        int delaySeconds = 10;
+
+                        string resultString = string.Empty;
+                        Exception lastException = null;
+
+                        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+                        {
+                            try
+                            {
+                                var guiThongDiepResult = await client.Guithongdiep2024Async(authHeader, base64thongdiep, 1);
+                                resultString = guiThongDiepResult.Guithongdiep2024Result.ConvertToString();
+
+                                if (!string.IsNullOrEmpty(resultString) && resultString.Length > 2)
+                                {
+                                    break; // thành công thì thoát retry
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                lastException = ex;
+                            }
+
+                            if (attempt < maxAttempts)
+                            {
+                                await Task.Delay(TimeSpan.FromSeconds(delaySeconds));
+                            }
+                        }
+
+
+                        if (!string.IsNullOrEmpty(resultString) && resultString.Length > 2)
                         {
                             var log = new hoa_don_log()
                             {
@@ -2857,22 +2886,19 @@ namespace Service.HoaDon
                             {
                                 await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
                             });
-
-                            // var duLieuHoaDonMoi = await this.SelectByIdAsync(hoaDon.id);
-
-                            // if (duLieuHoaDonMoi.hoa_don_trang_thai_id != (int)e_hoa_don_trang_thai.DA_PHAT_HANH)
-                            // {
-                            //     await _repositoryWrapper.HoaDon.HoaDon.UpdateTrangThaiAsync(hoaDon.id, (int)e_hoa_don_trang_thai.DA_GUI_CQT_CHUA_PHAN_HOI);
-                            // }
                         }
                         else
                         {
+                            var errorMessage = lastException != null
+                                ? lastException.Message
+                                : resultString;
+
                             var log = new hoa_don_log()
                             {
                                 file_thong_diep_url = filePath,
                                 ngay_thuc_hien = DateTime.Now,
                                 nguoi_thuc_hien = userInfo.full_name,
-                                noi_dung_thuc_hien = $"Gửi thông điệp lỗi {guiThongDiepResult.Guithongdiep2024Result.ConvertToString()}",
+                                noi_dung_thuc_hien = $"Gửi thông điệp lỗi {errorMessage}",
                                 hoa_don_id = hoaDon.id,
                                 hoa_don_log_type_id = -1 * (int)e_hoa_don_log_type.GUI_THONG_DIEP
                             };
@@ -2883,28 +2909,10 @@ namespace Service.HoaDon
                             });
                         }
                     }
-                    catch (System.Exception ex)
-                    {
-                        var log = new hoa_don_log()
-                        {
-                            file_thong_diep_url = filePath,
-                            ngay_thuc_hien = DateTime.Now,
-                            nguoi_thuc_hien = userInfo.full_name,
-                            noi_dung_thuc_hien = $"Gửi thông điệp lỗi {ex.Message}",
-                            hoa_don_id = hoaDon.id,
-                            hoa_don_log_type_id = -1 * (int)e_hoa_don_log_type.GUI_THONG_DIEP
-                        };
-                        log.SetInsertInfo(userId);
-                        _serviceWrapper.Core.TaskQueue.EnqueueTask(async _ =>
-                        {
-                            await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
-                        });
-                    }
                     finally
                     {
                         await client.CloseAsync();
                     }
-
 
                 }
                 finally
