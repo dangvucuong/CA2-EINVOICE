@@ -21,6 +21,7 @@ import { axiosClient } from "../../api/axiosClient";
 import { parseSoapResponse } from "../../helpers/common";
 import { NotifyHelper } from "../../helpers/toast";
 import { useAuth } from "../../hooks/useAuth";
+import SelectBoxKyHieuChungTuQuanLy from "../../component-data/selectbox-ky-hieu-chung-tu-quan-ly";
 
 const ChungTuThayThePage = () => {
   const history = useHistory();
@@ -106,14 +107,14 @@ const ChungTuThayThePage = () => {
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);
 
     if (parseRes.status === "success") {
       history.push(
-        `../../chung-tu/form/0?tinhchatct=${payload?.loai_chung_tu}&mact_goc=${parseRes.data}`
+        `../../chung-tu/form/0?tinhchatct=${payload?.loai_chung_tu}&mact_goc=${parseRes.data}`,
       );
     } else {
       NotifyHelper.Error(parseRes.message);
@@ -225,7 +226,7 @@ const ChungTuThayThePage = () => {
                 <FormControl.Label>
                   <Text text="Ký hiệu chứng từ gốc" />
                 </FormControl.Label>
-                <SelectBoxKyHieuChungTuPhatHanh
+                <SelectBoxKyHieuChungTuQuanLy
                   value={dataForm.ky_hieu}
                   onValueChanged={(value: string) => {
                     setDataForm({ ...dataForm, ky_hieu: value });

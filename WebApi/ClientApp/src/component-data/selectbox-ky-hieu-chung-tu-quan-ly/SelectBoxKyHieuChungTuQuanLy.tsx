@@ -6,7 +6,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { axiosClient } from "../../api/axiosClient";
 import { parseSoapResponse } from "../../helpers/common";
 
-interface ISelectBoxKyHieuChungTuPhatHanhProps {
+interface ISelectBoxKyHieuChungTuQuanLyProps {
   onValueChanged: (value: string) => void;
   value: string;
   maxWidth?: any;
@@ -14,8 +14,8 @@ interface ISelectBoxKyHieuChungTuPhatHanhProps {
   mau_so: string;
 }
 
-const SelectBoxKyHieuChungTuPhatHanh = (
-  props: ISelectBoxKyHieuChungTuPhatHanhProps
+const SelectBoxKyHieuChungTuQuanLy = (
+  props: ISelectBoxKyHieuChungTuQuanLyProps,
 ) => {
   const { value, mau_so } = props;
   const [open, setOpen] = useState(false);
@@ -50,21 +50,17 @@ const SelectBoxKyHieuChungTuPhatHanh = (
         headers: {
           "Content-Type": "text/xml; charset=utf-8",
         },
-      }
+      },
     );
 
     const parseRes = parseSoapResponse(res);
 
     if (parseRes.status === "success") {
-      const currentYear = new Date().getFullYear().toString().slice(-2); // "26"
-
-      const opts = (parseRes?.data ?? [])
-        .filter((item: any) => item?.ky_hieu?.includes(`/${currentYear}E`))
-        .map((item: any, index: number) => ({
-          id: index,
-          text: item.ky_hieu,
-          value: item.ky_hieu,
-        }));
+      const opts = (parseRes?.data ?? []).map((item: any, index: number) => ({
+        id: index,
+        text: item.ky_hieu,
+        value: item.ky_hieu,
+      }));
       setOptions(opts);
 
       if (value) {
@@ -129,4 +125,4 @@ const SelectBoxKyHieuChungTuPhatHanh = (
   );
 };
 
-export default SelectBoxKyHieuChungTuPhatHanh;
+export default SelectBoxKyHieuChungTuQuanLy;

@@ -101,7 +101,7 @@ namespace Service.HoaDon
                 }
 
 
-                var ngayHoaDonMax = await _repositoryWrapper.HoaDon.HoaDon.GetMaxNgayHoaDon(model.donvi_ma_dv, model.hoa_don_dang_ky_phat_hanh_mau_so, model.hoa_don_dang_ky_phat_hanh_ky_hieu);
+                var ngayHoaDonMax = await _repositoryWrapper.HoaDon.HoaDon.GetNgayHoaDonPhatHanhMaxAsynsc(model.donvi_ma_dv, model.hoa_don_dang_ky_phat_hanh_mau_so, model.hoa_don_dang_ky_phat_hanh_ky_hieu);
                 if (ngayHoaDonMax != null && model.ngay_hoa_don < ngayHoaDonMax.Value)
                 {
                     return new ErrorResult<int>(
@@ -308,7 +308,7 @@ namespace Service.HoaDon
                         );
                     }
 
-                    var ngayHoaDonMax = await _repositoryWrapper.HoaDon.HoaDon.GetMaxNgayHoaDon(model.donvi_ma_dv, model.hoa_don_dang_ky_phat_hanh_mau_so, model.hoa_don_dang_ky_phat_hanh_ky_hieu);
+                    var ngayHoaDonMax = await _repositoryWrapper.HoaDon.HoaDon.GetNgayHoaDonPhatHanhMaxAsynsc(model.donvi_ma_dv, model.hoa_don_dang_ky_phat_hanh_mau_so, model.hoa_don_dang_ky_phat_hanh_ky_hieu);
                     if (ngayHoaDonMax != null && model.ngay_hoa_don < ngayHoaDonMax.Value)
                     {
                         return new ErrorResult<int>(
@@ -937,7 +937,7 @@ namespace Service.HoaDon
             {
                 var phanTramThue = thue_suat.ten_thue_suat.Replace("KHAC:", "").Replace("%", "").Trim().ConvertToDouble(2);
 
-                var thanh_tien = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat && x.hang_hoa_tinh_chat_id == 1).Select(x => x.thanh_tien)
+                var thanh_tien = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat && (x.hang_hoa_tinh_chat_id == 1 || x.hang_hoa_tinh_chat_id == 5)).Select(x => x.thanh_tien)
                     .Sum();
                 var thanh_tien_ck = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat && x.hang_hoa_tinh_chat_id == 3).Select(x => x.thanh_tien)
                   .Sum();

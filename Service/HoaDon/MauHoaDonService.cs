@@ -35,7 +35,7 @@ namespace Service.HoaDon
             {
                 Indent = false,         // Không xuống dòng
                 OmitXmlDeclaration = false, // bao gồm khai báo XML
-                NewLineChars = "",      // Không thêm dòng mới
+                //NewLineChars = "",      // Không thêm dòng mới
                 Encoding = Encoding.UTF8    // Sử dụng UTF-8
             };
 
@@ -944,6 +944,7 @@ namespace Service.HoaDon
                 }
                 var soTrang = hangHoas.Count() / soHoaDonTrenTrang;
                 if (soTrang * soHoaDonTrenTrang < hangHoas.Count()) soTrang += 1;
+                if (soTrang <= 0) soTrang = 1;
                 for (int trang = 0; trang < soTrang; trang++)
                 {
                     var xsltContentTrang = xsltContent.Replace("paramlien", (trang + 1).ToString());
@@ -1060,7 +1061,7 @@ namespace Service.HoaDon
             var xsltArgument = new XsltArgumentList();
             xsltArgument.AddParam("paramlien", "", "0");
 
-            if (hoaDon.hoa_don_trang_thai_id == (int)e_hoa_don_trang_thai.DA_PHAT_HANH)
+            if (hoaDon.hoa_don_trang_thai_id == (int)e_hoa_don_trang_thai.DA_PHAT_HANH || hoaDon.hoa_don_trang_thai_id == (int)e_hoa_don_trang_thai.CHUA_GUI_CQT)
             {
                 var isCoMa = hoaDon.hoa_don_hinh_thuc_code == "C";
                 var hoaDongLogs = await _serviceWrapper.HoaDon.HoaDonLog.SelectByHoaDonAsync(hoaDon.id);
@@ -1161,7 +1162,8 @@ namespace Service.HoaDon
                     {
                         return new FunctionResult<string>(false, "File XML không tồn tại");
                     }
-                    var doc = XDocument.Load(xmlDataFile.file_thong_diep_url);
+                    //var doc = XDocument.Load(xmlDataFile.file_thong_diep_url);
+                    var doc = XDocument.Load(xmlDataFile.file_thong_diep_url, LoadOptions.PreserveWhitespace);
                     if (hoaDon.hoa_don_hinh_thuc_code == "M")
                     {
                         // chỉ giữ lại thẻ <HDon></HDon>
@@ -1207,7 +1209,7 @@ namespace Service.HoaDon
                             {
                                 hangHoasDataTrenTrang.Add(new XElement(item));
                             }
-                            var docTrang = XDocument.Load(xmlDataFile.file_thong_diep_url);
+                            var docTrang = XDocument.Load(xmlDataFile.file_thong_diep_url, LoadOptions.PreserveWhitespace);
                             var SignatureElementValueMTT = "";
                             if (hoaDon.hoa_don_hinh_thuc_code == "M")
                             {
