@@ -383,7 +383,11 @@ const ChungTuForm = () => {
         await TaoChungTu(data);
       }
     } else {
-      await TaoChungTuThayTheDieuChinh(data);
+      if (machungtu > 0) {
+        await SuaChungTu(data);
+      } else {
+        await TaoChungTuThayTheDieuChinh(data);
+      }
     }
   };
 
