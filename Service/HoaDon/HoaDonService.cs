@@ -409,6 +409,9 @@ namespace Service.HoaDon
                 }
             }
 
+            await SaveHoaDonThongTinBoSung(model, user.id);
+
+            await SaveThueSuatHoaDon(model, user.id);
             await this.SaveHangHoas(model, user.id, !insert);
             await this.SaveLoaiPhis(model, user.id, !insert);
 
@@ -758,26 +761,129 @@ namespace Service.HoaDon
             return true;
         }
 
+
+        private async Task<bool> SaveThueSuatHoaDon(HoaDonAddOrEditModel model, int user_id)
+        {
+            if (model.hoang_hoas == null || !model.hoang_hoas.Any()) return true;
+
+            var isAllChietKhau = !model.hoang_hoas.Where(x => x.hang_hoa_tinh_chat_id != 4)
+                                                  .Any(x => x.hang_hoa_tinh_chat_id != 3);
+
+            var dsThue = model.hoang_hoas
+                .Where(x => x.hang_hoa_tinh_chat_id != 4)
+                .Where(x => !string.IsNullOrEmpty(x.thue_vat) &&
+                           (x.thue_vat.Contains("%") || x.thue_vat == "KCT" || x.thue_vat == "KKKNT"))
+                .GroupBy(x => x.thue_vat)
+                .Select(g =>
+                {
+                    string tenThue = g.Key;
+                    double phanTram = tenThue.Replace("KHAC:", "").Replace("%", "").Trim().ConvertToDouble(2);
+
+                    var thanh_tien = g.Where(x => x.hang_hoa_tinh_chat_id == 1).Sum(x => x.thanh_tien);
+                    var thanh_tien_ck = g.Where(x => x.hang_hoa_tinh_chat_id == 3).Sum(x => x.thanh_tien);
+
+                    if (isAllChietKhau) thanh_tien = -1 * thanh_tien;
+
+                    decimal thTienFinal = (phanTram == 0) ? thanh_tien : (thanh_tien - thanh_tien_ck);
+
+                    decimal tThueFinal;
+                    if (phanTram == 0)
+                    {
+                        tThueFinal = (decimal)thanh_tien * (decimal)phanTram / 100;
+                    }
+                    else
+                    {
+                        tThueFinal = ((decimal)thanh_tien - (decimal)thanh_tien_ck) * (decimal)phanTram / 100;
+                    }
+
+                    // Làm tròn nếu là VND
+                    if (model.loai_tien != null && model.loai_tien.ToUpper() == "VND")
+                    {
+                        thTienFinal = Math.Round(thTienFinal, 0, MidpointRounding.AwayFromZero);
+                        tThueFinal = Math.Round(tThueFinal, 0, MidpointRounding.AwayFromZero);
+                    }
+
+                    return new ThueSuatModel
+                    {
+                        TSuat = tenThue,
+                        ThTien = thTienFinal,
+                        TThue = tThueFinal
+                    };
+                }).ToList();
+
+            // Logic 5 đồng tăng giảm (Chỉ áp dụng nếu có 1 mức thuế duy nhất)
+            if (dsThue.Count == 1 && model.so_tien_tang_giam_tien_thue != 0)
+            {
+                dsThue[0].TThue += model.so_tien_tang_giam_tien_thue;
+                // Nếu là VND thì làm tròn lại lần nữa
+                if (model.loai_tien != null && model.loai_tien.ToUpper() == "VND")
+                {
+                    dsThue[0].TThue = Math.Round(dsThue[0].TThue, 0, MidpointRounding.AwayFromZero);
+                }
+            }
+
+            return await _serviceWrapper.HoaDon.HoaDon.InsertThueSuatHoaDonAsync(model.id, dsThue);
+        }
+
+        public async Task<bool> InsertThueSuatHoaDonAsync(int hoaDonId, List<ThueSuatModel> dsThue)
+        {
+            return await _repositoryWrapper.HoaDon.HoaDon.InsertThueSuatHoaDonAsync(hoaDonId, dsThue);
+        }
+
+        private async Task<bool> SaveHoaDonThongTinBoSung(HoaDonAddOrEditModel model, int user_id)
+        {
+            // HoaDonThongTinBoSung
+            var infor = new HoaDonThongTinBoSung()
+            {
+                IsHdBanTaiSanCong = model.IsHdBanTaiSanCong ?? 0,
+                SoQuyetDinh = model.SoQuyetDinh ?? "",
+                NgayQuyetDinh = model.NgayQuyetDinh ?? "",
+                CoQuanBanHanhQD = model.CoQuanBanHanhQD ?? "",
+                HinhThucBan = model.HinhThucBan ?? "",
+                DiaDiemVCHangDen = model.DiaDiemVCHangDen ?? "",
+                TgianVCHangDenTu = model.TgianVCHangDenTu ?? "",
+                TgianVCHangDenDen = model.TgianVCHangDenDen ?? "",
+                IsHdPhiThueQuan = model.IsHdPhiThueQuan ?? 0,
+            };
+
+
+            return await _serviceWrapper.HoaDon.HoaDon.InsertHoaDonThongTinBoSungAsync(model.id, infor);
+        }
+
+
+        public async Task<bool> InsertHoaDonThongTinBoSungAsync(int hoaDonId, HoaDonThongTinBoSung infor)
+        {
+            return await _repositoryWrapper.HoaDon.HoaDon.InsertHoaDonThongTinBoSungAsync(hoaDonId, infor);
+        }
+
+
+
         public Task<PagingResult<IEnumerable<hoa_don_vm>>> SelectByDonViAsync(string donvi_ma_dv,
             HoaDonSelectPagingRequest pagingRequest)
         {
             return _repositoryWrapper.HoaDon.HoaDon.SelectByDonViAsync(donvi_ma_dv, pagingRequest);
         }
-
         public async Task<hoa_don_vm> SelectViewModelAsync(int id)
         {
             var obj = await this.SelectByIdAsync(id);
             if (obj != null)
             {
+
                 var item = obj.Map<hoa_don_vm>();
                 item.hang_hoas = (await _serviceWrapper.HoaDon.HoaDonHangHoa.SelectByHoaDonIdAsync(id)).ToList();
                 item.loai_phis = (await _serviceWrapper.HoaDon.HoaDonLoaiPhi.SelectByHoaDonAsync(id)).ToList();
+
+                if (obj.hoa_don_dang_ky_phat_hanh_mau_so == "2" || obj.hoa_don_dang_ky_phat_hanh_mau_so == "3")
+                {
+                    item.thong_tin_bo_sungs = await _repositoryWrapper.HoaDon.HoaDon.SelectHoaDonThongTinBoSungByHoaDonIdAsync(obj.id);
+                }
+
+
                 return item;
             }
 
             return null;
         }
-
         public async Task<FunctionResult<string>> CreateBase64MTTAsync(int id)
         {
             var hoaDon = await this.SelectByIdAsync(id);
@@ -920,89 +1026,24 @@ namespace Service.HoaDon
             return new SuccessResult<Model.Request.Xml.HoaDon>(model);
         }
 
+
         private async Task<Model.Request.Xml.HoaDon> CreateHoaDonXmlObject(hoa_don obj)
         {
-            var hangHoas = await _serviceWrapper.HoaDon.HoaDonHangHoa.SelectByHoaDonIdAsync(obj.id);
-            var thue_suats = hangHoas.Where(x => x.hang_hoa_tinh_chat_id != 4).Select(x => x.thue_vat).Distinct().Where(x => x.Contains("%") || x == "KCT" || x == "KKKNT").ToList()
-                .Select(x => new LTSuat()
-                {
-                    ten_thue_suat = x
-                }).ToList();
 
+            var thueSuatTuDb = await _repositoryWrapper.HoaDon.HoaDon.SelectThueSuatHoaDonByHoaDonIdAsync(obj.id);
+
+            var hangHoas = await _serviceWrapper.HoaDon.HoaDonHangHoa.SelectByHoaDonIdAsync(obj.id);
+
+            var thue_suats = thueSuatTuDb.Select(x => new LTSuat()
+            {
+                ten_thue_suat = x.TSuat, // Bê nguyên từ DB lên (đã là "8%", "KCT"...)
+                thanh_tien = x.ThTien.ConvertToStringAndRemoveZeroPart(),
+                tien_thue = x.TThue.ConvertToStringAndRemoveZeroPart()
+            }).ToList();
 
             var loaiPhis = await _serviceWrapper.HoaDon.HoaDonLoaiPhi.SelectByHoaDonAsync(obj.id);
             var isApDungDieuChinh5DongVaoThueSuat = thue_suats.Count == 1;
             var isAllChietKhau = !hangHoas.Where(x => x.hang_hoa_tinh_chat_id != 4).Any(x => x.hang_hoa_tinh_chat_id != 3);
-            foreach (var thue_suat in thue_suats)
-            {
-                var phanTramThue = thue_suat.ten_thue_suat.Replace("KHAC:", "").Replace("%", "").Trim().ConvertToDouble(2);
-
-                var thanh_tien = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat && (x.hang_hoa_tinh_chat_id == 1 || x.hang_hoa_tinh_chat_id == 5)).Select(x => x.thanh_tien)
-                    .Sum();
-                var thanh_tien_ck = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat && x.hang_hoa_tinh_chat_id == 3).Select(x => x.thanh_tien)
-                  .Sum();
-
-                // KHông làm tròn thành tiền
-                // var thanh_tien = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat && x.hang_hoa_tinh_chat_id == 1).Select(x => x.don_gia * x.so_luong)
-                //     .Sum();
-                // var thanh_tien_ck = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat && x.hang_hoa_tinh_chat_id == 3).Select(x => x.don_gia * x.so_luong)
-                //          .Sum();
-
-                if (isAllChietKhau)
-                {
-                    thanh_tien = -1 * thanh_tien;
-                }
-
-                if (phanTramThue == 0)
-                {
-                    thue_suat.thanh_tien = (thanh_tien).ConvertToStringAndRemoveZeroPart();
-
-                }
-                else
-                {
-                    thue_suat.thanh_tien = (thanh_tien - thanh_tien_ck).ConvertToStringAndRemoveZeroPart();
-
-                }
-                if (obj.loai_tien == "VND")
-                {
-                    if (phanTramThue == 0)
-                    {
-
-                        thue_suat.tien_thue = ((decimal)thanh_tien * (decimal)phanTramThue / 100).ConvertToStringAndRemoveZeroPart();
-
-                    }
-                    else
-                    {
-                        thue_suat.tien_thue = (((decimal)thanh_tien - (decimal)thanh_tien_ck) * (decimal)phanTramThue / 100).ConvertToStringAndRemoveZeroPart();
-                    }
-                }
-                else
-                {
-                    if (phanTramThue == 0)
-                    {
-                        thue_suat.tien_thue = ((decimal)thanh_tien * (decimal)phanTramThue / 100).ConvertToStringAndRemoveZeroPart();
-
-                    }
-                    else
-                    {
-                        thue_suat.tien_thue = (((decimal)thanh_tien - (decimal)thanh_tien_ck) * (decimal)phanTramThue / 100).ConvertToStringAndRemoveZeroPart();
-                    }
-                }
-
-                // thue_suat.tien_thue = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat)
-                // .Select(x => Math.Round(x.thanh_tien * phanTramThue / 100, 0, MidpointRounding.AwayFromZero))
-                // .Sum().ConvertToStringAndRemoveZeroPart();
-                if (isApDungDieuChinh5DongVaoThueSuat && obj.so_tien_tang_giam_tien_thue != 0)
-                {
-                    thue_suat.tien_thue += obj.so_tien_tang_giam_tien_thue;
-                }
-                if (obj.loai_tien == "VND")
-                {
-                    thue_suat.tien_thue = thue_suat.tien_thue.ConvertToDecimal().ConvertToStringAndRemoveZeroPart();
-                    thue_suat.thanh_tien = thue_suat.thanh_tien.ConvertToDecimal().ConvertToStringAndRemoveZeroPart();
-
-                }
-            }
 
             var tong_tien_thanh_toan_bang_so = obj.tong_tien_thanh_toan;
             ;
@@ -1013,7 +1054,6 @@ namespace Service.HoaDon
             // var test = obj.nguoi_mua_mst.ConvertToString() != ""
             //                ? (obj.nguoi_mua_ten_donvi.ConvertToString() != "" ? obj.nguoi_mua_ten_donvi.ConvertToString() : obj.nguoi_mua_ten)
             //                : obj.nguoi_mua_ten_donvi;
-
 
 
             var thongTinThanhToan = new Model.Request.Xml.ThongTinThanhToan()
@@ -1036,8 +1076,6 @@ namespace Service.HoaDon
                               : null
             };
 
-
-
             // --- NẾU MẪU SỐ KHÁC 2 THÌ THÊM THUẾ SUẤT ---
             if (obj.hoa_don_dang_ky_phat_hanh_mau_so != "2")
             {
@@ -1048,10 +1086,6 @@ namespace Service.HoaDon
                 thongTinThanhToan.tong_tien_chua_thue = obj.tong_tien_truong_thue.ConvertToStringAndRemoveZeroPart();
                 thongTinThanhToan.tong_tien_thue = obj.tong_tien_thue.ConvertToStringAndRemoveZeroPart();
             }
-
-
-
-
 
             var model = new Model.Request.Xml.HoaDon()
             {
@@ -1097,7 +1131,7 @@ namespace Service.HoaDon
                             ngan_hang = obj.nguoi_ban_ngan_hang,
                             email = obj.nguoi_ban_email,
                             fax = obj.nguoi_ban_fax.ConvertToString() != "" ? obj.nguoi_ban_fax : null,
-                            website = obj.nguoi_ban_website.ConvertToString() != "" ? obj.nguoi_ban_website : null,
+                            website = obj.nguoi_ban_website.ConvertToString() != "" ? obj.nguoi_ban_website : null
                         },
                         nguoi_mua = new Model.Request.Xml.NguoiMua()
                         {
@@ -1433,10 +1467,49 @@ namespace Service.HoaDon
                 };
             }
 
-            if (obj.hoa_don_dang_ky_phat_hanh_mau_so == "2")
+            if (obj.hoa_don_dang_ky_phat_hanh_mau_so == "2" || obj.hoa_don_dang_ky_phat_hanh_mau_so == "3")
             {
-                model.du_lieu_hoa_don.thong_tin_chung.HDDCKPTQuan = "0";
+
+                hd_thong_tin_bo_sung obj_ttbosung = await _repositoryWrapper.HoaDon.HoaDon.SelectHoaDonThongTinBoSungByHoaDonIdAsync(obj.id);
+
+
+                if (obj.hoa_don_dang_ky_phat_hanh_mau_so == "2")
+                {
+
+                    model.du_lieu_hoa_don.thong_tin_chung.HDDCKPTQuan = obj_ttbosung.is_hd_phi_thue_quan.ToString();
+
+
+                }
+                if (obj.hoa_don_dang_ky_phat_hanh_mau_so == "3")
+                {
+
+                    static string? ToIsoDateOrNull(string? value)
+                    {
+                        if (string.IsNullOrWhiteSpace(value))
+                            return null;
+
+                        if (!DateTime.TryParse(value, out var dt))
+                            return null;
+
+                        // DB default "ngày rỗng"
+                        if (dt.Date == new DateTime(1900, 1, 1))
+                            return null;
+
+                        return dt.ToString("yyyy-MM-dd");
+                    }
+
+                    //hoa don ban tai san cong
+                    model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.SoQuyetdinh = obj_ttbosung.so_quyet_dinh;
+                    model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.NgayQuyetdinh = ToIsoDateOrNull(obj_ttbosung.ngay_quyet_dinh);
+                    model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.CoQuanBHQDinh = obj_ttbosung.co_quan_ban_hanh_qd;
+                    model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_ban.HThucban = obj_ttbosung.hinh_thuc_ban;
+
+                    model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_mua.DiadiemVCHDen = obj_ttbosung.dia_diem_vc_hang_den;
+                    model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_mua.TGianVCTu = ToIsoDateOrNull(obj_ttbosung.tgian_vc_hang_den_tu);
+                    model.du_lieu_hoa_don.noi_dung_hoa_don.nguoi_mua.TGianVCDen = ToIsoDateOrNull(obj_ttbosung.tgian_vc_hang_den_den);
+                }
             }
+
 
             // Phiếu xuất kho
             if (obj.hoa_don_dang_ky_phat_hanh_mau_so == "6")
@@ -1847,7 +1920,7 @@ namespace Service.HoaDon
         }
 
         public async Task<FunctionResult<HoaDonPhatHanhRespone>> PhatHanhHoaDonCoMaAsync(hoa_don hoaDon,
-            string signed_text, int user_id_phathanh = 0)
+                string signed_text, int user_id_phathanh = 0)
         {
             // var _logExecutionTimeHelper = new LogExecutionTimeHelper();
             var userId = this.GetCurrentUserId();
@@ -1907,73 +1980,109 @@ namespace Service.HoaDon
                 try
                 {
                     await _semaphore.WaitAsync();
-                    try
+                    bool needRetry = false;
+                    var stopwatch = new System.Diagnostics.Stopwatch();
+
+                    do
                     {
-                        var guiThongDiepResult = await client.Guithongdiep2024Async(authHeader, base64thongdiep, 1);
-                        if (guiThongDiepResult.Guithongdiep2024Result.ConvertToString().Length > 2)
+                        needRetry = false;
+
+                        try
                         {
-                            var log = new hoa_don_log()
-                            {
-                                file_thong_diep_url = filePath,
-                                ngay_thuc_hien = DateTime.Now,
-                                nguoi_thuc_hien = userInfo.full_name,
-                                noi_dung_thuc_hien = "Gửi thông điệp lên CQT",
-                                hoa_don_id = hoaDon.id,
-                                hoa_don_log_type_id = (int)e_hoa_don_log_type.GUI_THONG_DIEP
-                            };
-                            log.SetInsertInfo(userId);
-                            _serviceWrapper.Core.TaskQueue.EnqueueTask(async _ =>
-                            {
-                                await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
-                            });
+                            var guiThongDiepResult = await client.Guithongdiep2024Async(authHeader, base64thongdiep, 1);
 
-                            // var duLieuHoaDonMoi = await this.SelectByIdAsync(hoaDon.id);
+                            if (guiThongDiepResult.Guithongdiep2024Result.ConvertToString().Length > 2)
+                            {
+                                var log = new hoa_don_log()
+                                {
+                                    file_thong_diep_url = filePath,
+                                    ngay_thuc_hien = DateTime.Now,
+                                    nguoi_thuc_hien = userInfo.full_name,
+                                    noi_dung_thuc_hien = "Gửi thông điệp lên CQT",
+                                    hoa_don_id = hoaDon.id,
+                                    hoa_don_log_type_id = (int)e_hoa_don_log_type.GUI_THONG_DIEP
+                                };
+                                log.SetInsertInfo(userId);
+                                _serviceWrapper.Core.TaskQueue.EnqueueTask(async _ =>
+                                {
+                                    await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
+                                });
+                            }
+                            else
+                            {
+                                if (!stopwatch.IsRunning)
+                                    stopwatch.Start();
 
-                            // if (duLieuHoaDonMoi.hoa_don_trang_thai_id != (int)e_hoa_don_trang_thai.DA_PHAT_HANH)
-                            // {
-                            //     await _repositoryWrapper.HoaDon.HoaDon.UpdateTrangThaiAsync(hoaDon.id, (int)e_hoa_don_trang_thai.DA_GUI_CQT_CHUA_PHAN_HOI);
-                            // }
+                                if (stopwatch.Elapsed < TimeSpan.FromSeconds(30))
+                                {
+                                    needRetry = true;
+                                }
+                                else
+                                {
+                                    var log = new hoa_don_log()
+                                    {
+                                        file_thong_diep_url = filePath,
+                                        ngay_thuc_hien = DateTime.Now,
+                                        nguoi_thuc_hien = userInfo.full_name,
+                                        noi_dung_thuc_hien = $"Gửi thông điệp lỗi {guiThongDiepResult.Guithongdiep2024Result.ConvertToString()}",
+                                        hoa_don_id = hoaDon.id,
+                                        hoa_don_log_type_id = -1 * (int)e_hoa_don_log_type.GUI_THONG_DIEP
+                                    };
+                                    log.SetInsertInfo(userId);
+                                    _serviceWrapper.Core.TaskQueue.EnqueueTask(async _ =>
+                                    {
+                                        await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
+                                    });
+                                }
+                            }
                         }
-                        else
-                        {
-                            var log = new hoa_don_log()
-                            {
-                                file_thong_diep_url = filePath,
-                                ngay_thuc_hien = DateTime.Now,
-                                nguoi_thuc_hien = userInfo.full_name,
-                                noi_dung_thuc_hien = $"Gửi thông điệp lỗi {guiThongDiepResult.Guithongdiep2024Result.ConvertToString()}",
-                                hoa_don_id = hoaDon.id,
-                                hoa_don_log_type_id = -1 * (int)e_hoa_don_log_type.GUI_THONG_DIEP
-                            };
-                            log.SetInsertInfo(userId);
-                            _serviceWrapper.Core.TaskQueue.EnqueueTask(async _ =>
-                            {
-                                await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
-                            });
-                        }
-                    }
-                    catch (System.Exception ex)
-                    {
-                        var log = new hoa_don_log()
-                        {
-                            file_thong_diep_url = filePath,
-                            ngay_thuc_hien = DateTime.Now,
-                            nguoi_thuc_hien = userInfo.full_name,
-                            noi_dung_thuc_hien = $"Gửi thông điệp lỗi {ex.Message}",
-                            hoa_don_id = hoaDon.id,
-                            hoa_don_log_type_id = -1 * (int)e_hoa_don_log_type.GUI_THONG_DIEP
-                        };
-                        log.SetInsertInfo(userId);
-                        _serviceWrapper.Core.TaskQueue.EnqueueTask(async _ =>
-                        {
-                            await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
-                        });
-                    }
-                    finally
-                    {
-                        await client.CloseAsync();
-                    }
+                        catch (System.Exception ex)
 
+                        {
+                            if (!stopwatch.IsRunning)
+                                stopwatch.Start();
+
+                            if (stopwatch.Elapsed < TimeSpan.FromSeconds(30))
+                            {
+                                needRetry = true;
+                            }
+                            else
+
+                            {
+                                var log = new hoa_don_log()
+                                {
+                                    file_thong_diep_url = filePath,
+                                    ngay_thuc_hien = DateTime.Now,
+                                    nguoi_thuc_hien = userInfo.full_name,
+                                    noi_dung_thuc_hien = $"Gửi thông điệp lỗi {ex.Message}",
+                                    hoa_don_id = hoaDon.id,
+                                    hoa_don_log_type_id = -1 * (int)e_hoa_don_log_type.GUI_THONG_DIEP
+                                };
+                                log.SetInsertInfo(userId);
+                                _serviceWrapper.Core.TaskQueue.EnqueueTask(async _ =>
+                                {
+                                    await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
+                                });
+                            }
+                        }
+
+                        if (needRetry)
+                        {
+                            var remaining = TimeSpan.FromSeconds(30) - stopwatch.Elapsed;
+
+                            if (remaining > TimeSpan.Zero)
+                            {
+                                var delayTime = remaining > TimeSpan.FromSeconds(10)
+                                    ? TimeSpan.FromSeconds(10)
+                                    : remaining;
+
+                                await Task.Delay(delayTime);
+                            }
+
+                        }
+
+                    }
+                    while (needRetry);
 
                 }
                 finally
@@ -2041,76 +2150,123 @@ namespace Service.HoaDon
 
                 await File.WriteAllTextAsync(filePath, base64thongdiep.ConvertToXmlFromBase64());
 
-                //
+
                 try
                 {
                     await _semaphore.WaitAsync();
+
                     try
                     {
-                        var guiThongDiepResult = await client.Guithongdiep2024Async(authHeader, base64thongdiep, 1);
-                        if (guiThongDiepResult.Guithongdiep2024Result.ConvertToString().Length > 2)
+                        bool needRetry = false;
+                        var stopwatch = new System.Diagnostics.Stopwatch();
+
+                        do
                         {
-                            var log = new hoa_don_log()
+                            needRetry = false;
+                            try
                             {
-                                file_thong_diep_url = filePath,
-                                ngay_thuc_hien = DateTime.Now,
-                                nguoi_thuc_hien = userInfo.full_name,
-                                noi_dung_thuc_hien = "Gửi thông điệp lên CQT",
-                                hoa_don_id = hoaDon.id,
-                                hoa_don_log_type_id = (int)e_hoa_don_log_type.GUI_THONG_DIEP
-                            };
-                            log.SetInsertInfo(userId);
-                            _serviceWrapper.Core.TaskQueue.EnqueueTask(async _ =>
+                                var guiThongDiepResult = await client.Guithongdiep2024Async(authHeader, base64thongdiep, 1);
+
+                                if (guiThongDiepResult.Guithongdiep2024Result.ConvertToString().Length > 2)
+                                {
+                                    var log = new hoa_don_log()
+                                    {
+                                        file_thong_diep_url = filePath,
+                                        ngay_thuc_hien = DateTime.Now,
+                                        nguoi_thuc_hien = userInfo.full_name,
+                                        noi_dung_thuc_hien = "Gửi thông điệp lên CQT",
+                                        hoa_don_id = hoaDon.id,
+                                        hoa_don_log_type_id = (int)e_hoa_don_log_type.GUI_THONG_DIEP
+                                    };
+                                    log.SetInsertInfo(userId);
+                                    _serviceWrapper.Core.TaskQueue.EnqueueTask(async _ =>
+                                    {
+                                        await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
+                                    });
+                                }
+                                else
+                                {
+                                    if (!stopwatch.IsRunning)
+                                        stopwatch.Start();
+
+                                    if (stopwatch.Elapsed < TimeSpan.FromSeconds(30))
+                                    {
+                                        needRetry = true;
+                                    }
+                                    else
+                                    {
+                                        var log = new hoa_don_log()
+                                        {
+                                            file_thong_diep_url = filePath,
+                                            ngay_thuc_hien = DateTime.Now,
+                                            nguoi_thuc_hien = userInfo.full_name,
+                                            noi_dung_thuc_hien = $"Gửi thông điệp thất bại {guiThongDiepResult.Guithongdiep2024Result.ConvertToString()}",
+                                            hoa_don_id = hoaDon.id,
+                                            hoa_don_log_type_id = -1 * (int)e_hoa_don_log_type.GUI_THONG_DIEP
+                                        };
+                                        log.SetInsertInfo(userId);
+                                        _serviceWrapper.Core.TaskQueue.EnqueueTask(async _ =>
+                                        {
+                                            await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
+                                        });
+                                    }
+                                }
+                            }
+                            catch (System.Exception ex)
                             {
-                                await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
-                            });
+                                if (!stopwatch.IsRunning)
+                                    stopwatch.Start();
+
+                                if (stopwatch.Elapsed < TimeSpan.FromSeconds(30))
+                                {
+                                    needRetry = true;
+                                }
+                                else
+                                {
+                                    var log = new hoa_don_log()
+                                    {
+                                        file_thong_diep_url = filePath,
+                                        ngay_thuc_hien = DateTime.Now,
+                                        nguoi_thuc_hien = userInfo.full_name,
+                                        noi_dung_thuc_hien = $"Gửi thông điệp thất bại {ex.Message}",
+                                        hoa_don_id = hoaDon.id,
+                                        hoa_don_log_type_id = -1 * (int)e_hoa_don_log_type.GUI_THONG_DIEP
+                                    };
+                                    log.SetInsertInfo(userId);
+                                    _serviceWrapper.Core.TaskQueue.EnqueueTask(async _ =>
+                                    {
+                                        await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
+                                    });
+                                }
+                            }
+
+                            if (needRetry)
+                            {
+                                var remaining = TimeSpan.FromSeconds(30) - stopwatch.Elapsed;
+
+                                if (remaining > TimeSpan.Zero)
+                                {
+                                    var delayTime = remaining > TimeSpan.FromSeconds(10)
+                                        ? TimeSpan.FromSeconds(10)
+                                        : remaining;
+
+                                    await Task.Delay(delayTime);
+                                }
+                            }
+
                         }
-                        else
-                        {
-                            var log = new hoa_don_log()
-                            {
-                                file_thong_diep_url = filePath,
-                                ngay_thuc_hien = DateTime.Now,
-                                nguoi_thuc_hien = userInfo.full_name,
-                                noi_dung_thuc_hien = $"Gửi thông điệp thất bại {guiThongDiepResult.Guithongdiep2024Result.ConvertToString()}",
-                                hoa_don_id = hoaDon.id,
-                                hoa_don_log_type_id = -1 * (int)e_hoa_don_log_type.GUI_THONG_DIEP
-                            };
-                            log.SetInsertInfo(userId);
-                            _serviceWrapper.Core.TaskQueue.EnqueueTask(async _ =>
-                            {
-                                await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
-                            });
-                        }
-                    }
-                    catch (System.Exception ex)
-                    {
-                        var log = new hoa_don_log()
-                        {
-                            file_thong_diep_url = filePath,
-                            ngay_thuc_hien = DateTime.Now,
-                            nguoi_thuc_hien = userInfo.full_name,
-                            noi_dung_thuc_hien = $"Gửi thông điệp thất bại {ex.Message}",
-                            hoa_don_id = hoaDon.id,
-                            hoa_don_log_type_id = -1 * (int)e_hoa_don_log_type.GUI_THONG_DIEP
-                        };
-                        log.SetInsertInfo(userId);
-                        _serviceWrapper.Core.TaskQueue.EnqueueTask(async _ =>
-                        {
-                            await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
-                        });
+                        while (needRetry);
+
                     }
                     finally
                     {
-                        await client.CloseAsync();
+                        await client.CloseAsync();   // ✅ đúng scope
                     }
-
-
 
                 }
                 finally
                 {
-                    _semaphore.Release();
+                    _semaphore.Release();            // ✅ đúng scope
                 }
 
                 return new SuccessResult<HoaDonPhatHanhRespone>();
