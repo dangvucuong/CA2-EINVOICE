@@ -18,6 +18,7 @@ import { IDaiLy } from "../../models/responses/category/IDaiLy";
 import { rootAction } from "../../state/actions/rootAction";
 import { eReducerStatusBase } from "../../state/reducer-models/eReducerStatusBase";
 import DaiLyEditFormModal from "./DaiLyEditFormModal";
+import DaiLyImportButton from "./DaiLyImportButton";
 
 const DaiLyPage = () => {
   const {
@@ -44,7 +45,7 @@ const DaiLyPage = () => {
     dispatch(
       rootAction.category.daiLyAction.loadStart({
         ...filter,
-      })
+      }),
     );
   }, [filter]);
   useEffect(() => {
@@ -55,7 +56,7 @@ const DaiLyPage = () => {
       dispatch(
         rootAction.category.daiLyAction.loadStart({
           ...filter,
-        })
+        }),
       );
     }
   }, [status, filter]);
@@ -85,6 +86,15 @@ const DaiLyPage = () => {
                 apiAuthorized={DAI_LY_API_ENDPOIT}
                 onClick={() => {
                   dispatch(rootAction.category.daiLyAction.showEditModal());
+                }}
+              />
+              <DaiLyImportButton
+                onSuccess={() => {
+                  dispatch(
+                    rootAction.category.daiLyAction.loadStart({
+                      ...filter,
+                    }),
+                  );
                 }}
               />
               <ExportToExcelBtn
@@ -128,7 +138,7 @@ const DaiLyPage = () => {
                   ...filter,
                   page_index: 0,
                   search_key: key,
-                })
+                }),
               );
             },
           }}
@@ -142,7 +152,7 @@ const DaiLyPage = () => {
                   ...filter,
                   sort_by: key,
                   sort_mode: sort_mode,
-                })
+                }),
               );
             },
           }}
@@ -152,7 +162,7 @@ const DaiLyPage = () => {
                 rootAction.category.daiLyAction.changeFilter({
                   ...filter,
                   page_index: pageIndex,
-                })
+                }),
               );
             },
             pageCount: paging_res?.page_count ?? 1,
@@ -211,7 +221,9 @@ const DaiLyPage = () => {
                           variant="invisible"
                           onClick={() => {
                             dispatch(
-                              rootAction.category.daiLyAction.showEditModal(row)
+                              rootAction.category.daiLyAction.showEditModal(
+                                row,
+                              ),
                             );
                           }}
                         />
@@ -225,8 +237,8 @@ const DaiLyPage = () => {
                           onClick={() => {
                             dispatch(
                               rootAction.category.daiLyAction.showDeleteConfirm(
-                                row
-                              )
+                                row,
+                              ),
                             );
                           }}
                         />
@@ -251,7 +263,9 @@ const DaiLyPage = () => {
           isSaving={status == eReducerStatusBase.is_deleting}
           onConfirm={() => {
             dispatch(
-              rootAction.category.daiLyAction.deleteStart(daiLyEditing?.id ?? 0)
+              rootAction.category.daiLyAction.deleteStart(
+                daiLyEditing?.id ?? 0,
+              ),
             );
           }}
         />

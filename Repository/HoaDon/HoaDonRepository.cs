@@ -5,10 +5,12 @@ using Dapper;
 using Model.FuncResult;
 using Model.Request.HoaDon;
 using Model.Request.ThongKe;
+using Model.Request.Xml;
 using Model.Respone.HoaDon;
 using Model.Respone.ThongKe;
 using Model.Table;
 using Repository.Base;
+using System.Data;
 
 namespace Repository.HoaDon
 {
@@ -318,6 +320,75 @@ namespace Repository.HoaDon
             param.Add("@hoa_don_trang_thai_id", hoa_don_trang_thai_id);
             return _dbConnection.ExecuteAsync("hoa_don_update_trang_thai", param);
         }
+
+        public Task<bool> InsertThueSuatHoaDonAsync(int id, IEnumerable<ThueSuatModel> dsThue)
+        {
+            // Tên trong ngoặc DataTable này thường để cho rõ nghĩa, quan trọng là cấu trúc cột
+            var table = new DataTable("dbo.thue_suat_hd_type");
+
+            // Thêm cột PHẢI ĐÚNG THỨ TỰ như trong SQL Type (TSuat -> ThTien -> TThue)
+            table.Columns.Add("TSuat", typeof(string));
+            table.Columns.Add("ThTien", typeof(decimal));
+            table.Columns.Add("TThue", typeof(decimal));
+
+            foreach (var item in dsThue)
+            {
+                table.Rows.Add(
+                    item.TSuat,
+                    item.ThTien,
+                    item.TThue
+                );
+            }
+
+            var param = new DynamicParameters();
+            param.Add("@HoaDonId", id);
+            // Truyền đúng tên Type đã định nghĩa trong SQL
+            param.Add("@ThueList", table.AsTableValuedParameter("dbo.thue_suat_hd_type"));
+
+            // Gọi theo kiểu 2 tham số như các hàm InsertsAsync khác của bạn
+            return _dbConnection.ExecuteAsync("InsertThueSuatHoaDon", param);
+        }
+
+
+        public Task<IEnumerable<ThueSuatModel>> SelectThueSuatHoaDonByHoaDonIdAsync(int hoaDonId)
+        {
+            var param = new DynamicParameters();
+            param.Add("@HoaDonId", hoaDonId);
+
+            // Sử dụng SelectAsync (hoặc QueryAsync tùy vào wrapper của bạn) 
+            // để lấy toàn bộ danh sách các cột TSuat, ThTien, TThue
+            return _dbConnection.SelectAsync<ThueSuatModel>("GetThueSuatHoaDonByHoaDonId", param);
+        }
+
+
+        public Task<bool> InsertHoaDonThongTinBoSungAsync(int id, HoaDonThongTinBoSung info)
+        {
+            var param = new DynamicParameters();
+
+            // Ánh xạ chính xác tên biến với các tham số trong Stored Procedure
+            param.Add("@HoaDonId", id);
+            param.Add("@IsHdBanTaiSanCong", info.IsHdBanTaiSanCong);
+            param.Add("@SoQuyetDinh", info.SoQuyetDinh);
+            param.Add("@NgayQuyetDinh", info.NgayQuyetDinh);
+            param.Add("@CoQuanBanHanhQD", info.CoQuanBanHanhQD);
+            param.Add("@HinhThucBan", info.HinhThucBan);
+            param.Add("@DiaDiemVCHangDen", info.DiaDiemVCHangDen);
+            param.Add("@TgianVCHangDenTu", info.TgianVCHangDenTu);
+            param.Add("@TgianVCHangDenDen", info.TgianVCHangDenDen);
+            param.Add("@IsHdPhiThueQuan", info.IsHdPhiThueQuan);
+
+            // Sử dụng ExecuteAsync để chạy Procedure
+            return _dbConnection.ExecuteAsync("HoaDonThongTinBoSung", param);
+
+        }
+
+        public Task<hd_thong_tin_bo_sung> SelectHoaDonThongTinBoSungByHoaDonIdAsync(int hoaDonId)
+        {
+            var param = new DynamicParameters();
+            param.Add("@HoaDonId", hoaDonId);
+            return _dbConnection.SelectFirstOrDefaultAsync<hd_thong_tin_bo_sung>("GetHoaDonThongTinBoSungByHoaDonId", param);
+        }
+
 
     }
 }

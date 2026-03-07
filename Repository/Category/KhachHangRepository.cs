@@ -6,6 +6,9 @@ using Model.Table;
 using Repository.Base;
 using Common;
 using Model.FuncResult;
+using System.Data;
+
+
 namespace Repository.Category
 {
     public class KhachHangRepository : CRUDRepository<khachhang>, IKhachHangRepository
@@ -14,11 +17,69 @@ namespace Repository.Category
         {
         }
 
-        public Task<bool> InsertsAsync(IEnumerable<khachhang> khachhangs)
+        // public Task<bool> InsertsAsync(IEnumerable<khachhang> khachhangs)
+        // {
+        //     var param = new DynamicParameters();
+        //     param.Add("@khachhangs", khachhangs.ConvertToTableValuedParameter("utp_khachhang_edit"));
+        //     return _dbConnection.ExecuteAsync("khachhang_inserts", param);
+        // }
+
+        public async Task<bool> InsertsAsync(IEnumerable<khachhang> khachHangs)
         {
-            var param = new DynamicParameters();
-            param.Add("@khachhangs", khachhangs.ConvertToTableValuedParameter("utp_khachhang_edit"));
-            return _dbConnection.ExecuteAsync("khachhang_inserts", param);
+            var table = new DataTable("utp_dm_khach_hang");
+
+            table.Columns.Add("id", typeof(int));
+            table.Columns.Add("donvi_ma_dv", typeof(string));
+            table.Columns.Add("ten_khach_hang", typeof(string));
+            table.Columns.Add("ten_don_vi", typeof(string));
+            table.Columns.Add("dia_chi", typeof(string));
+            table.Columns.Add("stk", typeof(string));
+            table.Columns.Add("mst", typeof(string));
+            table.Columns.Add("email", typeof(string));
+            table.Columns.Add("is_deleted", typeof(bool));
+            table.Columns.Add("created_time", typeof(DateTime));
+            table.Columns.Add("created_user_id", typeof(int));
+            table.Columns.Add("last_modified_times", typeof(DateTime));
+            table.Columns.Add("last_modified_user_id", typeof(int));
+            table.Columns.Add("ma_dv_ngan_sach", typeof(string));
+            table.Columns.Add("ccdan", typeof(string));
+
+            // 2. Đổ dữ liệu
+            foreach (var item in khachHangs)
+            {
+                table.Rows.Add(
+                    0, // id = 0 nếu DB tự tăng
+                    item.donvi_ma_dv,
+                    item.ten_khach_hang,
+                    item.ten_don_vi,
+                    item.dia_chi,
+                    item.stk,
+                    item.mst,
+                    item.email,
+                    item.is_deleted,
+                    item.created_time == default ? DateTime.Now : item.created_time,
+                    item.created_user_id,
+                    item.last_modified_times == default ? DateTime.Now : item.last_modified_times,
+                    item.last_modified_user_id,
+                    item.ma_dv_ngan_sach,
+                    item.ccdan
+                );
+            }
+
+            try
+            {
+                // ...existing code...
+                var param = new DynamicParameters();
+                param.Add("@dskhachhang", table.AsTableValuedParameter("utp_dm_khach_hang"));
+                var result = await _dbConnection.ExecuteAsync("sp_inserts_khach_hang", param);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                // log thực tế nên dùng ILogger / Serilog
+                Console.WriteLine("Lỗi import khách hàng: " + ex.Message);
+                throw; // giữ stack trace
+            }
         }
 
         public async Task<PagingResult<IEnumerable<khachhang>>> SelectByDonViAsync(string donvi_ma_dv, PagingRequest pagingRequest)

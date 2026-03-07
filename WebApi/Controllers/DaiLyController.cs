@@ -5,6 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 using Model.Request.Base;
 using Model.Table;
 using WebApi.Filters;
+using Common;
+using Model.Respone.Upload;
+using Model.Request.HoaDon;
+
 
 namespace WebApi.Controllers
 {
@@ -69,6 +73,34 @@ namespace WebApi.Controllers
             var isDeleted = await _daiLyService.DeleteAsync(obj.id);
             if (isDeleted) await this.SaveLogAsync($"Xóa đại lý: {obj.ten_dai_ly}", null);
             return isDeleted ? this.OK(obj) : this.BadRequest();
+        }
+        [HttpPost]
+        [Route("import/valid")]
+        [MustAuthorized("[POST]api/dai-ly")]
+        [ApiExplorerSettings(IgnoreApi = true)]
+
+        public async Task<ContentResult> ReadAndValidImportData([FromBody] UploadRespone upload)
+        {
+            var result = await _serviceWrapper.Category.DaiLy.ReadAndValidImportDataAsync(upload);
+            if (result.is_success)
+            {
+                return this.OK(result.data);
+            }
+            return this.BadRequest(result.message);
+        }
+        [HttpPost]
+        [Route("import")]
+        [MustAuthorized("[POST]api/dai-ly")]
+        [ApiExplorerSettings(IgnoreApi = true)]
+
+        public async Task<ContentResult> ImportData([FromBody] HoaDonImportRequest upload)
+        {
+            var result = await _serviceWrapper.Category.DaiLy.ImportDataAsync(upload);
+            if (result.is_success)
+            {
+                return this.OK(result.data);
+            }
+            return this.BadRequest(result.message);
         }
 
     }

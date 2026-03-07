@@ -16,7 +16,7 @@ const KhachHangEditFormModal = () => {
   const dispatch = useAppDispatch();
   const { user } = useAuth();
   const { khachHangEditing, status } = useAppSelector(
-    (x) => x.category.khachHangReducer
+    (x) => x.category.khachHangReducer,
   );
   const {
     register,
@@ -44,7 +44,7 @@ const KhachHangEditFormModal = () => {
       rootAction.category.khachHangAction.saveStart({
         ...data,
         ma_dv_ngan_sach: data.ma_dv_ngan_sach || "",
-      })
+      }),
     );
   };
   return (
@@ -166,6 +166,22 @@ const KhachHangEditFormModal = () => {
               name="ma_dv_ngan_sach"
               minLength={7}
               maxLength={7}
+              // required
+              block
+              // validateMessage="Vui lòng điền Số tài khoản"
+              errors={errors}
+            />
+          </FormControl>
+
+          <FormControl>
+            <FormControl.Label>
+              <Text text="Căn cước công dân" />
+            </FormControl.Label>
+            <TextInput
+              register={register}
+              name="ccdan"
+              minLength={9}
+              maxLength={12}
               // required
               block
               // validateMessage="Vui lòng điền Số tài khoản"

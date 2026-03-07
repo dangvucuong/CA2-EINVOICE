@@ -56,5 +56,8 @@ namespace Contracts.Service.HoaDon
         Task<FunctionResult<int>> SaoChepHoaDonNghichDaoAsync();
         Task<FunctionResult<int>> XuLyLoiMaKhongLienTiepAsync();
 
+        Task<bool> InsertThueSuatHoaDonAsync(int hoaDonId, List<ThueSuatModel> dsThue);
+        Task<bool> InsertHoaDonThongTinBoSungAsync(int hoaDonId, HoaDonThongTinBoSung infor);
+
     }
 }

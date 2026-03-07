@@ -6,6 +6,8 @@ using Model.FuncResult;
 using Model.Request.Base;
 using Model.Table;
 using Repository.Base;
+using System.Data;
+
 
 namespace Repository.Category
 {
@@ -13,6 +15,60 @@ namespace Repository.Category
     {
         public DaiLyRepository(IMSSQLConnection dbConnection) : base(dbConnection)
         {
+
+        }
+
+        public async Task<bool> InsertsAsync(IEnumerable<dai_ly> dailys)
+        {
+            // 1. Khởi tạo DataTable với tên Type tương ứng trong SQL
+            var table = new DataTable("utp_dm_daily");
+
+            // 2. Định nghĩa các cột dựa trên cấu trúc DB trong ảnh
+            table.Columns.Add("id", typeof(int));
+            table.Columns.Add("donvi_ma_dv", typeof(string));
+            table.Columns.Add("ma_dai_ly", typeof(string));
+            table.Columns.Add("ten_dai_ly", typeof(string));
+            table.Columns.Add("email", typeof(string));
+            table.Columns.Add("so_tai_khoan", typeof(string));
+            table.Columns.Add("is_deleted", typeof(bool));
+            table.Columns.Add("created_time", typeof(DateTime));
+            table.Columns.Add("created_user_id", typeof(int));
+            table.Columns.Add("last_modified_times", typeof(DateTime));
+            table.Columns.Add("last_modified_user_id", typeof(int));
+
+            // 3. Đổ dữ liệu từ danh sách vào table
+            foreach (var item in dailys)
+            {
+                table.Rows.Add(
+                    0, // id: Truyền 0 nếu là cột Identity hoặc bắt buộc Not Null
+                    item.donvi_ma_dv,
+                    item.ma_dai_ly,
+                    item.ten_dai_ly,
+                    item.email,
+                    item.so_tai_khoan,
+                    item.is_deleted,
+                    item.created_time == default(DateTime) ? DateTime.Now : item.created_time,
+                    item.created_user_id,
+                    item.last_modified_times == default(DateTime) ? DateTime.Now : item.last_modified_times,
+                    item.last_modified_user_id
+                );
+            }
+
+            try
+            {
+                // ...existing code...
+                var param = new DynamicParameters();
+                param.Add("@dailys", table.AsTableValuedParameter("utp_dm_daily"));
+                var result = await _dbConnection.ExecuteAsync("dm_daily_inserts", param);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                // Log ra console hoặc file
+                Console.WriteLine("Lỗi khi insert: " + ex.Message);
+                // Có thể log thêm ex.StackTrace nếu cần
+                return false;
+            }
         }
 
         public async Task<PagingResult<IEnumerable<dai_ly>>> SelectByDonViAsync(string donvi_ma_dv, PagingRequest pagingRequest)

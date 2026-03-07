@@ -39,7 +39,7 @@ namespace Model.Request.Xml
 
         [XmlElement(ElementName = "CCCDan")]
         public string cccd { get; set; }
-       
+
         [XmlElement(ElementName = "SHChieu")]
         public string so_ho_chieu { get; set; }
 
@@ -50,7 +50,17 @@ namespace Model.Request.Xml
         [XmlElement(ElementName = "TTKhac")]
         public ThongTinKhac thong_tin_khac { get; set; }
 
-          [XmlElement(ElementName = "HVTNNHang")]
+        [XmlElement(ElementName = "HVTNNHang")]
         public string HVTNNHang { get; set; }
+
+        //hoa don ban tai san cong
+        [XmlElement(ElementName = "DDVCHDen")]
+        public string DiadiemVCHDen { get; set; }
+
+        [XmlElement(ElementName = "TGVCHDTu")]
+        public string TGianVCTu { get; set; }
+
+        [XmlElement(ElementName = "TGVCHDDen")]
+        public string TGianVCDen { get; set; }
     }
 }

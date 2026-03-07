@@ -7,6 +7,7 @@ import {
 } from "@primer/octicons-react";
 import {
   Box,
+  Checkbox,
   Flash,
   FormControl,
   IconButton,
@@ -66,7 +67,8 @@ import HoaDonView from "./HoaDonView";
 import PhieuXuatKhoDaiLySubForm from "./PhieuXuatKhoDaiLySubForm";
 import PhieuXuatKhoVanChuyenSubForm from "./PhieuXuatKhoVanChuyenSubForm";
 import { appInfo } from "../../AppInfo";
-import { ConvertTienChu } from "../../helpers/common";
+import { ConvertTienChu, toIsoDateOrEmpty } from "../../helpers/common";
+import HoaDonBanTaiSanCongSubForm from "./HoaDonBanTaiSanCongSubForm";
 
 const HoaDonForm = () => {
   const { id: pId }: any = useParams();
@@ -199,6 +201,10 @@ const HoaDonForm = () => {
     return loaiHoaDonCT?.id === 1;
   }, [loaiHoaDonCT]);
 
+  const isHoaDonBanTaiSanCong = useMemo(() => {
+    return loaiHoaDonCT?.id === 3;
+  }, [loaiHoaDonCT]);
+
   useEffect(() => {
     if (signalRConnectionServer) {
       if (hoaDonId > 0) {
@@ -250,6 +256,9 @@ const HoaDonForm = () => {
 
       setFormData({
         ...hoaDonViewModel,
+        IsHdPhiThueQuan: hoaDonViewModel.thong_tin_bo_sungs?.is_hd_phi_thue_quan
+          ? 1
+          : 0,
       });
 
       if (hoaDonId > 0) {
@@ -277,6 +286,22 @@ const HoaDonForm = () => {
         NoiDiNoiDen: hoaDonViewModel?.thong_tin_khac?.NoiDiNoiDen,
         // ngay_lap: moment(toKhaiViewModel.ngay_lap).format("YYYY-MM-DD"),
         // ngay_co_hieu_luc: moment(toKhaiViewModel.ngay_co_hieu_luc).format("YYYY-MM-DD"),
+        SoQuyetDinh: hoaDonViewModel.thong_tin_bo_sungs?.so_quyet_dinh,
+        NgayQuyetDinh: toIsoDateOrEmpty(
+          hoaDonViewModel.thong_tin_bo_sungs?.ngay_quyet_dinh,
+        ),
+        CoQuanBanHanhQD:
+          hoaDonViewModel.thong_tin_bo_sungs?.co_quan_ban_hanh_qd,
+        HinhThucBan: hoaDonViewModel.thong_tin_bo_sungs?.hinh_thuc_ban,
+        DiaDiemVCHangDen:
+          hoaDonViewModel.thong_tin_bo_sungs?.dia_diem_vc_hang_den,
+
+        TgianVCHangDenTu: toIsoDateOrEmpty(
+          hoaDonViewModel.thong_tin_bo_sungs?.tgian_vc_hang_den_tu,
+        ),
+        TgianVCHangDenDen: toIsoDateOrEmpty(
+          hoaDonViewModel.thong_tin_bo_sungs?.tgian_vc_hang_den_den,
+        ),
       });
     }
   }, [hoaDonViewModel, hoaDonId]);
@@ -760,6 +785,23 @@ const HoaDonForm = () => {
         ...x,
         stt: idx + 1,
       })),
+
+      // Hóa đơn bổ sung thông tin
+      IsHdPhiThueQuan: formData.IsHdPhiThueQuan ?? 0,
+      IsHdBanTaiSanCong: isHoaDonBanTaiSanCong ? 1 : 0,
+      SoQuyetDinh: data?.SoQuyetDinh?.trim() ?? "",
+      NgayQuyetDinh: data?.NgayQuyetDinh
+        ? moment(data?.NgayQuyetDinh).format("YYYY-MM-DD")
+        : "",
+      CoQuanBanHanhQD: data?.CoQuanBanHanhQD?.trim() ?? "",
+      HinhThucBan: data?.HinhThucBan?.trim() ?? "",
+      DiaDiemVCHangDen: data?.DiaDiemVCHangDen?.trim() ?? "",
+      TgianVCHangDenTu: data?.TgianVCHangDenTu
+        ? moment(data?.TgianVCHangDenTu).format("YYYY-MM-DD")
+        : "",
+      TgianVCHangDenDen: data?.TgianVCHangDenDen
+        ? moment(data?.TgianVCHangDenDen).format("YYYY-MM-DD")
+        : "",
     };
   };
 
@@ -1310,6 +1352,37 @@ const HoaDonForm = () => {
                   }}
                 />
               </FormGroupInline>
+
+              {isHoaDonBanHang && (
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    mt: 2,
+                  }}
+                >
+                  <Checkbox
+                    checked={formData.IsHdPhiThueQuan === 1}
+                    onChange={(e) => {
+                      // IsHdPhiThueQuan
+                      setFormData({
+                        ...formData,
+                        IsHdPhiThueQuan: e.target.checked ? 1 : 0,
+                      });
+                    }}
+                  />
+                  <Box
+                    sx={{
+                      ml: 1,
+                      fontWeight: "400",
+                      fontSize: "14px",
+                    }}
+                  >
+                    Dành cho tổ chức, cá nhân trong khu phi thuế quan
+                  </Box>
+                </Box>
+              )}
             </Box>
             <PaperFormGroup
               label="Đơn vị bán hàng"
@@ -1333,6 +1406,14 @@ const HoaDonForm = () => {
               {isPhieuXuatKhoDaiLy && (
                 <Box>
                   <PhieuXuatKhoDaiLySubForm
+                    register={register}
+                    errors={errors}
+                  />
+                </Box>
+              )}
+              {isHoaDonBanTaiSanCong && (
+                <Box>
+                  <HoaDonBanTaiSanCongSubForm
                     register={register}
                     errors={errors}
                   />

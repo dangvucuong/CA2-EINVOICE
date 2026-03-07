@@ -13,5 +13,7 @@ namespace Model.Table
         public string mst { get; set; }
         public string email { get; set; }
         public string ma_dv_ngan_sach { get; set; }
+
+        public string? ccdan { get; set; }
     }
 }

@@ -87,4 +87,17 @@ export interface IHoaDon {
   TenTau?: string;
   SoThamChieu?: string;
   NoiDiNoiDen?: string;
+
+  // Hóa đơn thông tin bổ sung
+  IsHdPhiThueQuan?: number;
+  IsHdBanTaiSanCong?: number;
+  SoQuyetDinh?: string;
+  NgayQuyetDinh?: string;
+  CoQuanBanHanhQD?: string;
+  HinhThucBan?: string;
+  DiaDiemVCHangDen?: string;
+  TgianVCHangDenTu?: string;
+  TgianVCHangDenDen?: string;
+
+  thong_tin_bo_sungs?: any;
 }

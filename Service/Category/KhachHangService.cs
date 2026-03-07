@@ -42,7 +42,8 @@ namespace Service.Category
                     stk = row["stk"].ConvertToString(),
                     ten_don_vi = row["ten_don_vi"].ConvertToString(),
                     ten_khach_hang = row["ten_khach_hang"].ConvertToString(),
-                    ma_dv_ngan_sach = ""
+                    ma_dv_ngan_sach = row["ma_dv_ngan_sach"].ConvertToString(),
+                    ccdan = row["ccdan"].ConvertToString()
                 };
                 obj.SetInsertInfo(user.id);
                 khachHangs.Add(obj);
@@ -69,6 +70,8 @@ namespace Service.Category
             dt.Columns.Add("stk", typeof(string));
             dt.Columns.Add("mst", typeof(string));
             dt.Columns.Add("email", typeof(string));
+            dt.Columns.Add("ma_dv_ngan_sach", typeof(string));
+            dt.Columns.Add("ccdan", typeof(string));
             dt.Columns.Add("ma_loi", typeof(string));
 
             for (int i = 0; i < excelDatas.Rows.Count; i++)
@@ -82,17 +85,21 @@ namespace Service.Category
 
                 row["stk"] = excelDatas.Columns.Contains("Số tài khoản") ? data["Số tài khoản"].ConvertToString() : "";
                 row["mst"] = excelDatas.Columns.Contains("Mã số thuế") ? data["Mã số thuế"].ConvertToString() : "";
-                row["dia_chi"] = excelDatas.Columns.Contains("dia_chi") ? data["dia_chi"].ConvertToString() : "";
+                row["dia_chi"] = excelDatas.Columns.Contains("Địa chỉ") ? data["Địa chỉ"].ConvertToString() : "";
                 row["email"] = excelDatas.Columns.Contains("email") ? data["email"].ConvertToString() : "";
+
+                row["ma_dv_ngan_sach"] = excelDatas.Columns.Contains("Mã ĐV ngân sách") ? data["Mã ĐV ngân sách"].ConvertToString() : "";
+                row["ccdan"] = excelDatas.Columns.Contains("CCCD") ? data["CCCD"].ConvertToString() : "";
 
                 if (row["ten_khach_hang"].ConvertToString() == "" && row["ten_don_vi"].ConvertToString() == "")
                 {
                     maLois.Add("Vui lòng điền tên đơn vị hoặc tên khách hàng");
                 }
 
-                row["ma_loi"] = maLois.Join(";\n"); 
+                row["ma_loi"] = maLois.Join(";\n");
                 dt.Rows.Add(row);
             }
+
 
 
 
