@@ -73,6 +73,7 @@ const TextInputMstKhachHang = (props: ITextInputMstKhachHangProps) => {
         onChange={(e) => {
           setOpen(true);
           setFilter(e.target.value);
+          props.onValueChanged({ text: e.target.value });
         }}
         onBlur={(e) => {
           // nếu blur ra ngoài panel thì mới đóng
