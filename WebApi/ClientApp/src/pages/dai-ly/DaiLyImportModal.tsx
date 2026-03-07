@@ -144,7 +144,7 @@ const DaiLyImportModal = (props: IDaiLyImportModalProps) => {
                     href={`${appInfo.baseApiURL.replace(
                       "/api",
                       "",
-                    )}/Template/khach-hang.xlsx`}
+                    )}/Template/tmpdaily.xlsx`}
                     target="_blank"
                   >
                     <Button
