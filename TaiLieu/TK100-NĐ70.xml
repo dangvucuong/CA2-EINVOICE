@@ -1,0 +1,280 @@
+<TKhai>
+	<DLTKhai Id="_389af8e0-27d8-4d1a-8336-85633670fc54">
+		<TTChung>
+			<PBan>
+				2.0.1
+			</PBan>
+			<MSo>
+				01/ĐKTĐ-HĐĐT
+			</MSo>
+			<Ten>
+				Tờ khai thay đổi thông tin sử dụng hóa đơn điện tử
+			</Ten>
+			<HThuc>
+				2
+			</HThuc>
+			<TNNT>
+				Công ty cổ phần công nghệ thẻ Nacencomm
+			</TNNT>
+			<MST>
+				0103930279-999
+			</MST>
+			<CQTQLy>
+				Chi cục Thuế Quận Đống Đa
+			</CQTQLy>
+			<MCQTQLy>
+				10109
+			</MCQTQLy>
+
+			<TNDDPLuat>			Tên người đại diện pháp luật (50 ký tự)			</TNDDPLuat>
+			<DTDDPLuat>
+				Điện thoại người đại diện pháp luật (20 ký tự)
+			</DTDDPLuat>
+		
+			<CCCDan>
+				Căn cước công dân (Số CC/CCCD/số định danh) ( 12 ký tự)
+			</CCCDan>
+			<NSDDPLuat>
+				Ngày sinh đại diện pháp luật (Ngày tháng năm sinh)
+			</NSDDPLuat>
+			<GTinh>
+				Giới tính  Số (0: Nữ, 1: Nam)
+			</GTinh>
+
+			<DCLHe>
+				SỐ  2 LÊ VĂN THIÊM
+			</DCLHe>
+			<DCTDTu>
+				it_group@cavn.vn
+			</DCTDTu>
+			<NLHe>
+				ĐỖ THỊ THU HẰNG
+			</NLHe>
+			<DTLHe>
+				0902432283
+			</DTLHe>
+			<DDanh>
+				HN
+			</DDanh>
+			<NLap>
+				2023-11-01
+			</NLap>
+		</TTChung>
+		<NDTKhai>
+			<HTHDon>
+				<CMa>
+					1
+				</CMa>
+				<KCMa>
+					0
+				</KCMa>
+				<CMTMTTien>
+					1
+				</CMTMTTien>
+			</HTHDon>
+			<HTGDLHDDT>
+				<NNTDBKKhan>
+					0
+				</NNTDBKKhan>
+				<NNTKTDNUBND>
+					0
+				</NNTKTDNUBND>
+				<CQXLTSCong>
+					Cơ quan thuế hoặc cơ quan được giao nhiệm vụ tổ chức, xử lý tài sản công theo quy định pháp luật về quản lý, sử dụng tài sản công (khoản 11 điều 1 Nghị định 70)
+					Số (0: không áp dụng, 1: áp dụng)
+				</CQXLTSCong>
+				<CDLTTDCQT>
+					0
+				</CDLTTDCQT>
+				<CDLQTCTN>
+					0
+				</CDLQTCTN>
+			</HTGDLHDDT>
+			<PThuc>
+				<CDDu>
+					1
+				</CDDu>
+				<CBTHop>
+					0
+				</CBTHop>
+			</PThuc>
+			<LHDSDung>
+				<HDGTGT>
+					1
+				</HDGTGT>
+				<HDGTGTTHBLai>
+					0
+				</HDGTGTTHBLai>
+				<HDBHang>
+					1
+				</HDBHang>
+				<HDBHTHBLai>
+					0
+				</HDBHTHBLai>
+				<HDTMai>
+					0
+				</HDTMai>
+				<HDBTSCong>
+					0
+				</HDBTSCong>
+				<HDBHDTQGia>
+					0
+				</HDBHDTQGia>
+				<HDKhac>
+					1
+				</HDKhac>
+				<CTu>
+					1
+				</CTu>
+			</LHDSDung>
+			<DSCTSSDung>
+				<CTS>
+					<STT>
+						1
+					</STT>
+					<TTChuc>
+						CA2
+					</TTChuc>
+					<Seri>
+						5402BC5CACCE669C2015000200063CD0
+					</Seri>
+					<TNgay>
+						2022-05-25T16:24:19
+					</TNgay>
+					<DNgay>
+						2025-03-06T16:38:19
+					</DNgay>
+					<HThuc>
+						1
+					</HThuc>
+				</CTS>
+			</DSCTSSDung>
+			<TTTCGP>
+				<TCGP>
+					<STT>
+						1
+					</STT>
+					<TTCGP>
+						Tên tổ chức cung cấp giải pháp hóa đơn điện tử 1
+					</TTCGP>
+					<MSTTCGP>
+						Mã số thuế tổ chức cung cấp giải pháp hóa đơn điện tử
+					</MSTTCGP>
+					<TNgay>
+						Từ ngày (Ngày bắt đầu sử dụng dịch vụ)
+					</TNgay>
+					<DNgay>
+						Đến ngày (Ngày kết thúc sử dụng dịch vụ)
+					</DNgay>
+				</TCGP>
+			</TTTCGP>
+			<TTTCTN>
+				<TCTN>
+					<STT>
+						1
+					</STT>
+					<TTCTN>
+						Tên tổ chức truyền nhận
+					</TTCTN>
+					<MSTTCTN>
+						Mã số thuế tổ chức truyền nhận
+					</MSTTCTN>
+					<TNgay>
+						Từ ngày (Ngày bắt đầu sử dụng dịch vụ)
+					</TNgay>
+					<DNgay>
+						Đến ngày (Ngày kết thúc sử dụng dịch vụ)
+					</DNgay>
+					<GChu>
+						Đưa nội dung vào nếu có
+					</GChu>
+				</TCTN>
+			</TTTCTN>
+			<TTDVHTPT>
+				<DVHTPT>
+					<STT>
+						1
+					</STT>
+					<TDVHTPT>
+						Tên đơn vị hạch toán phụ thuộc cần cấp quyền tra cứu hóa đơn
+					</TDVHTPT>
+					<MSTDVHTPT>
+						MST đơn vị hạch toán phụ thuộc cần cấp quyền tra cứu hóa đơn
+					</MSTDVHTPT>
+					<TNgay>
+						Từ ngày (Ngày bắt đầu cấp quyền tra cứu hóa đơn)
+					</TNgay>
+					<DNgay>
+						Đến ngày (Ngày kết thúc cấp quyền tra cứu hóa đơn)
+					</DNgay>
+					<GChu>
+						Đưa nội dung vào nếu có
+					</GChu>
+				</DVHTPT>
+			</TTDVHTPT>
+			<TTTNSDung>
+				<TNSDung>
+					<STT>
+						1
+					</STT>
+					<TNgay>
+						Từ ngày (Ngày bắt đầu ngừng sử dụng)
+					</TNgay>
+					<DNgay>
+						Đến ngày (Ngày kết thúc ngừng sử dụng)
+					</DNgay>
+					<TTCGP>
+						Tên tổ chức cung cấp giải pháp hóa đơn điện tử 2
+					</TTCGP>
+					<MSTTCGP>
+						Mã số thuế tổ chức cung cấp giải pháp hóa đơn điện tử
+					</MSTTCGP>
+					<Seri>
+						Seri (Số sê-ri chứng thư số)
+					</Seri>
+					<GChu>
+						Đưa nội dung vào nếu có
+					</GChu>
+				</TNSDung>
+			</TTTNSDung>
+			<TTDKTH>
+				<DKTH>
+					<STT>
+					</STT>
+					<TLHDon>
+						Tên loại hóa đơn (Tên loại hóa đơn tích hợp)
+					</TLHDon>
+					<KHMSHDon>
+						Ký hiệu mẫu hóa đơn (Ký hiệu mẫu hóa đơn tích hợp)
+					</KHMSHDon>
+					<KHHDon>
+						Ký hiệu hóa đơn  (Ký hiệu hóa đơn tích hợp)
+					</KHHDon>
+					<Ten>
+						Tên (Tên tổ chức được/nhận tích hợp)
+					</Ten>
+					<MST>
+						Mã số thuế (Mã số thuế tổ chức được/nhận Tích hợp)
+					</MST>
+					<MDich>
+						Mục đích
+					</MDich>
+					<TNgay>
+						Từ ngày (Thời hạn tích hợp từ ngày)
+					</TNgay>
+					<DNgay>
+						Đến ngày (Thời hạn tích hợp đến ngày)
+					</DNgay>
+					<GChu>
+						Đưa nội dung vào nếu có
+					</GChu>
+				</DKTH>
+			</TTDKTH>
+		</NDTKhai>
+	</DLTKhai>
+	<DSCKS>
+		<NNT>
+		</NNT>
+		<CCKSKhac />
+	</DSCKS>
+</TKhai>

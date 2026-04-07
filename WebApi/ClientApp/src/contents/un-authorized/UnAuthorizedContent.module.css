@@ -1,0 +1,14 @@
+.loginFormContent {
+  background-color: #fff;
+  border-top-left-radius: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+@media screen and (max-width: 768px) {
+  .loginFormContent {
+    border-top-left-radius: 0px;
+  }
+}

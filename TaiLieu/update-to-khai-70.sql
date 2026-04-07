@@ -1,0 +1,367 @@
+alter table to_khai add dai_dien_phap_luat_ho_ten NVARCHAR(200)
+alter table to_khai add dai_dien_phap_luat_dien_thoai NVARCHAR(200)
+alter table to_khai add dai_dien_phap_luat_dien_cccd NVARCHAR(200)
+alter table to_khai add dai_dien_phap_luat_dien_ngay_sinh NVARCHAR(200)
+alter table to_khai add dai_dien_phap_luat_dien_gioi_tinh INT
+alter table to_khai add is_co_quan_xu_ly_tai_san_cong BIT
+alter table to_khai add is_sd_hoadon_gtgt_bien_lai BIT
+alter table to_khai add is_sd_hoadon_banhang_bien_lai BIT
+alter table to_khai add is_sd_hoadon_thuong_mai BIT
+
+
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+ALTER procedure [dbo].[to_khai_insert]
+    @to_khai_status_id int,
+    @loai_to_khai_id int,
+    @ma_to_khai nvarchar (200),
+    @ngay_lap datetime,
+    @mst nvarchar (200),
+    @nguoi_nop_thue nvarchar (2000),
+    @nguoi_lien_he nvarchar (400),
+    @co_quan_thue nvarchar (2000),
+    @dia_chi_lien_he nvarchar (2000),
+    @email_lien_he nvarchar (200),
+    @dien_thoai_lien_he nvarchar (200),
+    @is_hoadon_co_ma_cqt bit,
+    @is_hoadon_co_ma_cqt_mtt bit,
+    @is_hoadon_khong_co_ma_cqt bit,
+    @is_khong_phai_tra_tien_dich_vu bit,
+    @is_doanh_nghiep_vvn_kho_khan bit,
+    @is_doanh_nghiep_vvn_khac bit,
+    @is_chuyen_day_du_tung_hoadon bit,
+    @is_chuyen_theo_bang_tonghop bit,
+    @is_sd_hoadon_gtgt bit,
+    @is_sd_hoadon_banhang bit,
+    @is_sd_chungtu_giong_hoadon bit,
+    @noi_lap nvarchar (300),
+    @ngay_co_hieu_luc date,
+    @cks_user_id int,
+    @cks_serial_no nvarchar (2000),
+    @cks_user_full_name nvarchar (2000),
+    @is_camket bit,
+    @ngay_tao datetime,
+    @nguoi_tao nvarchar (2000),
+    @is_deleted bit,
+    @created_time datetime,
+    @created_user_id int,
+    @last_modified_times datetime,
+    @last_modified_user_id int,
+    @is_chuyen_du_lieu_truc_tiep bit,
+    @is_chuyen_lieu_thong_qua_to_chuc bit,
+    @is_sd_hoadon_khac bit,
+    @donvi_ma_dv nvarchar (200),
+    @ma_dang_ky NVARCHAR(100)='',
+    @user_id_phathanh int,
+    @phat_hanh_uuid nvarchar(100),
+    @ma_cqt nvarchar(10),
+    @co_quan_thue_id INT,
+    @is_ban_hang_du_tru_quoc_gia BIT,
+    @is_ban_tai_san_cong BIT,
+    @dai_dien_phap_luat_ho_ten nvarchar(200)='',
+    @dai_dien_phap_luat_dien_thoai nvarchar(200)='',
+    @dai_dien_phap_luat_dien_cccd nvarchar(200)='',
+    @dai_dien_phap_luat_dien_ngay_sinh DATETIME=NULL,
+    @dai_dien_phap_luat_dien_gioi_tinh INT=-1,
+    @is_co_quan_xu_ly_tai_san_cong BIT=0,
+    @is_sd_hoadon_gtgt_bien_lai BIT=0,
+    @is_sd_hoadon_banhang_bien_lai BIT=0,
+    @is_sd_hoadon_thuong_mai BIT=0
+as
+begin
+    insert into to_khai
+        (to_khai_status_id,
+        loai_to_khai_id,
+        ma_to_khai,
+        ngay_lap,
+        mst,
+        nguoi_nop_thue,
+        nguoi_lien_he,
+        co_quan_thue,
+        dia_chi_lien_he,
+        email_lien_he,
+        dien_thoai_lien_he,
+        is_hoadon_co_ma_cqt,
+        is_hoadon_co_ma_cqt_mtt,
+        is_hoadon_khong_co_ma_cqt,
+        is_khong_phai_tra_tien_dich_vu,
+        is_doanh_nghiep_vvn_kho_khan,
+        is_doanh_nghiep_vvn_khac,
+        is_chuyen_day_du_tung_hoadon,
+        is_chuyen_theo_bang_tonghop,
+        is_sd_hoadon_gtgt,
+        is_sd_hoadon_banhang,
+        is_sd_chungtu_giong_hoadon,
+        noi_lap,
+        ngay_co_hieu_luc,
+        cks_user_id,
+        cks_serial_no,
+        cks_user_full_name,
+        is_camket,
+        ngay_tao,
+        nguoi_tao,
+        is_deleted,
+        created_time,
+        created_user_id,
+        last_modified_times,
+        last_modified_user_id,
+        is_chuyen_du_lieu_truc_tiep,
+        is_chuyen_lieu_thong_qua_to_chuc,
+        is_sd_hoadon_khac,
+        donvi_ma_dv,
+        ma_dang_ky,
+        user_id_phathanh,
+        phat_hanh_uuid,
+        ma_cqt,
+        co_quan_thue_id,
+        is_ban_hang_du_tru_quoc_gia ,
+        is_ban_tai_san_cong,
+        dai_dien_phap_luat_ho_ten,
+        dai_dien_phap_luat_dien_thoai,
+        dai_dien_phap_luat_dien_cccd,
+        dai_dien_phap_luat_dien_ngay_sinh,
+        dai_dien_phap_luat_dien_gioi_tinh,
+        is_co_quan_xu_ly_tai_san_cong,
+        is_sd_hoadon_gtgt_bien_lai,
+        is_sd_hoadon_banhang_bien_lai,
+        is_sd_hoadon_thuong_mai
+        )
+    values
+        (@to_khai_status_id,
+            @loai_to_khai_id,
+            @ma_to_khai,
+            @ngay_lap,
+            @mst,
+            @nguoi_nop_thue,
+            @nguoi_lien_he,
+            @co_quan_thue,
+            @dia_chi_lien_he,
+            @email_lien_he,
+            @dien_thoai_lien_he,
+            @is_hoadon_co_ma_cqt,
+            @is_hoadon_co_ma_cqt_mtt,
+            @is_hoadon_khong_co_ma_cqt,
+            @is_khong_phai_tra_tien_dich_vu,
+            @is_doanh_nghiep_vvn_kho_khan,
+            @is_doanh_nghiep_vvn_khac,
+            @is_chuyen_day_du_tung_hoadon,
+            @is_chuyen_theo_bang_tonghop,
+            @is_sd_hoadon_gtgt,
+            @is_sd_hoadon_banhang,
+            @is_sd_chungtu_giong_hoadon,
+            @noi_lap,
+            @ngay_co_hieu_luc,
+            @cks_user_id,
+            @cks_serial_no,
+            @cks_user_full_name,
+            @is_camket,
+            @ngay_tao,
+            @nguoi_tao,
+            @is_deleted,
+            @created_time,
+            @created_user_id,
+            @last_modified_times,
+            @last_modified_user_id,
+            @is_chuyen_du_lieu_truc_tiep,
+            @is_chuyen_lieu_thong_qua_to_chuc,
+            @is_sd_hoadon_khac,
+            @donvi_ma_dv,
+            @ma_dang_ky,
+            @user_id_phathanh,
+            @phat_hanh_uuid,
+            @ma_cqt,
+            @co_quan_thue_id,
+            @is_ban_hang_du_tru_quoc_gia ,
+            @is_ban_tai_san_cong,
+            @dai_dien_phap_luat_ho_ten,
+            @dai_dien_phap_luat_dien_thoai,
+            @dai_dien_phap_luat_dien_cccd,
+            @dai_dien_phap_luat_dien_ngay_sinh,
+            @dai_dien_phap_luat_dien_gioi_tinh,
+            @is_co_quan_xu_ly_tai_san_cong,
+            @is_sd_hoadon_gtgt_bien_lai,
+            @is_sd_hoadon_banhang_bien_lai,
+            @is_sd_hoadon_thuong_mai)
+    return @@identity
+end
+GO
+
+
+
+ALTER procedure [dbo].[to_khai_update]
+    @id int,
+    @to_khai_status_id int,
+    @loai_to_khai_id int,
+    @ma_to_khai nvarchar (200),
+    @ngay_lap datetime,
+    @mst nvarchar (200),
+    @nguoi_nop_thue nvarchar (2000),
+    @nguoi_lien_he nvarchar (400),
+    @co_quan_thue nvarchar (2000),
+    @dia_chi_lien_he nvarchar (2000),
+    @email_lien_he nvarchar (200),
+    @dien_thoai_lien_he nvarchar (200),
+    @is_hoadon_co_ma_cqt bit,
+    @is_hoadon_co_ma_cqt_mtt bit,
+    @is_hoadon_khong_co_ma_cqt bit,
+    @is_khong_phai_tra_tien_dich_vu bit,
+    @is_doanh_nghiep_vvn_kho_khan bit,
+    @is_doanh_nghiep_vvn_khac bit,
+    @is_chuyen_day_du_tung_hoadon bit,
+    @is_chuyen_theo_bang_tonghop bit,
+    @is_sd_hoadon_gtgt bit,
+    @is_sd_hoadon_banhang bit,
+    @is_sd_chungtu_giong_hoadon bit,
+    @noi_lap nvarchar (300),
+    @ngay_co_hieu_luc date,
+    @cks_user_id int,
+    @cks_serial_no nvarchar (2000),
+    @cks_user_full_name nvarchar (2000),
+    @is_camket bit,
+    @ngay_tao datetime,
+    @nguoi_tao nvarchar (2000),
+    @last_modified_times datetime,
+    @last_modified_user_id int,
+    @is_chuyen_du_lieu_truc_tiep bit,
+    @is_chuyen_lieu_thong_qua_to_chuc bit,
+    @is_sd_hoadon_khac bit,
+    @donvi_ma_dv nvarchar (200),
+    @ma_dang_ky NVARCHAR(100)='',
+    @user_id_phathanh int,
+    @phat_hanh_uuid nvarchar(100),
+    @ma_cqt nvarchar(10),
+    @co_quan_thue_id INT,
+    @is_ban_hang_du_tru_quoc_gia BIT,
+    @is_ban_tai_san_cong BIT,
+    @dai_dien_phap_luat_ho_ten nvarchar(200)='',
+    @dai_dien_phap_luat_dien_thoai nvarchar(200)='',
+    @dai_dien_phap_luat_dien_cccd nvarchar(200)='',
+    @dai_dien_phap_luat_dien_ngay_sinh DATETIME=NULL,
+    @dai_dien_phap_luat_dien_gioi_tinh INT=-1,
+    @is_co_quan_xu_ly_tai_san_cong BIT=0,
+    @is_sd_hoadon_gtgt_bien_lai BIT=0,
+    @is_sd_hoadon_banhang_bien_lai BIT=0,
+    @is_sd_hoadon_thuong_mai BIT=0
+as
+begin
+    update to_khai
+	set
+		to_khai_status_id=@to_khai_status_id,
+		loai_to_khai_id=@loai_to_khai_id,
+		ma_to_khai=@ma_to_khai,
+		ngay_lap=@ngay_lap,
+		mst=@mst,
+		nguoi_nop_thue=@nguoi_nop_thue,
+		nguoi_lien_he=@nguoi_lien_he,
+		co_quan_thue=@co_quan_thue,
+		dia_chi_lien_he=@dia_chi_lien_he,
+		email_lien_he=@email_lien_he,
+		dien_thoai_lien_he=@dien_thoai_lien_he,
+		is_hoadon_co_ma_cqt=@is_hoadon_co_ma_cqt,
+		is_hoadon_co_ma_cqt_mtt=@is_hoadon_co_ma_cqt_mtt,
+		is_hoadon_khong_co_ma_cqt=@is_hoadon_khong_co_ma_cqt,
+		is_khong_phai_tra_tien_dich_vu=@is_khong_phai_tra_tien_dich_vu,
+		is_doanh_nghiep_vvn_kho_khan=@is_doanh_nghiep_vvn_kho_khan,
+		is_doanh_nghiep_vvn_khac=@is_doanh_nghiep_vvn_khac,
+		is_chuyen_day_du_tung_hoadon=@is_chuyen_day_du_tung_hoadon,
+		is_chuyen_theo_bang_tonghop=@is_chuyen_theo_bang_tonghop,
+		is_sd_hoadon_gtgt=@is_sd_hoadon_gtgt,
+		is_sd_hoadon_banhang=@is_sd_hoadon_banhang,
+		is_sd_chungtu_giong_hoadon=@is_sd_chungtu_giong_hoadon,
+		noi_lap=@noi_lap,
+		ngay_co_hieu_luc=@ngay_co_hieu_luc,
+		cks_user_id=@cks_user_id,
+		cks_serial_no=@cks_serial_no,
+		cks_user_full_name=@cks_user_full_name,
+		is_camket=@is_camket,
+		ngay_tao=@ngay_tao,
+		nguoi_tao=@nguoi_tao,
+		last_modified_times=@last_modified_times,
+		last_modified_user_id=@last_modified_user_id,
+		is_chuyen_du_lieu_truc_tiep=@is_chuyen_du_lieu_truc_tiep,
+		is_chuyen_lieu_thong_qua_to_chuc=@is_chuyen_lieu_thong_qua_to_chuc,
+		is_sd_hoadon_khac=@is_sd_hoadon_khac,
+		donvi_ma_dv=@donvi_ma_dv,
+        ma_dang_ky=@ma_dang_ky,
+		user_id_phathanh=@user_id_phathanh,
+		phat_hanh_uuid=@phat_hanh_uuid,
+		ma_cqt=@ma_cqt,
+		co_quan_thue_id=@co_quan_thue_id,
+        is_ban_hang_du_tru_quoc_gia=@is_ban_hang_du_tru_quoc_gia,
+        is_ban_tai_san_cong=@is_ban_tai_san_cong,
+        dai_dien_phap_luat_ho_ten=@dai_dien_phap_luat_ho_ten,
+        dai_dien_phap_luat_dien_thoai=@dai_dien_phap_luat_dien_thoai,
+        dai_dien_phap_luat_dien_cccd=@dai_dien_phap_luat_dien_cccd,
+        dai_dien_phap_luat_dien_ngay_sinh=@dai_dien_phap_luat_dien_ngay_sinh,
+        dai_dien_phap_luat_dien_gioi_tinh=@dai_dien_phap_luat_dien_gioi_tinh,
+        is_co_quan_xu_ly_tai_san_cong=@is_co_quan_xu_ly_tai_san_cong,
+        is_sd_hoadon_gtgt_bien_lai=@is_sd_hoadon_gtgt_bien_lai,
+        is_sd_hoadon_banhang_bien_lai=@is_sd_hoadon_banhang_bien_lai,
+        is_sd_hoadon_thuong_mai=@is_sd_hoadon_thuong_mai
+	where id=@id
+end
+GO
+
+
+ALTER TABLE [evoice_user_log].dbo.[rs_yeu_cau_ky]
+ALTER COLUMN type_key nvarchar(max);
+GO
+
+
+ALTER procedure [dbo].[rs_yeu_cau_ky_insert]
+	@code nvarchar (300),
+	@user_id nvarchar (200),
+	@type nvarchar (200),
+	@type_key nvarchar (max),
+	@is_deleted bit,
+	@created_time datetime,
+	@created_user_id int,
+	@last_modified_times datetime,
+	@last_modified_user_id int,
+	@ket_qua_ky ntext
+as
+begin
+	insert into rs_yeu_cau_ky
+		(code,
+		user_id,
+		type,
+		type_key,
+		is_deleted,
+		created_time,
+		created_user_id,
+		last_modified_times,
+		last_modified_user_id,
+		ket_qua_ky)
+	values
+		(@code,
+		@user_id,
+		@type,
+		@type_key,
+		@is_deleted,
+		@created_time,
+		@created_user_id,
+		@last_modified_times,
+		@last_modified_user_id,
+		@ket_qua_ky)
+	return @@identity
+end
+GO
+
+create PROCEDURE hoa_don_update_phathanh_bangkes
+    @ids Ids READONLY,
+    @phat_hanh_uuid NVARCHAR(100),
+    @user_id_phathanh INT
+as
+BEGIN
+    UPDATE a set a.phat_hanh_uuid=@phat_hanh_uuid,
+   a.user_id_phathanh=@user_id_phathanh
+    from hoa_don a
+        join @ids b on a.id = b.id
+    where a.is_deleted=0
+end
+GO

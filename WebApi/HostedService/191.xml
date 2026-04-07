@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TKhai>
+    <DLTKhai Id="_225f94cd-a233-4bb1-99fe-3cb1bcd42ed1">
+        <TTChung>
+            <PBan>2.0.1</PBan>
+            <MSo>01/ĐKTĐ-HĐĐT</MSo>
+            <Ten>Tờ khai đăng ký sử dụng hóa đơn điện tử</Ten>
+            <HThuc>1</HThuc>
+            <TNNT>CÔNG TY TNHH KỸ THUẬT VÀ DỊCH VỤ BẢO ĐIỆP</TNNT>
+            <MST>0110795454</MST>
+            <CQTQLy>Chi cục Thuế khu vực Thanh Oai - Chương Mỹ</CQTQLy>
+            <MCQTQLy>10153</MCQTQLy>
+            <NLHe>NGÔ VĂN QUYỀN</NLHe>
+            <DCLHe>Thông Quang Trung, Xã Hữu Văn, Huyện Chương Mỹ, Thành Phố Hà Nội, Việt Nam</DCLHe>
+            <DCTDTu>bapdiepphoto@gmail.com</DCTDTu>
+            <DTLHe>0986199003</DTLHe>
+            <DDanh>Hà Nội</DDanh>
+            <NLap>2024-08-01</NLap>
+        </TTChung>
+        <NDTKhai>
+            <HTHDon>
+                <CMa>1</CMa>
+                <KCMa>0</KCMa>
+                <CMTMTTien>0</CMTMTTien>
+            </HTHDon>
+            <HTGDLHDDT>
+                <NNTDBKKhan>0</NNTDBKKhan>
+                <NNTKTDNUBND>0</NNTKTDNUBND>
+                <CDLTTDCQT>0</CDLTTDCQT>
+                <CDLQTCTN>0</CDLQTCTN>
+            </HTGDLHDDT>
+            <PThuc>
+                <CDDu>1</CDDu>
+                <CBTHop>0</CBTHop>
+            </PThuc>
+            <LHDSDung>
+                <HDGTGT>1</HDGTGT>
+                <HDBHang>0</HDBHang>
+                <HDBTSCong>0</HDBTSCong>
+                <HDBHDTQGia>0</HDBHDTQGia>
+                <HDKhac>0</HDKhac>
+                <CTu>0</CTu>
+            </LHDSDung>
+            <DSCTSSDung>
+                <CTS>
+                    <STT>1</STT>
+                    <TTChuc>CÔNG TY TNHH KỸ THUẬT VÀ DỊCH VỤ BẢO ĐIỆP</TTChuc>
+                    <Seri>5402BC5CACCE669C201500020007A5F0</Seri>
+                    <TNgay>2024-07-31T16:16:05</TNgay>
+                    <DNgay>2025-03-06T16:38:19</DNgay>
+                    <HThuc>1</HThuc>
+                </CTS>
+            </DSCTSSDung>
+        </NDTKhai>
+    </DLTKhai>
+    <DSCKS>
+        <NNT />
+        <CCKSKhac />
+    </DSCKS>
+</TKhai>

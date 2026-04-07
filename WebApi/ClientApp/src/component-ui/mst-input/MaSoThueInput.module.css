@@ -1,0 +1,24 @@
+.group {
+    display: flex;
+}
+
+
+
+.group span:not(:first-child, :last-child) {
+    width: 40px;
+    border-radius: 0px !important;
+}
+
+.group span:first-child {
+    border-top-right-radius: 0px !important;
+    border-bottom-right-radius: 0px !important;
+}
+
+.group span:last-child {
+    border-top-left-radius: 0px !important;
+    border-bottom-left-radius: 0px !important;
+}
+
+.group input {
+    width: 35px;
+}

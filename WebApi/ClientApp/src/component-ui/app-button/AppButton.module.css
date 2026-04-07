@@ -1,0 +1,90 @@
+.container {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    /* height: 80px; */
+    font-weight: 500;
+    margin-bottom: 10px;
+    cursor: pointer;
+    
+}
+
+.container.active .appName {
+    opacity: 1;
+}
+.container.disabled {
+    opacity: 0.5!important;
+    font-weight: 400;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+.container:hover .iconApp {
+    /* box-shadow: rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px; */
+    /* box-shadow: var(--secondary) 0px 0px 0px 3px; */
+    background-color: rgba(222, 63, 15, 0.3);
+    transition: all 0.3s;
+    color: var(--secondary);
+}
+
+.icon {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.iconState {
+    width: 3px;
+}
+
+.activeState {
+    background-color: var(--secondary);
+    height: 32px;
+    border-radius: 4px;
+}
+
+.iconImage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+
+}
+
+.iconApp {
+    background-color: var(--bg-muted);
+    height: 48px;
+    width: 48px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2px;
+    
+}
+.iconApp svg{
+    width: 24px;
+    height: 24px;
+}
+.iconApp.active {
+    background-color: var(--secondary);
+    color: #fff!important;
+}
+
+.appName {
+    opacity: 0.6;
+    font-size: 12px;
+}
+.popup{
+    background-color: var(--bg-muted);
+}
+.popup li{
+    color: #fff;
+}
+.popup li>div[role="presentation"]{
+    color: var(--secondary);
+}

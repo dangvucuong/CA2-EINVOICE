@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Contracts\Contract.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Core\" />
+    <None Remove="User\" />
+    <None Remove="Category\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Core\" />
+    <Folder Include="User\" />
+    <Folder Include="Category\" />
+  </ItemGroup>
+</Project>

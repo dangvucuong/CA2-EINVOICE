@@ -1,0 +1,15 @@
+.navsub {
+    background-color: var(--bg-muted);
+}
+
+.navsub span {
+    color: #fff;
+}
+
+.navsub svg {
+    color: #fff;
+}
+
+.navsub li>div {
+    height: 32px;
+}

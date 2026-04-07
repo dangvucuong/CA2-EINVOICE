@@ -1,0 +1,46 @@
+<HDon>
+  <DLHDon  Id="_12553232">
+    <TTChung>
+      <PBan>2.1.0</PBan>
+      <THDon>HÓA ĐƠN GIÁ TRỊ GIA TĂNG</THDon>
+      <KHMSHDon>01GTKT0/001</KHMSHDon>
+      <KHHDon>AA/25E</KHHDon>
+      <SHDon>00000001</SHDon>
+      <NLap>2025-09-13</NLap>
+      <DVTTe>VND</DVTTe>
+      <TGia>1</TGia>
+      <HTTToan>Chuyển khoản</HTTToan>
+    </TTChung>
+    <NDHDon>
+      <NBan>
+        <Ten>CÔNG TY TNHH ABC</Ten>
+        <MST>0312345678</MST>
+        <DChi>123 Đường A, Quận 1, TP.HCM</DChi>
+      </NBan>
+      <NMua>
+        <Ten>CÔNG TY TNHH XYZ</Ten>
+        <MST>0101234567</MST>
+        <DChi>456 Đường B, Quận Hoàn Kiếm, Hà Nội</DChi>
+      </NMua>
+      <DSHHDVu>
+        <HHDVu>
+          <TChat>1</TChat>
+          <STT>1</STT>
+          <THHDVu>Sản phẩm A</THHDVu>
+          <DVTinh>Cái</DVTinh>
+          <SLuong>10</SLuong>
+          <DGia>50000</DGia>
+          <ThTien>500000</ThTien>
+        </HHDVu>
+      </DSHHDVu>
+      <TToan>
+        <TgTTTBSo>500000</TgTTTBSo>
+        <TgTTTBChu>Năm trăm nghìn đồng</TgTTTBChu>
+      </TToan>
+    </NDHDon>
+  </DLHDon>
+  <DLQRCode>BASE64-QRCODE</DLQRCode>
+  <DSCKS>
+    <NBan />  
+  </DSCKS>
+</HDon>

@@ -1,0 +1,21 @@
+import LazyPage from '../component-ui/lazy-page';
+
+export const UserPage = LazyPage(import('./user'));
+export const HomePage = LazyPage(import('./home'));
+export const RolePage = LazyPage(import('./role'));
+export const KhachHangPage = LazyPage(import('./khach-hang'));
+export const HangHoaPage = LazyPage(import('./hang-hoa'));
+export const ChangePWPage = LazyPage(import('./change-pw'));
+export const RegisterPage = LazyPage(import('./register'));
+export const ContactPage = LazyPage(import('./contact'));
+export const LogPage = LazyPage(import('./history'));
+export const TaiNguyenPage = LazyPage(import('./tai-nguyen'));
+export const ToKhaiPage = LazyPage(import('./to-khai'));
+export const MauHoDonPage = LazyPage(import('./mau-hoa-don'));
+export const MauHoaDonListPage = LazyPage(import('./mau-hoa-don-list-page'));
+export const HoaDonForm = LazyPage(import('./hoa-don-form'));
+export const HoaDonPage = LazyPage(import('./hoa-don'));
+export const HoaDonPhatHanhPage = LazyPage(import('./hoa-don-phat-hanh'));
+export const ThongKePage = LazyPage(import('./thong-ke'));
+export const HoaDonDieuChinhPage = LazyPage(import('./hoa-don-dieu-chinh'));
+export const HoaDonThayThePage = LazyPage(import('./hoa-don-thay-the'));
