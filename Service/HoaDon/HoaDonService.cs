@@ -72,7 +72,13 @@ namespace Service.HoaDon
             var insert = model.id <= 0;
             CalculateThanhTienHoaDon(model);
             var tienbangchu = string.Empty;
+            if (model.loai_tien == null) model.loai_tien = "VND";
+
             if (model.loai_tien == "VND")
+            {
+                tienbangchu = clsMoneyreader.DocTienBangChu(model.tong_tien_thanh_toan);
+            }
+            else if (model.loai_tien == "VNĐ")
             {
                 tienbangchu = clsMoneyreader.DocTienBangChu(model.tong_tien_thanh_toan);
             }
@@ -2343,7 +2349,8 @@ namespace Service.HoaDon
             }
 
             var maThamChieu = ketQuaThongDiepRespone.TTChung.MTDTChieu;
-            var uuid = maThamChieu.Replace($"V{AppSettings.FixedValue.MNGui}", "");
+            // var uuid = maThamChieu.Replace($"V{AppSettings.FixedValue.MNGui}", "");
+            var uuid = maThamChieu.Replace($"V0103930279", "");
             var cachedDataType = await _serviceWrapper.Cache.GetDataAsync<string>(uuid);
             var cachedTypes = new List<string> { "hoa_don", "tbss", "to_khai", "bang_ke_mtt" };
             if (!cachedTypes.Contains(cachedDataType.ConvertToString()))

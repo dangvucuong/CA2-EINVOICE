@@ -11,12 +11,20 @@ namespace Service.HoaDon
             "không","một","hai","ba","bốn","năm","sáu","bảy","tám","chín"
         };
 
+        // hỗ trợ số rất lớn
         private static readonly string[] Hang =
         {
-            "","nghìn","triệu","tỷ"
+            "",
+            "nghìn",
+            "triệu",
+            "tỷ",
+            "nghìn tỷ",
+            "triệu tỷ",
+            "tỷ tỷ"
         };
 
         #endregion
+
 
         #region cấu hình tiền tệ
 
@@ -30,6 +38,7 @@ namespace Service.HoaDon
 
             public bool UseAnd { get; set; } = true;
         }
+
 
         static readonly Dictionary<string, CurrencyInfo> CurrencyMap =
             new Dictionary<string, CurrencyInfo>(StringComparer.OrdinalIgnoreCase)
@@ -69,7 +78,7 @@ namespace Service.HoaDon
                 {
                     MajorName = "yên",
                     MinorName = "xu",
-                    MinorDigits = 2,
+                    MinorDigits = 0,
                     UseAnd = false
                 },
 
@@ -116,29 +125,32 @@ namespace Service.HoaDon
 
         #endregion
 
-        #region đọc VND
+
+
+        #region public API
 
         public static string DocTienBangChu(decimal soTien)
         {
             return DocTienTheoDonVi(soTien, "VND");
         }
 
-        #endregion
 
-        #region đọc theo đơn vị tiền tệ
 
         public static string DocTienTheoDonVi(decimal amount, string currencyCode)
         {
             if (!CurrencyMap.ContainsKey(currencyCode))
                 throw new Exception("Currency not supported: " + currencyCode);
 
+
             var info = CurrencyMap[currencyCode];
 
             decimal rounded =
                 Math.Round(amount, info.MinorDigits);
 
+
             long majorPart =
                 (long)Math.Floor(rounded);
+
 
             long minorPart = 0;
 
@@ -149,9 +161,12 @@ namespace Service.HoaDon
                     * (decimal)Math.Pow(10, info.MinorDigits));
             }
 
+
             string result =
                 ReadInteger(majorPart)
                 + " " + info.MajorName;
+
+
 
             if (minorPart > 0)
             {
@@ -163,6 +178,7 @@ namespace Service.HoaDon
                     + " " + info.MinorName;
             }
 
+
             result = result.Trim();
 
             return char.ToUpper(result[0])
@@ -171,6 +187,9 @@ namespace Service.HoaDon
 
         #endregion
 
+
+
+
         #region đọc số nguyên
 
         private static string ReadInteger(long number)
@@ -178,99 +197,155 @@ namespace Service.HoaDon
             if (number == 0)
                 return "không";
 
-            int maxIndex = 0;
-            long temp = number;
 
-            while (temp >= 1000)
-            {
-                temp /= 1000;
-                maxIndex++;
-            }
+            List<int> blocks =
+                new List<int>();
 
-            string result = "";
-            int i = 0;
 
             while (number > 0)
             {
-                int block = (int)(number % 1000);
-
-                if (block != 0)
-                {
-                    bool isHighestBlock = (i == maxIndex);
-
-                    string text =
-                        DocBaSo(block, isHighestBlock);
-
-                    result =
-                        text + " "
-                        + Hang[i % 4]
-                        + " "
-                        + result;
-                }
-
+                blocks.Add((int)(number % 1000));
                 number /= 1000;
-                i++;
             }
 
-            return result.Trim();
-        }
-
-        #endregion
-
-        #region đọc 3 chữ số
-
-        private static string DocBaSo(int number, bool isHighestBlock)
-        {
-            int tram = number / 100;
-            int chuc = (number % 100) / 10;
-            int donvi = number % 10;
 
             string result = "";
 
-            // hàng trăm
-            if (tram > 0)
+
+            for (int i = blocks.Count - 1; i >= 0; i--)
             {
-                result += ChuSo[tram] + " trăm";
-            }
-            else if (!isHighestBlock && number > 0)
-            {
-                result += "không trăm";
+                int block = blocks[i];
+
+                if (block == 0)
+                    continue;
+
+
+                bool isHighestBlock =
+                    (i == blocks.Count - 1);
+
+
+                string text =
+                    DocBaSo(block, isHighestBlock);
+
+
+                string unit =
+                    (i < Hang.Length)
+                        ? Hang[i]
+                        : "";
+
+
+                result +=
+                    text
+                    + (unit != "" ? " " + unit : "")
+                    + " ";
             }
 
-            // hàng chục
-            if (chuc > 1)
-            {
-                result += (result != "" ? " " : "") + ChuSo[chuc] + " mươi";
-
-                if (donvi == 1)
-                    result += "mốt ";
-                else if (donvi == 4)
-                    result += " tư ";
-                else if (donvi == 5)
-                    result += "lăm ";
-                else if (donvi > 0)
-                    result += ChuSo[donvi] + " ";
-            }
-            else if (chuc == 1)
-            {
-                result += (result != "" ? " " : "") + "mười";
-
-                if (donvi == 5)
-                    result += " lăm";
-                else if (donvi > 0)
-                    result += " " + ChuSo[donvi];
-            }
-            else if (donvi > 0)
-            {
-                if (tram > 0 || !isHighestBlock)
-                    result += (result != "" ? " linh " : "linh ");
-
-                result += ChuSo[donvi];
-            }
 
             return result.Trim();
         }
 
         #endregion
+
+
+
+
+        #region đọc 3 chữ số
+
+        private static string DocBaSo(
+            int number,
+            bool isHighestBlock)
+        {
+
+            int tram =
+                number / 100;
+
+
+            int chuc =
+                (number % 100) / 10;
+
+
+            int donvi =
+                number % 10;
+
+
+            string result = "";
+
+
+            // trăm
+
+            if (tram > 0)
+            {
+                result +=
+                    ChuSo[tram]
+                    + " trăm";
+            }
+            else if (!isHighestBlock
+                     && number > 0)
+            {
+                result +=
+                    "không trăm";
+            }
+
+
+
+            // chục
+
+            if (chuc > 1)
+            {
+                result +=
+                    (result != "" ? " " : "")
+                    + ChuSo[chuc]
+                    + " mươi";
+
+
+                if (donvi == 1)
+                    result += " mốt";
+
+                else if (donvi == 4)
+                    result += " tư";
+
+                else if (donvi == 5)
+                    result += " lăm";
+
+                else if (donvi > 0)
+                    result += " " + ChuSo[donvi];
+            }
+
+
+            else if (chuc == 1)
+            {
+                result +=
+                    (result != "" ? " " : "")
+                    + "mười";
+
+
+                if (donvi == 5)
+                    result += " lăm";
+
+                else if (donvi > 0)
+                    result += " " + ChuSo[donvi];
+            }
+
+
+            else if (donvi > 0)
+            {
+                if (tram > 0
+                    || !isHighestBlock)
+                {
+                    result +=
+                        (result != "" ? " linh " : "linh ");
+                }
+
+
+                result +=
+                    ChuSo[donvi];
+            }
+
+
+            return result.Trim();
+        }
+
+        #endregion
+
     }
 }

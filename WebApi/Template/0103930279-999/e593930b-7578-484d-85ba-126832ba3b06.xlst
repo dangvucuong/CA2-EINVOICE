@@ -130,6 +130,28 @@
                                     <br/>
                                     <span style="font-weight:bold; font-size:15pt">(VAT INVOICE)</span>
                                     <br/>
+								<span style="font-size:10.5pt">
+				   Ngày
+									&#160;
+									<xsl:variable name="string">
+										<xsl:value-of select="substring(DLHDon/TTChung/NLap,9,2)"/>
+									</xsl:variable>
+									<xsl:value-of select="$string" />
+
+				  tháng
+									&#160;
+									<xsl:variable name="string1">
+										<xsl:value-of select="substring(DLHDon/TTChung/NLap,6,2)"/>
+									</xsl:variable>
+									<xsl:value-of select="$string1" />
+				  năm
+									&#160;
+									<xsl:variable name="string2">
+										<xsl:value-of select="substring(DLHDon/TTChung/NLap,0,5)"/>
+									</xsl:variable>
+									<xsl:value-of select="$string2" />
+								</span>
+                                    <br/>
                                     <span style="font-weight:normal;font-size:10.5pt;display:param1_1">param1</span>
                                 </div>
                                 <div id="header_right">   
