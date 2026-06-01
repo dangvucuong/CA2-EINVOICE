@@ -1,5 +1,6 @@
 using Contracts.Service.Base;
 using Model.Base;
+using Model.Cache;
 using Model.Request.HoaDon;
 using Model.Request.Hub;
 using Model.Respone.ApiSign;
@@ -24,5 +25,7 @@ namespace Contracts.Service.HoaDon
         Task<bool> XuLyThongDiepKySoVaPhatHanhHoaDonBangKeAsync(rs_yeu_cau_ky yeuCauKy);
         Task<IEnumerable<HoaDonCreateXmlKySoRespone>> CreateXmlVaPhatHanhsMTTBangKeAsync(HoaDonKyLoRequest request, List<hoa_don> hoaDonMTTs, bool isRunBackgroundForRS = false);
         Task<bool> XuLyThongDiepKetQuaPhanHanhAsync(KetQuaThongDiepRespone ketQuaThongDiepRespone,string xmlKetQua);
+        Task<List<HoaDonPrepareHashSignResponse>>PrepareHashSignsAsync(List<int> ids);
+        Task<(string signedXmlBase64, int hoaDonId)> FinalizeHashSignAsync(HoaDonFinalizeHashSignRequest request);
     }
 }

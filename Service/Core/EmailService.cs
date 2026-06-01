@@ -7,16 +7,23 @@ using Model.Static;
 using Service.Base;
 using Common;
 using System.Globalization;
+using System.Net.Http;
+using System.Text;
+
 namespace Service.Core
 {
     public class EmailService : BaseService, IEmailService
     {
+
+        private static readonly HttpClient _httpClient;
+        private static string taikhoan = "0103930279WEBHN";
+        private static string matkhau = "2026CA2WEBHN920eab4b969a4afda9fae0da7469d668";
+
         public EmailService(IServiceProvider serviceProvider) : base(serviceProvider)
         {
         }
         public async Task<FunctionResult<bool>> SendEmailAsync(SendEmailRequest rq)
-        {
-
+        {           
             // return new FunctionResultBase<bool>(true,"");
             string _FromEmailAddress = AppSettings.EmailConfig.FromEmailAddress;
             string _Host = AppSettings.EmailConfig.Host;
@@ -48,19 +55,17 @@ namespace Service.Core
             message.Body = rq.Body;
             message.IsBodyHtml = rq.isHtml;
 
-
-
             if (message.To.Count > 0)
             {
-                var smtp = new SmtpClient(_Host)
-                {
-                    DeliveryMethod = SmtpDeliveryMethod.Network
-                };
-                smtp.Port = _Port;
-                smtp.UseDefaultCredentials = false;
-                smtp.Credentials = new System.Net.NetworkCredential(_FromEmailAddress, _PasswordEmail);
-                smtp.EnableSsl = _EnableSsl;
-                smtp.Send(message);
+                //var smtp = new SmtpClient(_Host)
+                //{
+                //    DeliveryMethod = SmtpDeliveryMethod.Network
+                //};
+                //smtp.Port = _Port;
+                //smtp.UseDefaultCredentials = false;
+                //smtp.Credentials = new System.Net.NetworkCredential(_FromEmailAddress, _PasswordEmail);
+                //smtp.EnableSsl = _EnableSsl;
+                //smtp.Send(message);
                 var email_sended = new Model.Table.email_sended()
                 {
                     body = rq.Body,
@@ -69,8 +74,10 @@ namespace Service.Core
                     subject = rq.Subject,
                     to_address = message.To.Select(x => x.Address).Join(";"),
                     send_by_username = rq.SendByUser
-                };
+                };               
                 email_sended.id = await _repositoryWrapper.Core.EmailSended.InsertAsync(email_sended);
+                string systemkey=Guid.NewGuid().ToString();
+             
                 return new FunctionResult<bool>(true, string.Empty);
             }
             return new FunctionResult<bool>(false, string.Empty);
@@ -117,6 +124,38 @@ namespace Service.Core
             catch (RegexMatchTimeoutException)
             {
                 return false;
+            }
+        }
+
+        public static string SendMailapi(string systemKey,string to,string cc,string subject,string bodyHtml,string displayName)
+        {
+            try
+            {
+                var payload = new
+                {
+                    taikhoan,
+                    matkhau,
+                    SystemKey = systemKey,
+                    To = to,
+                    Cc = cc,
+                    Subject = subject,
+                    BodyHtml = bodyHtml,
+                    DisplayName = displayName
+                };
+
+                var json = Newtonsoft.Json.JsonConvert.SerializeObject(payload);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = _httpClient
+                    .PostAsync("api/SendMailCA2/SendMail", content)
+                    .GetAwaiter()
+                    .GetResult();
+
+                return response.Content.ReadAsStringAsync().Result;
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
             }
         }
     }

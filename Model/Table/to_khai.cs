@@ -109,5 +109,7 @@ namespace Model.Table
         public string? to_chuc_cap_giay_phep_json { get; set; }
         public string? to_chuc_truyen_nhan_json { get; set; }
         public string? so_ho_chieu { get; set; }
+
+        public string? tam_ngung_su_dung { get; set; }
     }
 }

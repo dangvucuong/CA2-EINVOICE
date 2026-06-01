@@ -58,4 +58,11 @@ export interface IToKhai {
 
   to_chuc_cap_giay_phep_json?: string;
   to_chuc_truyen_nhan_json?: string;
+  tam_ngung_su_dung?: string;
+
+  tam_ngung_ten_to_chuc?: string;
+  tam_ngung_mst?: string;
+  tam_ngung_tu_ngay?: string;
+  tam_ngung_den_ngay?: string;
+  is_tam_ngung_su_dung?: boolean;
 }

@@ -233,7 +233,7 @@ export const ToKhaiForm = () => {
   const noi_lap = watch("noi_lap");
   const loai_to_khai_id = watch("loai_to_khai_id");
   const is_camket = watch("is_camket");
-
+  const is_tam_ngung_su_dung = watch("is_tam_ngung_su_dung");
   const handleGetDetailAsync = async () => {
     setLoadingStatus("loading");
     const res = await toKhaiApi.getViewModel(id);
@@ -246,6 +246,7 @@ export const ToKhaiForm = () => {
       setLoadingStatus("load_err");
     }
   };
+
   useEffect(() => {
     if (_signalrConnected) {
       _signalrHubProxy.on("addMessage", function (eventName: any, data: any) {
@@ -346,12 +347,14 @@ export const ToKhaiForm = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toKhais, loai_to_khai_id]);
+
   const onSubmit = async (data: IToKhai) => {
     // console.log({
     //   onSubmit: data,
     // });
 
     ///validate email
+    //  debugger;
     if (data.email_lien_he) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(data.email_lien_he)) {
@@ -382,6 +385,24 @@ export const ToKhaiForm = () => {
         data.to_chuc_cap_giay_phep_json ?? JSON.stringify([defaultTTCPObj]),
       to_chuc_truyen_nhan_json:
         data.to_chuc_truyen_nhan_json ?? JSON.stringify([defaultTTTNObj]),
+
+      // thêm đoạn này
+      tam_ngung_su_dung: data.is_tam_ngung_su_dung
+        ? JSON.stringify({
+          TTTNSDung: {
+            TNSDung: [
+              {
+                STT: "1",
+                TTCGP: data.tam_ngung_ten_to_chuc,
+                MSTTCGP: data.tam_ngung_mst,
+                TNgay: data.tam_ngung_tu_ngay,
+                DNgay: data.tam_ngung_den_ngay,
+              },
+            ],
+          },
+        })
+        : "",
+
       list_cts: cerFiles.map((x) => {
         const obj: IToKhaiCTS = {
           to_khai_id: id,
@@ -898,6 +919,106 @@ export const ToKhaiForm = () => {
               setValue={setValue}
             />
           </PaperFormGroup>
+
+          <Controller
+            control={control}
+            name="is_tam_ngung_su_dung"
+            render={({ field }) => {
+              return (
+                <FormControl sx={{ mb: 3 }}>
+                  <Checkbox
+                    checked={field.value ?? false}
+                    onChange={(e) => {
+                      field.onChange(e.target.checked);
+                    }}
+                  />
+                  <FormControl.Label>
+                    Có tạm ngừng sử dụng hóa đơn điện tử
+                  </FormControl.Label>
+                </FormControl>
+              );
+            }}
+          />
+
+          {
+            is_tam_ngung_su_dung && (
+              <PaperFormGroup label="9. Thông tin tạm ngừng sử dụng hóa đơn điện tử">
+                <Box
+                  sx={{
+                    border: "1px solid #d0d7de",
+                    borderRadius: "6px",
+                    overflow: "hidden",
+                  }}
+                >
+                  {/* Header */}
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: "80px 2fr 1fr 1fr 1fr",
+                      backgroundColor: "#f6f8fa",
+                      fontWeight: "bold",
+                      borderBottom: "1px solid #d0d7de",
+                    }}
+                  >
+                    <Box p={2}>STT</Box>
+                    <Box p={2}>Tên tổ chức</Box>
+                    <Box p={2}>Mã số thuế</Box>
+                    <Box p={2}>Từ ngày</Box>
+                    <Box p={2}>Đến ngày</Box>
+                  </Box>
+
+                  {/* Row */}
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: "80px 2fr 1fr 1fr 1fr",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Box p={2}>1</Box>
+
+                    <Box p={2}>
+                      <TextInput
+                        register={register}
+                        name="tam_ngung_ten_to_chuc"
+                        block
+                        defaultValue="CÔNG TY CỔ PHẦN CÔNG NGHỆ THẺ NACENCOMM"
+                      />
+                    </Box>
+
+                    <Box p={2}>
+                      <TextInput
+                        register={register}
+                        name="tam_ngung_mst"
+                        block
+                        defaultValue="0103930279"
+                      />
+                    </Box>
+
+                    <Box p={2}>
+                      <TextInput
+                        register={register}
+                        name="tam_ngung_tu_ngay"
+                        type="date"
+                        block
+                        defaultValue={moment().format("YYYY-MM-DD")}
+                      />
+                    </Box>
+
+                    <Box p={2}>
+                      <TextInput
+                        register={register}
+                        name="tam_ngung_den_ngay"
+                        type="date"
+                        block
+                        defaultValue={moment().endOf("year").format("YYYY-MM-DD")}
+                      />
+                    </Box>
+                  </Box>
+                </Box>
+              </PaperFormGroup>
+            )
+          }
           <Box
             sx={{
               borderTopStyle: "solid",
@@ -1068,38 +1189,38 @@ export const ToKhaiForm = () => {
                 {(id === 0 ||
                   (toKhaiViewModel &&
                     toKhaiViewModel.to_khai_status_id ===
-                      eToKhaiStatus.TAO_MOI)) && (
-                  <>
-                    <Button
-                      text="Lưu"
-                      isLoading={isSaving}
-                      type="submit"
-                      disabled={!is_camket}
-                      sx={{ mr: 2, minWidth: "100px" }}
-                      size="large"
-                      variant="primary"
+                    eToKhaiStatus.TAO_MOI)) && (
+                    <>
+                      <Button
+                        text="Lưu"
+                        isLoading={isSaving}
+                        type="submit"
+                        disabled={!is_camket}
+                        sx={{ mr: 2, minWidth: "100px" }}
+                        size="large"
+                        variant="primary"
                       // tooltip="Vui lòng xác nhận Cam kết chịu trách nhiệm..."
-                    />
-                    <Button
-                      text="Ký gửi cơ quan thuế"
-                      isLoading={isSaving}
-                      disabled={!isCanSend}
-                      sx={{ minWidth: "100px" }}
-                      variant="primary"
-                      size="large"
-                      tooltip="Bạn chỉ có thể gửi tờ khai sau khi đã ký số"
-                      onClick={() => {
-                        if (user) {
-                          if (user.is_hsm_signing || user.is_remote_signing) {
-                            handleKySoRemoteAsync();
-                          } else {
-                            handleGetBase64KySo();
+                      />
+                      <Button
+                        text="Ký gửi cơ quan thuế"
+                        isLoading={isSaving}
+                        disabled={!isCanSend}
+                        sx={{ minWidth: "100px" }}
+                        variant="primary"
+                        size="large"
+                        tooltip="Bạn chỉ có thể gửi tờ khai sau khi đã ký số"
+                        onClick={() => {
+                          if (user) {
+                            if (user.is_hsm_signing || user.is_remote_signing) {
+                              handleKySoRemoteAsync();
+                            } else {
+                              handleGetBase64KySo();
+                            }
                           }
-                        }
-                      }}
-                    />
-                  </>
-                )}
+                        }}
+                      />
+                    </>
+                  )}
               </Box>
             </Box>
           </Box>

@@ -11,13 +11,27 @@ import { DownloadIcon } from "@primer/octicons-react";
 import { userApi } from "../../api/user/userApi";
 
 interface IKySoModalProps {
-  base64: string;
+  base64?: string;
   base64BienBan?: string;
-  onSuccess: (signedtext: string, bienBanSignedText?: string) => void;
+
+  hashBase64?: string;
+  sessionId?: string;
+
+  onSuccess?: (
+    signedtext: string,
+    bienBanSignedText?: string
+  ) => void;
+
+  onHashSignSuccess?: (
+    sessionId: string,
+    signatureValue: string
+  ) => void;
   onClose: () => void;
 }
+
 const KySoModal = (props: IKySoModalProps) => {
-  const { base64, onClose, onSuccess } = props;
+  const { base64, hashBase64, sessionId, onClose, onSuccess, onHashSignSuccess } = props;
+
   const { user } = useAuth();
   const { createUUID } = useCommonContext();
   const {
@@ -31,20 +45,23 @@ const KySoModal = (props: IKySoModalProps) => {
   const [kySoSuccessHoaDonSuccessResult, setkySoSuccessHoaDonSuccessResult] =
     useState();
   const [kySoBienBanSuccessResult, setKySoBienBanSuccessResult] = useState();
+
+  const isHashSigning = !!hashBase64 && !!sessionId;
+
   useEffect(() => {
     if (props.base64BienBan) {
       if (kySoSuccessHoaDonSuccessResult && kySoBienBanSuccessResult) {
         if ((user?.serial_number ?? "") === "" && serialNumber) {
           hanldeUpdateSerialNumerIfEmpty();
         }
-        onSuccess(kySoSuccessHoaDonSuccessResult, kySoBienBanSuccessResult);
+        onSuccess?.(kySoSuccessHoaDonSuccessResult,kySoBienBanSuccessResult);
       }
     } else {
       if (kySoSuccessHoaDonSuccessResult) {
         if ((user?.serial_number ?? "") === "" && serialNumber) {
           hanldeUpdateSerialNumerIfEmpty();
         }
-        onSuccess(kySoSuccessHoaDonSuccessResult);
+        onSuccess?.(kySoSuccessHoaDonSuccessResult,kySoBienBanSuccessResult);
       }
     }
   }, [
@@ -55,14 +72,7 @@ const KySoModal = (props: IKySoModalProps) => {
     serialNumber,
     user,
   ]);
-  // const {
-  //   _signalrConnected,
-  //   createUUID,
-  //   _signalrHubProxy,
-  //   _signalrSelectCert,
-  //   _signalrSignLogin,
-  //   getMSTFromCertSubject,
-  // } = useCommonContext();
+
   useEffect(() => {
     setSerialNumber(user?.serial_number ?? "");
   }, [user]);
@@ -138,14 +148,15 @@ const KySoModal = (props: IKySoModalProps) => {
       _codeRef.current = code;
       // const code = '95182a97-5f81-4928-9101-dccb14b9a336';
 
-      var content = code + "|" + serialNumber + "|" + base64 + "|XML";
+      let content = "";
 
-      // if (!isSignalRReady()) {
-      //   NotifyHelper.Error("Chưa kết nối server. Đang kết nối lại...");
-      //   reconnectSignalR();
-      //   return; // KHÔNG SEND, chờ reconnect
-      // }
-      // 
+      if (isHashSigning) {
+        content = code + "|" + serialNumber + "|" + hashBase64 + "|HASH";
+      } else {
+        content = code + "|" + serialNumber + "|" + base64 + "|XML";
+      }
+
+
       _signalrHubProxy
         .invoke("send", content)
         .done(function () {
@@ -213,7 +224,23 @@ const KySoModal = (props: IKySoModalProps) => {
                 ketquas,
                 signedtext,
               });
-              setkySoSuccessHoaDonSuccessResult(signedtext);
+
+              //setkySoSuccessHoaDonSuccessResult(signedtext);
+
+              if (isHashSigning) {
+                if (
+                  onHashSignSuccess && sessionId
+                ) 
+                {
+                  onHashSignSuccess(
+                    sessionId,
+                    signedtext
+                  );
+                }
+              } else {
+                setkySoSuccessHoaDonSuccessResult(signedtext);
+              }
+
             } else {
               if (!shownErrorCodes.has(code)) {
                 NotifyHelper.Error(signedtext ?? "Có lỗi");

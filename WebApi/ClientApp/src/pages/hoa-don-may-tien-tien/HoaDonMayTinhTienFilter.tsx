@@ -18,6 +18,7 @@ const HoaDonMayTinhTienFilter = (props: IHoaDonMayTinhTienFilterProps) => {
     return (
         <>
             <SelectBoxLoaiHoaDonCTPhatHanh
+                onlyMtt
                 isShowClearBtn
                 value={filter.loai_hoa_don_ct_id}
                 onValueChanged={(id) => {
@@ -31,6 +32,7 @@ const HoaDonMayTinhTienFilter = (props: IHoaDonMayTinhTienFilterProps) => {
             />
             <Box>
                 <SelectBoxMauSoPhatHanh value={filter.hoa_don_dang_ky_phat_hanh_mau_so}
+                    onlyMtt
                     loai_hoa_don_ct_id={filter.loai_hoa_don_ct_id}
                     isAutoSelectIfHasOneItem
                     isShowClearBtn
@@ -45,6 +47,7 @@ const HoaDonMayTinhTienFilter = (props: IHoaDonMayTinhTienFilterProps) => {
             </Box>
             <Box>
                 <SelectBoxKyHieuPhatHanh value={filter.hoa_don_dang_ky_phat_hanh_ky_hieu}
+                    onlyMtt
                     isAutoSelectIfHasOneItem
                     isShowClearBtn
                     loai_hoa_don_ct_id={filter.loai_hoa_don_ct_id}

@@ -55,6 +55,7 @@ import { IHoaDon } from "../../models/responses/hoa-don/IHoaDon";
 import { rootAction } from "../../state/actions/rootAction";
 import { eReducerStatusBase } from "../../state/reducer-models/eReducerStatusBase";
 import HoaDonFilter from "./HoaDonFilter";
+import HoaDonMayTinhTienFilter from "../hoa-don-may-tien-tien/HoaDonMayTinhTienFilter";
 import HoaDonImportButton from "./HoaDonImportButton";
 import HoaDonKySoPhatHanhMultiple from "./HoaDonKySoPhatHanhMultiple";
 import HoaDonSendEmailModal from "./HoaDonSendEmailModal";
@@ -63,8 +64,20 @@ import { HoaDonTimelineModal } from "./HoaDonTimelineModal";
 import { useWindowSize } from "../../hooks/useWindowSize";
 import { useHoaDonTrangThaiAllReport } from "../../hooks/useHoaDonTrangThaiAllReport";
 import ViewHoaDonButtonActionListItem from "../../component-data/view-hoa-don-modal";
+import { ISigningItem } from "../../models/requests/hoa-don/ISigningItem";
+
 const hoaDonAction = rootAction.hoaDon.hoaDonAction;
-const HoaDonPage = () => {
+
+export interface IHoaDonPageProps {
+  variant?: "default" | "mtt";
+}
+
+const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
+  const isMtt = variant === "mtt";
+  const routeSlug = isMtt ? "hoa-don-mtt" : "hoa-don";
+  const applyListFilter = <T extends object>(f: T): T =>
+    isMtt ? { ...f, hoa_don_hinh_thuc_code: "M" } : f;
+
   const { tab }: any = useParams();
 
   const history = useHistory();
@@ -80,6 +93,11 @@ const HoaDonPage = () => {
   const { isMobile } = useWindowSize();
   const today = moment(new Date()).format("YYYY-MM-DD");
 
+  const [choPhanHoiCount, setChoPhanHoiCount] = useState(0);
+  const [chuaGuiCQTCount, setChuaGuiCQTCount] = useState(0);
+
+  const [signingItems, setSigningItems] = useState<ISigningItem[]>([]);
+
   const {
     status,
     hoaDons,
@@ -90,6 +108,9 @@ const HoaDonPage = () => {
     isShowLogModal,
     hoaDonSelectedIds,
   } = useAppSelector((x) => x.hoaDon.hoaDonReducer);
+
+
+
   const hoaDonKhacNgay = hoaDons
     .filter((x) => (hoaDonSelectedIds ?? []).includes(x.id))
     .find((x) => moment(x.ngay_hoa_don).format("YYYY-MM-DD") !== today);
@@ -113,11 +134,11 @@ const HoaDonPage = () => {
         loai_hoa_don_ct_id: 0,
         hoa_don_dang_ky_phat_hanh_mau_so: "",
         hoa_don_dang_ky_phat_hanh_ky_hieu: "",
-        // hoa_don_hinh_thuc_code: "M",
+        hoa_don_hinh_thuc_code: isMtt ? "M" : undefined,
         page_index: 0,
         page_size: 20,
         search_key: undefined,
-        sort_by: "",
+        sort_by: "ma_so_hoa_don",
         sort_mode: eSortMode.DESC,
       })
     );
@@ -180,84 +201,129 @@ const HoaDonPage = () => {
       NotifyHelper.Error("Không tải được thông tin hóa đơn điều chỉnh");
     }
   };
+
   useEffect(() => {
     if (tab === "nhap") {
       dispatch(
-        hoaDonAction.changeFilter({
-          ...filter,
-          hoa_don_hinh_thuc_code: undefined,
-          hoa_don_trang_thai_ids: [eHoaDonTrangThai.NHAP],
-        })
+        hoaDonAction.changeFilter(
+          applyListFilter({
+            ...filter,
+            hoa_don_hinh_thuc_code: isMtt ? "M" : undefined,
+            hoa_don_trang_thai_ids: [eHoaDonTrangThai.NHAP],
+          })
+        )
       );
     }
     if (!tab || tab === "da-phat-hanh") {
       dispatch(
-        hoaDonAction.changeFilter({
-          ...filter,
-          hoa_don_hinh_thuc_code: undefined,
-          hoa_don_trang_thai_ids: [
-            eHoaDonTrangThai.DA_PHAT_HANH,
-            eHoaDonTrangThai.DA_GUI_LEN_CQT_CHUA_PHAN_HOI_KIEM_TRA_DU_LIEU,
-            eHoaDonTrangThai.DA_GUI_CQT_CHUA_PHAN_HOI,
-          ],
-        })
+        hoaDonAction.changeFilter(
+          applyListFilter({
+            ...filter,
+            hoa_don_hinh_thuc_code: isMtt ? "M" : undefined,
+            hoa_don_trang_thai_ids: [
+              eHoaDonTrangThai.DA_PHAT_HANH,
+              eHoaDonTrangThai.DA_GUI_LEN_CQT_CHUA_PHAN_HOI_KIEM_TRA_DU_LIEU,
+              eHoaDonTrangThai.DA_GUI_CQT_CHUA_PHAN_HOI,
+            ],
+          })
+        )
       );
     }
     if (tab === "cho-phat-hanh") {
       dispatch(
-        hoaDonAction.changeFilter({
-          ...filter,
-          hoa_don_trang_thai_ids: [eHoaDonTrangThai.CHUA_GUI_CQT],
-        })
+        hoaDonAction.changeFilter(
+          applyListFilter({
+            ...filter,
+            hoa_don_trang_thai_ids: [eHoaDonTrangThai.CHUA_GUI_CQT],
+          })
+        )
+      );
+    }
+    if (tab === "chua-gui-cqt") {
+      dispatch(
+        hoaDonAction.changeFilter(
+          applyListFilter({
+            ...filter,
+            hoa_don_trang_thai_ids: [],
+          })
+        )
       );
     }
     if (tab === "phat-hanh-loi") {
       dispatch(
-        hoaDonAction.changeFilter({
-          ...filter,
-          hoa_don_hinh_thuc_code: undefined,
-          hoa_don_trang_thai_ids: [
-            eHoaDonTrangThai.DA_GUI_LEN_CQT_PHAN_HOI_KY_THUAT,
-            eHoaDonTrangThai.CHUA_CO_KET_QUA_PHAN_HOI,
-            eHoaDonTrangThai.KHONG_HOP_LE,
-            eHoaDonTrangThai.LOI_THONG_DIEP,
-          ],
-        })
+        hoaDonAction.changeFilter(
+          applyListFilter({
+            ...filter,
+            hoa_don_hinh_thuc_code: isMtt ? "M" : undefined,
+            hoa_don_trang_thai_ids: [
+              eHoaDonTrangThai.DA_GUI_LEN_CQT_PHAN_HOI_KY_THUAT,
+              eHoaDonTrangThai.CHUA_CO_KET_QUA_PHAN_HOI,
+              eHoaDonTrangThai.KHONG_HOP_LE,
+              eHoaDonTrangThai.LOI_THONG_DIEP,
+            ],
+          })
+        )
       );
     }
     if (tab === "da-huy") {
       dispatch(
-        hoaDonAction.changeFilter({
-          ...filter,
-          hoa_don_hinh_thuc_code: undefined,
-          hoa_don_trang_thai_ids: [eHoaDonTrangThai.DA_HUY],
-        })
+        hoaDonAction.changeFilter(
+          applyListFilter({
+            ...filter,
+            hoa_don_hinh_thuc_code: isMtt ? "M" : undefined,
+            hoa_don_trang_thai_ids: [eHoaDonTrangThai.DA_HUY],
+          })
+        )
       );
     }
   }, [tab]);
+
+
+
+
   useEffect(() => {
-    if (filter.hoa_don_trang_thai_ids.length > 0) {
+    if (filter.hoa_don_trang_thai_ids.length > 0 || tab === "chua-gui-cqt") {
       dispatch(
         hoaDonAction.loadStart({
-          ...filter,
+          ...applyListFilter(filter),
+          tab,
         })
       );
     }
   }, [filter]);
+
+  useEffect(() => {
+    if (tab === "cho-phat-hanh") {
+      setChoPhanHoiCount(
+        paging_res?.total_count ?? 0
+      );
+    }
+
+    if (tab === "chua-gui-cqt") {
+      setChuaGuiCQTCount(
+        paging_res?.total_count ?? 0
+      );
+    }
+  }, [paging_res?.total_count, tab]);
+
+
+
   useEffect(() => {
     if (
       status === eReducerStatusBase.is_saved ||
       status === eReducerStatusBase.is_deleted
     ) {
-      if (filter.hoa_don_trang_thai_ids.length > 0) {
+      if (filter.hoa_don_trang_thai_ids.length > 0 || tab === "chua-gui-cqt") {
         dispatch(
           hoaDonAction.loadStart({
-            ...filter,
+            ...applyListFilter(filter),
+            tab,
           })
         );
       }
     }
   }, [status, filter]);
+
   const handleSendEmail = async () => {
     if ((hoaDonSelectedIds?.length ?? 0) >= 2) {
       if (
@@ -285,6 +351,7 @@ const HoaDonPage = () => {
       setisShowSendEmailConfirm(true);
     }
   };
+
   const handleDeletesHoaDon = async (
     isHuyNoiBo: boolean,
     hoaDonId?: number
@@ -310,9 +377,8 @@ const HoaDonPage = () => {
 
     if (
       await confirm({
-        content: `Bạn có chắc chắn muốn ${isHuyNoiBo ? "hủy nội bộ" : "xóa"} ${
-          (hoaDonSelectedIds?.length ?? 0) > 0 ? "các" : ""
-        } hóa đơn đã chọn`,
+        content: `Bạn có chắc chắn muốn ${isHuyNoiBo ? "hủy nội bộ" : "xóa"} ${(hoaDonSelectedIds?.length ?? 0) > 0 ? "các" : ""
+          } hóa đơn đã chọn`,
         title: `${isHuyNoiBo ? "Hủy nội bộ" : "Xóa hóa đơn"}`,
         cancelButtonContent: "Không",
         confirmButtonContent: `${isHuyNoiBo ? "Hủy nội bộ" : "Xóa hóa đơn"}`,
@@ -329,7 +395,8 @@ const HoaDonPage = () => {
         NotifyHelper.Success("Success");
         dispatch(
           hoaDonAction.loadStart({
-            ...filter,
+            ...applyListFilter(filter),
+            tab,
           })
         );
       } else {
@@ -337,6 +404,7 @@ const HoaDonPage = () => {
       }
     }
   };
+
   const handleCreateViewLink = async (id: number) => {
     const res = await hoaDonApi.createViewLink(id);
     if (res.is_success) {
@@ -346,10 +414,114 @@ const HoaDonPage = () => {
     }
   };
 
+  // test ky hash 
+
+  const handleTestHashSign = async (id: number) => {
+
+    try {
+
+      setIsSaving(true);
+
+      // =====================================================
+      // PREPARE
+      // =====================================================
+
+      const prepareRes =
+        await hoaDonApi.prepareHashSign(id);
+
+      if (!prepareRes.is_success) {
+
+        NotifyHelper.Error(
+          prepareRes.message ?? "Prepare failed"
+        );
+
+        setIsSaving(false);
+
+        return;
+      }
+
+      const prepareData = prepareRes.data;
+
+      const signingItem: ISigningItem = {
+        hoaDonId: id,
+       sessionId: prepareData.SessionId,
+       hashBase64: prepareData.HashBase64,
+      status: "prepared"
+      };
+      setSigningItems(prev => [
+        ...prev.filter(x => x.hoaDonId !== id),
+        signingItem
+      ]);
+
+      console.log(
+        "PREPARE ITEM",
+        signingItem
+      );
+
+      // =====================================================
+      // TEST FULL SIGN
+      // =====================================================
+
+      setSigningItems(prev =>
+        prev.map(x =>
+          x.hoaDonId === id
+            ? {
+              ...x,
+              status: "signing"
+            }
+            : x
+        )
+      );
+
+      const fullSignRes = await hoaDonApi.testFullSign(id);
+
+      if (!fullSignRes.is_success) {
+        setSigningItems(prev =>
+          prev.map(x =>
+            x.hoaDonId === id
+              ? {
+                ...x,
+                status: "error",
+                error:
+                  fullSignRes.message
+              }
+              : x
+          )
+        );
+
+        NotifyHelper.Error(fullSignRes.message ?? "Sign failed");
+        setIsSaving(false);
+        return;
+      }
+
+      setSigningItems(prev =>
+        prev.map(x =>
+          x.hoaDonId === id
+            ? {
+              ...x,
+              status: "completed"
+            }
+            : x
+        )
+      );
+
+      console.log("SIGNED XML",fullSignRes.data);
+      console.log("SIGNING ITEMS", signingItems);
+      NotifyHelper.Success("Hash sign thành công");
+
+      setIsSaving(false);
+
+    } catch (ex) {
+      console.log(ex);
+      setIsSaving(false);
+      NotifyHelper.Error("Có lỗi xảy ra");
+    }
+  };
+
   return (
     <Box>
       <Helmet>
-        <title>Hóa đơn</title>
+        <title>{isMtt ? "Hóa đơn máy tính tiền" : "Hóa đơn"}</title>
       </Helmet>
 
       {isCanNotView && <UnAuthorizedPage />}
@@ -368,7 +540,13 @@ const HoaDonPage = () => {
                 flex: 1,
               }}
             >
-              <Heading text="Danh sách hóa đơn" />
+              <Heading
+                text={
+                  isMtt
+                    ? "Danh sách hóa đơn máy tính tiền"
+                    : "Danh sách hóa đơn"
+                }
+              />
             </Box>
             <Box
               sx={{
@@ -382,7 +560,9 @@ const HoaDonPage = () => {
               <HoaDonSort
                 sortBy={{
                   field:
-                    (filter.sort_by ?? "") !== "" ? filter.sort_by ?? "" : "id",
+                    (filter.sort_by ?? "") !== ""
+                      ? filter.sort_by ?? ""
+                      : "ma_so_hoa_don",
                   mode: filter.sort_mode ?? eSortMode.DESC,
                 }}
                 onValueChanged={(data) => {
@@ -396,7 +576,7 @@ const HoaDonPage = () => {
                 }}
               />
               <Box sx={{ display: "flex", gap: 1 }}>
-                <Link to={"../../hoa-don/form/0"}>
+                <Link to={`../../${routeSlug}/form/0`}>
                   <Button
                     text="Lập hóa đơn mới"
                     leadingVisual={PlusIcon}
@@ -408,7 +588,8 @@ const HoaDonPage = () => {
                   onSuccess={() => {
                     dispatch(
                       hoaDonAction.loadStart({
-                        ...filter,
+                        ...applyListFilter(filter),
+                        tab,
                       })
                     );
                   }}
@@ -416,11 +597,12 @@ const HoaDonPage = () => {
               </Box>
             </Box>
           </Box>
+
           <Box id="tabs">
             <UnderlineNav aria-label="Repository">
               <UnderlineNav.Item
                 as={Link}
-                to="../hoa-don/nhap"
+                to={`../${routeSlug}/nhap`}
                 aria-current={tab === "nhap" ? "page" : undefined}
                 icon={ShieldIcon}
               >
@@ -428,7 +610,7 @@ const HoaDonPage = () => {
               </UnderlineNav.Item>
               <UnderlineNav.Item
                 as={Link}
-                to={"../hoa-don/da-phat-hanh"}
+                to={`../${routeSlug}/da-phat-hanh`}
                 aria-current={
                   !tab || tab === "da-phat-hanh" ? "page" : undefined
                 }
@@ -436,35 +618,41 @@ const HoaDonPage = () => {
               >
                 Đã phát hành
               </UnderlineNav.Item>
+
               <UnderlineNav.Item
                 as={Link}
-                to={"../hoa-don/cho-phat-hanh"}
+                to={`../${routeSlug}/cho-phat-hanh`}
                 aria-current={tab === "cho-phat-hanh" ? "page" : undefined}
                 icon={ShieldIcon}
-                // counter={dataReport.find(x => x.hoa_don_trang_thai_id === eHoaDonTrangThai.CHUA_GUI_CQT)?.total}
               >
                 <Box sx={{ display: "flex", gap: 2 }}>
-                  Chưa gửi CQT
-                  {(dataReport.find(
-                    (x) =>
-                      x.hoa_don_trang_thai_id === eHoaDonTrangThai.CHUA_GUI_CQT
-                  )?.total ?? 0) > 0 && (
-                    <Label variant="danger">
-                      {
-                        dataReport.find(
-                          (x) =>
-                            x.hoa_don_trang_thai_id ===
-                            eHoaDonTrangThai.CHUA_GUI_CQT
-                        )?.total
-                      }
-                    </Label>
-                  )}
+                  Chờ phản hồi CQT
+
+                  <Label variant="danger">
+                    {choPhanHoiCount}
+                  </Label>
                 </Box>
               </UnderlineNav.Item>
 
               <UnderlineNav.Item
                 as={Link}
-                to={"../hoa-don/phat-hanh-loi"}
+                to={`../${routeSlug}/chua-gui-cqt`}
+                aria-current={tab === "chua-gui-cqt" ? "page" : undefined}
+                icon={ShieldIcon}
+              >
+                <Box sx={{ display: "flex", gap: 2 }}>
+                  Chưa gửi được CQT
+
+                  <Label variant="danger">
+                    {chuaGuiCQTCount}
+                  </Label>
+                </Box>
+              </UnderlineNav.Item>
+
+
+              <UnderlineNav.Item
+                as={Link}
+                to={`../${routeSlug}/phat-hanh-loi`}
                 aria-current={tab === "phat-hanh-loi" ? "page" : undefined}
                 icon={ShieldSlashIcon}
               >
@@ -472,7 +660,7 @@ const HoaDonPage = () => {
               </UnderlineNav.Item>
               <UnderlineNav.Item
                 as={Link}
-                to={"../hoa-don/da-huy"}
+                to={`../${routeSlug}/da-huy`}
                 aria-current={tab === "da-huy" ? "page" : undefined}
                 icon={ShieldXIcon}
               >
@@ -482,10 +670,21 @@ const HoaDonPage = () => {
               {/* <UnderlineNav.Item>Hóa đơn đã hủy</UnderlineNav.Item> */}
             </UnderlineNav>
           </Box>
+
           <Box sx={{ mt: 3 }}>
             {isMobile && (
               <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 1 }}>
-                {(hoaDonSelectedIds?.length ?? 0) <= 0 && <HoaDonFilter />}
+                {(hoaDonSelectedIds?.length ?? 0) <= 0 &&
+                  (isMtt ? (
+                    <HoaDonMayTinhTienFilter
+                      filter={filter}
+                      onChanged={(f) =>
+                        dispatch(hoaDonAction.changeFilter(applyListFilter(f)))
+                      }
+                    />
+                  ) : (
+                    <HoaDonFilter />
+                  ))}
                 {(hoaDonSelectedIds?.length ?? 0) > 0 &&
                   (!tab || tab === "da-phat-hanh") && (
                     <>
@@ -498,10 +697,11 @@ const HoaDonPage = () => {
                       />
                     </>
                   )}
+
                 {(hoaDonSelectedIds?.length ?? 0) > 0 &&
-                  (!tab || tab === "nhap" || tab === "cho-phat-hanh") && (
+                  (tab === "nhap") && (
                     <>
-                      {tab !== "da-phat-hanh" && tab && (
+                      {(tab === "nhap") && (
                         <HoaDonKySoPhatHanhMultiple
                           ids={hoaDonSelectedIds ?? []}
                           isKhacNgay={hoaDonKhacNgay != undefined}
@@ -509,17 +709,19 @@ const HoaDonPage = () => {
                           onClose={() => {
                             dispatch(
                               hoaDonAction.loadStart({
-                                ...filter,
+                                ...applyListFilter(filter),
+                                tab,
                               })
                             );
                           }}
                           title={
-                            tab === "cho-phat-hanh"
+                            tab === "chua-gui-cqt"
                               ? "Gửi cấp mã Thuế"
                               : "Ký số và gửi cấp mã"
                           }
                         />
                       )}
+
                       <Button
                         text="Gửi HĐ nháp"
                         leadingVisual={MailIcon}
@@ -559,11 +761,10 @@ const HoaDonPage = () => {
                           // href={`../../../api/hoa-don/pdfs?hoaDonIds=${hoaDonSelectedIds?.join(
                           //   ","
                           // )}`}
-                          href={`${
-                            process.env.REACT_APP_API_BASE_URL
-                          }/hoa-don/pdfs?hoaDonIds=${hoaDonSelectedIds?.join(
-                            ","
-                          )}`}
+                          href={`${process.env.REACT_APP_API_BASE_URL
+                            }/hoa-don/pdfs?hoaDonIds=${hoaDonSelectedIds?.join(
+                              ","
+                            )}`}
                         >
                           <ActionList.LeadingVisual>
                             <FileIcon />
@@ -576,11 +777,10 @@ const HoaDonPage = () => {
                             // href={`../../../api/hoa-don/xmls?hoaDonIds=${hoaDonSelectedIds?.join(
                             //   ","
                             // )}`}
-                            href={`${
-                              process.env.REACT_APP_API_BASE_URL
-                            }/hoa-don/xmls?hoaDonIds=${hoaDonSelectedIds?.join(
-                              ","
-                            )}`}
+                            href={`${process.env.REACT_APP_API_BASE_URL
+                              }/hoa-don/xmls?hoaDonIds=${hoaDonSelectedIds?.join(
+                                ","
+                              )}`}
                           >
                             <ActionList.LeadingVisual>
                               <FileCodeIcon />
@@ -593,7 +793,7 @@ const HoaDonPage = () => {
                   </ActionMenu>
                 )}
                 <ExportToExcelBtn
-                  fileName="hoa-don"
+                  fileName={isMtt ? "hoa-don-mtt" : "hoa-don"}
                   formatDataFunction={(data) => {
                     return data.map((x: IHoaDon) => {
                       return {
@@ -609,9 +809,8 @@ const HoaDonPage = () => {
                         "Tổng tiền": x.tong_tien_thanh_toan,
                         "Mã tra cứu": x.ma_tra_cuu,
                         "Kết quả": x.ket_qua_phat_hanh,
-                        "Mã CQT cấp": `${x.phat_hanh_ma_ketqua_cqt} ${
-                          x.ma_so_hoa_don_mtt ?? ""
-                        }`,
+                        "Mã CQT cấp": `${x.phat_hanh_ma_ketqua_cqt} ${x.ma_so_hoa_don_mtt ?? ""
+                          }`,
                       };
                     });
                   }}
@@ -649,9 +848,19 @@ const HoaDonPage = () => {
                 <>
                   {!isMobile && (
                     <Box sx={{ display: "flex", gap: 1 }}>
-                      {(hoaDonSelectedIds?.length ?? 0) <= 0 && (
-                        <HoaDonFilter />
-                      )}
+                      {(hoaDonSelectedIds?.length ?? 0) <= 0 &&
+                        (isMtt ? (
+                          <HoaDonMayTinhTienFilter
+                            filter={filter}
+                            onChanged={(f) =>
+                              dispatch(
+                                hoaDonAction.changeFilter(applyListFilter(f))
+                              )
+                            }
+                          />
+                        ) : (
+                          <HoaDonFilter />
+                        ))}
                       {(hoaDonSelectedIds?.length ?? 0) > 0 &&
                         (!tab || tab === "da-phat-hanh") && (
                           <>
@@ -665,9 +874,9 @@ const HoaDonPage = () => {
                           </>
                         )}
                       {(hoaDonSelectedIds?.length ?? 0) > 0 &&
-                        (!tab || tab === "nhap" || tab === "cho-phat-hanh") && (
+                        (tab === "nhap") && (
                           <>
-                            {tab !== "da-phat-hanh" && tab && (
+                            {(tab === "nhap") && (
                               <HoaDonKySoPhatHanhMultiple
                                 ids={hoaDonSelectedIds ?? []}
                                 isKhacNgay={hoaDonKhacNgay != undefined}
@@ -675,17 +884,19 @@ const HoaDonPage = () => {
                                 onClose={() => {
                                   dispatch(
                                     hoaDonAction.loadStart({
-                                      ...filter,
+                                      ...applyListFilter(filter),
+                                      tab,
                                     })
                                   );
                                 }}
                                 title={
-                                  tab === "cho-phat-hanh"
+                                  tab === "chua-gui-cqt"
                                     ? "Gửi cấp mã Thuế"
                                     : "Ký số và gửi cấp mã"
                                 }
                               />
                             )}
+
                             <Button
                               text="Gửi HĐ nháp"
                               leadingVisual={MailIcon}
@@ -736,9 +947,8 @@ const HoaDonPage = () => {
                                     );
                                     return;
                                   }
-                                  const url = `${
-                                    process.env.REACT_APP_API_BASE_URL
-                                  }/hoa-don/pdfs?hoaDonIds=${ids.join(",")}`;
+                                  const url = `${process.env.REACT_APP_API_BASE_URL
+                                    }/hoa-don/pdfs?hoaDonIds=${ids.join(",")}`;
                                   window.open(url, "_blank");
                                 }}
                               >
@@ -750,11 +960,10 @@ const HoaDonPage = () => {
                               {tab !== "nhap" && (
                                 <ActionList.LinkItem
                                   target="_blank"
-                                  href={`${
-                                    process.env.REACT_APP_API_BASE_URL
-                                  }/hoa-don/xmls?hoaDonIds=${hoaDonSelectedIds?.join(
-                                    ","
-                                  )}`}
+                                  href={`${process.env.REACT_APP_API_BASE_URL
+                                    }/hoa-don/xmls?hoaDonIds=${hoaDonSelectedIds?.join(
+                                      ","
+                                    )}`}
                                 >
                                   <ActionList.LeadingVisual>
                                     <FileCodeIcon />
@@ -767,7 +976,7 @@ const HoaDonPage = () => {
                         </ActionMenu>
                       )}
                       <ExportToExcelBtn
-                        fileName="hoa-don"
+                        fileName={isMtt ? "hoa-don-mtt" : "hoa-don"}
                         formatDataFunction={(data) => {
                           return data.map((x: IHoaDon) => {
                             return {
@@ -783,9 +992,8 @@ const HoaDonPage = () => {
                               "Tổng tiền": x.tong_tien_thanh_toan,
                               "Mã tra cứu": x.ma_tra_cuu,
                               "Kết quả": x.ket_qua_phat_hanh,
-                              "Mã CQT cấp": `${x.phat_hanh_ma_ketqua_cqt} ${
-                                x.ma_so_hoa_don_mtt ?? ""
-                              }`,
+                              "Mã CQT cấp": `${x.phat_hanh_ma_ketqua_cqt} ${x.ma_so_hoa_don_mtt ?? ""
+                                }`,
                             };
                           });
                         }}
@@ -827,7 +1035,7 @@ const HoaDonPage = () => {
               sortConfig={{
                 enable: false,
                 field: filter.sort_by,
-                mode: filter.sort_mode ?? eSortMode.ASC,
+                mode: filter.sort_mode ?? eSortMode.DESC,
                 onValueChanged: (key: string, sort_mode: eSortMode) => {
                   dispatch(
                     hoaDonAction.changeFilter({
@@ -864,18 +1072,18 @@ const HoaDonPage = () => {
               }}
               selection={
                 !tab ||
-                tab === "da-phat-hanh" ||
-                tab === "nhap" ||
-                tab === "cho-phat-hanh" ||
-                tab === "phat-hanh-loi"
+                  tab === "da-phat-hanh" ||
+                  tab === "nhap" ||
+                  tab === "cho-phat-hanh" ||
+                  tab === "phat-hanh-loi"
                   ? {
-                      mode: "multiple",
-                      keyExpr: "id",
-                      selectedRowKeys: hoaDonSelectedIds,
-                      onSelectionChanged: (keys) => {
-                        dispatch(hoaDonAction.changeSelectedId(keys));
-                      },
-                    }
+                    mode: "multiple",
+                    keyExpr: "id",
+                    selectedRowKeys: hoaDonSelectedIds,
+                    onSelectionChanged: (keys) => {
+                      dispatch(hoaDonAction.changeSelectedId(keys));
+                    },
+                  }
                   : undefined
               }
               columns={[
@@ -911,7 +1119,7 @@ const HoaDonPage = () => {
                         {tab === "nhap" ? (
                           <IconButton
                             as={LinkHref}
-                            href={`../../hoa-don/form/${row.id}`}
+                            href={`../../${routeSlug}/form/${row.id}`}
                             icon={PencilIcon}
                             aria-label="Edit"
                             variant="invisible"
@@ -940,7 +1148,7 @@ const HoaDonPage = () => {
                             onClick={() => {
                               if (
                                 row?.hoa_don_trang_thai_id ===
-                                  eHoaDonTrangThai.NHAP &&
+                                eHoaDonTrangThai.NHAP &&
                                 row?.ma_so_hoa_don > 0
                               ) {
                                 handleDeletesHoaDon(true, row.id);
@@ -1008,7 +1216,7 @@ const HoaDonPage = () => {
                                   <ActionList.Item
                                     onSelect={() => {
                                       history.push(
-                                        `../../hoa-don/form/${row.id}`
+                                        `../../${routeSlug}/form/${row.id}`
                                       );
                                     }}
                                   >
@@ -1045,7 +1253,7 @@ const HoaDonPage = () => {
                                 <ActionList.Item
                                   onSelect={() => {
                                     history.push(
-                                      `../../hoa-don/form/0?copy_id=${row.id}`
+                                      `../../${routeSlug}/form/0?copy_id=${row.id}`
                                     );
                                   }}
                                 >
@@ -1070,7 +1278,7 @@ const HoaDonPage = () => {
                                       // variant="danger"
                                       onSelect={() => {
                                         history.push(
-                                          `../../hoa-don/form/0?hinh_thuc_id=3&hoa_don_goc_id=${row.id}`
+                                          `../../${routeSlug}/form/0?hinh_thuc_id=3&hoa_don_goc_id=${row.id}`
                                         );
                                       }}
                                     >
@@ -1087,7 +1295,7 @@ const HoaDonPage = () => {
                                       }
                                       onSelect={() => {
                                         history.push(
-                                          `../../hoa-don/form/0?hinh_thuc_id=2&hoa_don_goc_id=${row.id}`
+                                          `../../${routeSlug}/form/0?hinh_thuc_id=2&hoa_don_goc_id=${row.id}`
                                         );
                                       }}
                                     >
@@ -1144,7 +1352,7 @@ const HoaDonPage = () => {
                                     {/* <ActionList.Item
                                                                             // variant="danger"
                                                                             onSelect={() => {
-                                                                                history.push(`../../hoa-don-mtt/form/${row.id}`)
+                                                                                history.push(`../../${routeSlug}/form/${row.id}`)
                                                                             }}>
                                                                             <ActionList.LeadingVisual>
                                                                                 <WorkflowIcon />
@@ -1163,7 +1371,7 @@ const HoaDonPage = () => {
                                     onSelect={() => {
                                       if (
                                         row?.hoa_don_trang_thai_id ===
-                                          eHoaDonTrangThai.NHAP &&
+                                        eHoaDonTrangThai.NHAP &&
                                         row?.ma_so_hoa_don > 0
                                       ) {
                                         handleDeletesHoaDon(true, row.id);
@@ -1182,30 +1390,102 @@ const HoaDonPage = () => {
 
                                     {row?.hoa_don_trang_thai_id ===
                                       eHoaDonTrangThai.NHAP &&
-                                    row?.ma_so_hoa_don > 0
+                                      row?.ma_so_hoa_don > 0
                                       ? "Hủy nội bộ"
                                       : "Xóa hóa đơn nháp"}
                                   </ActionList.Item>
-                                </>
-                              )}
-                              {(tab === "cho-phat-hanh" ||
-                                tab === "phat-hanh-loi") && (
-                                <>
-                                  <ActionList.Divider />
+
                                   <ActionList.Item
-                                    variant="danger"
-                                    // disabled={isCanNotDelete}
                                     onSelect={() => {
-                                      handleDeletesHoaDon(true, row.id);
+                                      handleTestHashSign(row.id);
                                     }}
                                   >
                                     <ActionList.LeadingVisual>
-                                      <TrashIcon />
+                                      <ShieldCheckIcon />
                                     </ActionList.LeadingVisual>
-                                    Hủy nội bộ
+
+                                    Test Hash Sign
                                   </ActionList.Item>
+
                                 </>
                               )}
+                              {(tab === "cho-phat-hanh" ||
+                                tab === "phat-hanh-loi" || tab === "chua-gui-cqt") && (
+                                  <>
+                                    <ActionList.Divider />
+
+                                    {tab === "chua-gui-cqt" && (
+                                      <>
+                                        <ActionList.Divider />
+
+                                        <ActionList.Item
+                                          onSelect={async () => {
+
+                                            if (
+                                              !(await confirm({
+                                                title: "Gửi lại CQT",
+                                                content:
+                                                  "Bạn có chắc chắn muốn gửi lại hóa đơn lên CQT?",
+                                                confirmButtonContent: "Gửi lại",
+                                                cancelButtonContent: "Đóng",
+                                                confirmButtonType: "primary",
+                                              }))
+                                            ) {
+                                              return;
+                                            }
+
+                                            setIsSaving(true);
+
+                                            try {
+                                              const res = await hoaDonApi.guiLaiCQT(
+                                                row.id
+                                              );
+
+                                              if (res.is_success) {
+                                                NotifyHelper.Success(
+                                                  "Gửi lại CQT thành công"
+                                                );
+
+                                                dispatch(
+                                                  hoaDonAction.loadStart({
+                                                    ...applyListFilter(filter),
+                                                    tab,
+                                                  })
+                                                );
+                                              } else {
+                                                NotifyHelper.Error(
+                                                  res.message ?? "Gửi lại CQT thất bại"
+                                                );
+                                              }
+                                            } finally {
+                                              setIsSaving(false);
+                                            }
+                                          }}
+                                        >
+                                          <ActionList.LeadingVisual>
+                                            <PaperAirplaneIcon />
+                                          </ActionList.LeadingVisual>
+
+                                          Gửi lại CQT
+                                        </ActionList.Item>
+                                      </>
+                                    )}
+
+
+                                    <ActionList.Item
+                                      variant="danger"
+                                      // disabled={isCanNotDelete}
+                                      onSelect={() => {
+                                        handleDeletesHoaDon(true, row.id);
+                                      }}
+                                    >
+                                      <ActionList.LeadingVisual>
+                                        <TrashIcon />
+                                      </ActionList.LeadingVisual>
+                                      Hủy nội bộ
+                                    </ActionList.Item>
+                                  </>
+                                )}
                             </ActionList>
                           </ActionMenu.Overlay>
                         </ActionMenu>
@@ -1220,7 +1500,7 @@ const HoaDonPage = () => {
                   width: "100px",
                   renderCell: (data: IHoaDon) => {
                     return (
-                      <Link to={`../../hoa-don/form/${data.id}`}>
+                      <Link to={`../../${routeSlug}/form/${data.id}`}>
                         {data.hoa_don_dang_ky_phat_hanh_ky_hieu}
                       </Link>
                     );
@@ -1331,7 +1611,7 @@ const HoaDonPage = () => {
                           (data.hoa_don_trang_thai_id ===
                             eHoaDonTrangThai.DA_GUI_LEN_CQT_CHUA_PHAN_HOI_KIEM_TRA_DU_LIEU ||
                             data.hoa_don_trang_thai_id ===
-                              eHoaDonTrangThai.DA_GUI_CQT_CHUA_PHAN_HOI) && (
+                            eHoaDonTrangThai.DA_GUI_CQT_CHUA_PHAN_HOI) && (
                             <Box>
                               Chưa có phản hồi kết quả kiểm tra dữ liệu từ CQT
                             </Box>
@@ -1344,26 +1624,26 @@ const HoaDonPage = () => {
                         )} */}
                         {(data.phat_hanh_ma_ketqua_cqt ||
                           data.ma_so_hoa_don_mtt) && (
-                          <Box
-                            sx={{
-                              display: "flex",
-                              flexWrap: "wrap",
-                            }}
-                          >
-                            <b>Mã CQT: </b>{" "}
-                            <Box sx={{ color: "green" }}>
-                              {data.phat_hanh_ma_ketqua_cqt}{" "}
-                              {data.ma_so_hoa_don_mtt ?? ""}
+                            <Box
+                              sx={{
+                                display: "flex",
+                                flexWrap: "wrap",
+                              }}
+                            >
+                              <b>Mã CQT: </b>{" "}
+                              <Box sx={{ color: "green" }}>
+                                {data.phat_hanh_ma_ketqua_cqt}{" "}
+                                {data.ma_so_hoa_don_mtt ?? ""}
+                              </Box>
                             </Box>
-                          </Box>
-                        )}
+                          )}
                         {data.ket_qua_phat_hanh}
                         {_hoaDonThayTheDieuChinhs.length > 0 && (
                           <Box sx={{ mt: 1 }}>
                             {_hoaDonThayTheDieuChinhs.map((x) => {
                               return (
                                 <Box>
-                                  <LinkHref href={`../../hoa-don/form/${x.id}`}>
+                                  <LinkHref href={`../../${routeSlug}/form/${x.id}`}>
                                     <Box>
                                       {x.hoa_don_hinh_thuc_id === 2
                                         ? "Thay thế bởi"

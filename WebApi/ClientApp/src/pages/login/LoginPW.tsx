@@ -21,7 +21,8 @@ const LoginPW = ({
   const dispatch = useAppDispatch();
   const { status } = useAppSelector((x) => x.accountReducer);
   const { appConfig } = useAppSelector((x) => x.common.appConfigReducer);
-
+ console.log(appConfig);
+console.log(appConfig?.ReCAPTCHASiteKey);
   const {
     register,
     handleSubmit,

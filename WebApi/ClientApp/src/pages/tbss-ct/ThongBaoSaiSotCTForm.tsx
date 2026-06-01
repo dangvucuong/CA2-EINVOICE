@@ -71,6 +71,7 @@ const ThongBaoSaiSotCTForm = () => {
     useState(false);
   const [tbssPhatHanhPushNotifyModel, setTBSSPhatHanhPushNotifyModel] =
     useState<ITBSSPhatHanhPushNotifyModel>();
+
   const [dataForm, setDataForm] = useState<any>({
     loai_thong_bao: 1,
     loai_chung_tu_dien_tu: "",
@@ -133,7 +134,7 @@ const ThongBaoSaiSotCTForm = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [thongBaoSaiSotId]);
 
-  const handlePhatHanhAsync = async (signedtext: string) => {};
+  const handlePhatHanhAsync = async (signedtext: string) => { };
 
   const handleGetBase64KySo = async (madonvi: string, matbss: string) => {
     const soap = `<?xml version="1.0" encoding="utf-8"?>
@@ -168,18 +169,20 @@ const ThongBaoSaiSotCTForm = () => {
     }
   };
 
-  const handleKySoRemoteAsync = async () => {};
+  const handleKySoRemoteAsync = async () => { };
 
   const onSubmit = async (data: any) => {
     let isValid: boolean = true;
-
+    console.log("loaict",data.loai_chung_tu_dien_tu);
+    var loai_ct=data.loai_chung_tu_dien_tu;
     if (coQuanThueId <= 0 || !coQuanThue || !coQuanThue.ma_cqt) {
       setError("ma_cqt", {
         type: "manual",
       });
       isValid = false;
     }
-    if (dataForm?.loai_chung_tu_dien_tu === "") {
+   
+    if (data.loai_chung_tu_dien_tu === "") {
       setError("loai_chung_tu_dien_tu", {
         type: "manual",
       });
@@ -500,7 +503,7 @@ const ThongBaoSaiSotCTForm = () => {
                     register={register}
                     required
                     value={moment(new Date()).format("DD/MM/YYYY")}
-                    onValueChanged={(value, date) => {}}
+                    onValueChanged={(value, date) => { }}
                     width={"100%"}
                   />
                 </FormControl>
@@ -518,6 +521,8 @@ const ThongBaoSaiSotCTForm = () => {
                   ...dataForm,
                   loai_chung_tu_dien_tu: value,
                 });
+
+                setValue("loai_chung_tu_dien_tu", value); // thêm dòng này
                 clearErrors("loai_chung_tu_dien_tu");
               }}
             />
@@ -674,7 +679,7 @@ const ThongBaoSaiSotCTForm = () => {
                 size="medium"
                 text={"Ký và gửi thông báo lên CQT"}
                 isLoading={isSaving}
-                // isLoading={status === eReducerStatusBase.is_saving}
+              // isLoading={status === eReducerStatusBase.is_saving}
               />
               {/* {thongBaoSaiSotId > 0 && (
                 <Button
@@ -699,7 +704,7 @@ const ThongBaoSaiSotCTForm = () => {
               size="medium"
               text={"Cập nhật"}
               isLoading={isSaving}
-              // isLoading={status === eReducerStatusBase.is_saving}
+            // isLoading={status === eReducerStatusBase.is_saving}
             />
           )}
         </ModalActions>

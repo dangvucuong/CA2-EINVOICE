@@ -46,7 +46,7 @@ const HoaDonDieuChinhPage = () => {
     page_index: 0,
     page_size: 20,
     search_key: undefined,
-    sort_by: "",
+    sort_by: "ma_so_hoa_don",
     sort_mode: eSortMode.DESC,
   });
   const [hoaDons, setHoaDons] = useState<IHoaDon[]>([]);

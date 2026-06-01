@@ -1,5 +1,6 @@
 using Contracts.Service.Base;
 using Model.Base;
+using Model.Cache;
 using Model.FuncResult;
 using Model.Request.HoaDon;
 using Model.Request.ToKhai;
@@ -58,6 +59,17 @@ namespace Contracts.Service.HoaDon
 
         Task<bool> InsertThueSuatHoaDonAsync(int hoaDonId, List<ThueSuatModel> dsThue);
         Task<bool> InsertHoaDonThongTinBoSungAsync(int hoaDonId, HoaDonThongTinBoSung infor);
+
+        Task<PagingResult<IEnumerable<hoa_don_vm>>> SelectChoPhanHoiCQTAsync(string donvi_ma_dv,HoaDonSelectPagingRequest pagingRequest);
+
+        Task<PagingResult<IEnumerable<hoa_don_vm>>> SelectChuaGuiCQTAsync(string donvi_ma_dv, HoaDonSelectPagingRequest pagingRequest);
+
+        Task<FunctionResult<object>> GuiLaiCQTAsync(int id);
+
+        // update ky hash
+
+        Task<HoaDonPrepareHashSignResponse>PrepareHashSignAsync(int hoaDonId);
+        Task<string> FinalizeHashSignAsync(HoaDonFinalizeHashSignRequest request);
 
     }
 }

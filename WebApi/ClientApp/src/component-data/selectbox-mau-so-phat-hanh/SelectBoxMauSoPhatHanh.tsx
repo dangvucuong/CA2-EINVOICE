@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useAppSelector } from "../../hooks/useAppSelector";
 import { TriangleDownIcon, XCircleFillIcon } from "@primer/octicons-react";
+import { isDangKyPhatHanhMtt } from "../../utils/hoaDonKyHieu";
 
 interface ISelectBoxMauSoPhatHanhProps {
   onValueChanged: (id: string) => void;
@@ -11,6 +12,7 @@ interface ISelectBoxMauSoPhatHanhProps {
   loai_hoa_don_ct_id: number;
   isAutoSelectIfHasOneItem: boolean;
   isShowClearBtn?: boolean;
+  onlyMtt?: boolean;
 }
 
 const SelectBoxMauSoPhatHanh = (props: ISelectBoxMauSoPhatHanhProps) => {
@@ -25,14 +27,22 @@ const SelectBoxMauSoPhatHanh = (props: ISelectBoxMauSoPhatHanhProps) => {
     // 
     hoaDonDangKyPhatHanhs
       .sort((a, b) => b.id - a.id)
-      .filter((x) => x.loai_hoa_don_ct_id === props.loai_hoa_don_ct_id)
+      .filter((x) => {
+        if (x.loai_hoa_don_ct_id !== props.loai_hoa_don_ct_id) {
+          return false;
+        }
+        if (props.onlyMtt) {
+          return isDangKyPhatHanhMtt(x);
+        }
+        return true;
+      })
       .map((x) => ({ id: x.mau_so, text: x.mau_so }))
       .forEach((item) => {
         uniqueData.add(JSON.stringify(item));
       });
     var result = Array.from(uniqueData).map((item: any) => JSON.parse(item));
     return result;
-  }, [hoaDonDangKyPhatHanhs, props.loai_hoa_don_ct_id]);
+  }, [hoaDonDangKyPhatHanhs, props.loai_hoa_don_ct_id, props.onlyMtt]);
   const filterdData = useMemo(() => {
     return dataSource.filter((item) =>
       item.text.toLowerCase().includes(filter.toLowerCase())

@@ -6,6 +6,23 @@ import { IHoaDonSelectPagingRequest } from "../../models/requests/hoa-don/IHoaDo
 import { apiClient } from "../apiClient";
 export const HOA_DON_API = "hoa-don";
 export const HOA_DON_PHATHANH_API = "hoa-don/phat-hanh";
+
+
+const selectChoPhanHoiCQT = async (data: any) => {
+    return await apiClient.post(
+        "hoa-don/select-cho-phan-hoi-cqt",
+        data
+    );
+};
+
+const selectChuaGuiCQT = async (data: any) => {
+    return await apiClient.post(
+        "hoa-don/select-chua-gui-cqt",
+        data
+    );
+};
+
+
 export const hoaDonApi = {
     selectByDonViPaging: (request: IHoaDonSelectPagingRequest) => apiClient.post(`${HOA_DON_API}/select`, {
         ...request,
@@ -14,7 +31,7 @@ export const hoaDonApi = {
     }
     ),
     getLogs: (hoaDonId: number) => apiClient.get(`${HOA_DON_API}/${hoaDonId}/log`),
-    getPrintHtml: (hoaDonId: number, pageSize?: number, inChuyenDoi?: boolean) => apiClient.get(`${HOA_DON_API}/${hoaDonId}/print?page_size=${pageSize??10}&${inChuyenDoi ? `chuyen_doi=${inChuyenDoi}` : ""}`),
+    getPrintHtml: (hoaDonId: number, pageSize?: number, inChuyenDoi?: boolean) => apiClient.get(`${HOA_DON_API}/${hoaDonId}/print?page_size=${pageSize ?? 10}&${inChuyenDoi ? `chuyen_doi=${inChuyenDoi}` : ""}`),
     getPreviewHtml: (rq: IIHoaDonAddOrEditModel) => apiClient.put(`${HOA_DON_API}/preview`, rq),
     getBienBanHtml: (hoaDonId: number) => apiClient.get(`${HOA_DON_API}/${hoaDonId}/html-bien-ban`),
     getViewModel: (hoaDonId: number) => apiClient.get(`${HOA_DON_API}/${hoaDonId}`),
@@ -33,6 +50,34 @@ export const hoaDonApi = {
     createViewLink: (hoaDonId: number) => apiClient.get(`${HOA_DON_API}/${hoaDonId}/link`),
     validateViewLink: (hoaDonId: number, hash: string) => apiClient.get(`${HOA_DON_API}/${hoaDonId}/link/validate?hash=${hash}`),
     createXmlKySos: (rq: IHoaDonDeletesRequest) => apiClient.post(`${HOA_DON_API}/ky-so-multiple`, rq),
+    // update phan tach danh sách api theo 2 procerdure mới
+    selectChoPhanHoiCQT, selectChuaGuiCQT,
 
+    guiLaiCQT: (id: number) =>
+        apiClient.post(
+            `hoa-don/gui-lai-cqt/${id}`
+        ),
+
+        // test ky hash
+    prepareHashSign: (id: number) =>
+        apiClient.get(`hoa-don/test-prepare-hash/${id}`),
+
+    finalizeHashSign: (rq: any) =>
+        apiClient.post(`hoa-don/finalize-hash-sign`,rq),
+
+    testFullSign: (id: number) =>
+    apiClient.get(
+        `hoa-don/test-full-sign/${id}`
+    ),
+    prepareHashSigns: (rq: IHoaDonDeletesRequest) =>
+    apiClient.post(
+        `hoa-don-ky-lo/prepare-hash-signs`,
+        rq
+    ),
+    finalizeHashSignMultiple: (rq: any) =>
+    apiClient.post(
+        `hoa-don-ky-lo/finalize-hash-sign`,
+        rq
+    ),
 
 }

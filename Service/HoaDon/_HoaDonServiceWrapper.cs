@@ -1,10 +1,12 @@
 using Contracts.Service.HoaDon;
 using Contracts.Service.HoaDon.PushMessageToVender;
 using Contracts.Service.HoaDon.XuLyThongDiep;
+using Microsoft.Extensions.DependencyInjection;
 using Service.Base;
 using Service.HoaDon.PushMessageToVender;
 using Service.HoaDon.XuLyThongDiep;
-
+using StackExchange.Redis;
+using Microsoft.Extensions.DependencyInjection;
 namespace Service.HoaDon
 {
     public class HoaDonServiceWrapper : BaseService, IHoaDonServiceWrapper
@@ -39,7 +41,7 @@ namespace Service.HoaDon
 
         public IHoaDonDangKyPhatHanhService HoaDonDangKyPhatHanh => _hoaDonDangKyPhatHanhService ??= new HoaDonDangKyPhatHanhService(_serviceProvider);
 
-        public IHoaDonService HoaDon => _hoaDonService ??= new HoaDonService(_serviceProvider);
+        public IHoaDonService HoaDon => _hoaDonService ??= new HoaDonService(_serviceProvider,new HoaDonSignService(_serviceProvider.GetRequiredService<IDatabase>()));
 
         public IHoaDonHangHoaService HoaDonHangHoa => _hoaDonHangHoaService ??= new HoaDonHangHoaService(_serviceProvider);
 

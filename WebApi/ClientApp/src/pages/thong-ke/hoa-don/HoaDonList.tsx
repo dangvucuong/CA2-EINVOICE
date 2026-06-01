@@ -58,7 +58,7 @@ const HoaDonList = (props: IHoaDonListProps) => {
     page_index: 0,
     page_size: 20,
     search_key: undefined,
-    sort_by: "",
+    sort_by: "ma_so_hoa_don",
     sort_mode: eSortMode.DESC,
     tu_ngay: props.tu_ngay,
     den_ngay: props.den_ngay,
@@ -248,6 +248,7 @@ useEffect(()=>{
                       ? x.nguoi_mua_ten_donvi
                       : x.nguoi_mua_ten,
                     MST: x.nguoi_mua_mst,
+                    "Địa chỉ người mua": x.nguoi_mua_dia_chi,
                     Email: x.nguoi_mua_email,
                     "Trước thuế": x.tong_tien_truong_thue,
                     Thuế: x.tong_tien_thue,
@@ -322,7 +323,7 @@ useEffect(()=>{
         sortConfig={{
           enable: false,
           field: filter.sort_by,
-          mode: filter.sort_mode ?? eSortMode.ASC,
+                mode: filter.sort_mode ?? eSortMode.DESC,
           onValueChanged: (key: string, sort_mode: eSortMode) => {
             setFilter({
               ...filter,
@@ -407,6 +408,15 @@ useEffect(()=>{
               );
             },
             // sortBy: "alphanumeric"
+          },
+          {
+            header: "Địa chỉ người mua",
+            field: "nguoi_mua_dia_chi",
+            rowHeader: false,
+            minWidth: "220px",
+            renderCell: (x: IHoaDon) => (
+              <Box className="limit1Line">{x.nguoi_mua_dia_chi ?? ""}</Box>
+            ),
           },
           {
             header: "Trước thuế",

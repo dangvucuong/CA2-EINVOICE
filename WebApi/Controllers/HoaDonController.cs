@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Common;
 using Contract.Service;
 using Contracts.Service.HoaDon;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Model.Base;
 using Model.Enum;
@@ -15,12 +16,17 @@ using Model.Respone.HoaDon;
 using Model.Respone.Upload;
 using Model.Static;
 using WebApi.Filters;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography;
+using System;
+using Model.Cache;
 
 namespace WebApi.Controllers
 {
     [ApiController]
     [Route("api/hoa-don")]
-    [MustLogged]
+    //[MustLogged]
 
     public class HoaDonController : BaseController
     {
@@ -606,6 +612,72 @@ namespace WebApi.Controllers
             var url = AppSettings.FixedValue.FileDomain + "/hoa-don/view/" + id.ToString() + "?hash=" + id.ConvertToString().GenerateBcrypt();
             return this.OK(url);
         }
+
+        //update tach ds
+
+        [HttpPost("select-cho-phan-hoi-cqt")]
+        public async Task<IActionResult> SelectChoPhanHoiCQTAsync([FromBody] HoaDonSelectPagingRequest request)
+        {
+            var userInfo = this.GetUserInfo();
+            var result = await _hoaDonService.SelectChoPhanHoiCQTAsync(userInfo.donvi_ma_dv,request);
+            return Ok(new SuccessResult<object>(new
+            {
+                data = result.data,
+                total_count = result.total_count,
+                page_count = result.page_count,
+                page_number = result.page_number,
+                page_size = result.page_size
+            }));
+        }
+
+        [HttpPost("select-chua-gui-cqt")]
+        public async Task<IActionResult> SelectChuaGuiCQTAsync([FromBody] HoaDonSelectPagingRequest request)
+        {
+            var userInfo = this.GetUserInfo();
+            var result = await _hoaDonService
+                .SelectChuaGuiCQTAsync(
+                    userInfo.donvi_ma_dv,
+                    request
+                );
+            return Ok(new SuccessResult<object>(new
+            {
+                data = result.data,
+                total_count = result.total_count,
+                page_count = result.page_count,
+                page_number = result.page_number,
+                page_size = result.page_size
+            }));
+        }
+
+        [HttpPost("gui-lai-cqt/{id}")]
+        public async Task<IActionResult> GuiLaiCQTAsync(int id)
+        {
+            var result = await _hoaDonService
+                .GuiLaiCQTAsync(id);
+
+            return Ok(result);
+        }
+
+        // test ky hash
+
+        [AllowAnonymous]
+        [HttpGet("test-prepare-hash/{id}")]
+        public async Task<IActionResult>TestPrepareHashAsync(int id)
+        {
+            var result =await _hoaDonService.PrepareHashSignAsync(id);
+            return Ok(new SuccessResult<object>(result));
+        }
+
+        [AllowAnonymous]
+        [HttpPost("finalize-hash-sign")]
+        public async Task<IActionResult> FinalizeHashSignAsync([FromBody]HoaDonFinalizeHashSignRequest request)
+        {
+            string signedXml =await _hoaDonService.FinalizeHashSignAsync(request);
+            return Ok(new SuccessResult<object>(signedXml));
+        }
+
+        
+
 
     }
 }

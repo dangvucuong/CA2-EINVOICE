@@ -1,17 +1,23 @@
 using System.Runtime.InteropServices;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Xml;
 using Common;
 using Contracts.Service.HoaDon;
 using Microsoft.Extensions.DependencyInjection;
 using Model.Base;
+using Model.Cache;
 using Model.Enum;
 using Model.RemoteSigning;
 using Model.Request.Base;
 using Model.Request.HoaDon;
 using Model.Request.Hub;
 using Model.Request.ToKhai;
+using Model.Request.Xml;
 using Model.Respone;
+using Model.Respone.Account;
 using Model.Respone.ApiSign;
 using Model.Respone.HoaDon;
 using Model.Respone.Xml;
@@ -19,11 +25,14 @@ using Model.Static;
 using Model.Table;
 using Service.Base;
 using Service.Hub;
+using WebApp;
 
 namespace Service.HoaDon
 {
     public class HoaDonKyLoService : CRUDService<hoa_don>, IHoaDonKyLoService
     {
+        private readonly IHoaDonSignService _hoaDonSignService;
+
         private IHoaDonService _hoaDonService;
         HoaDonPhatHanhHub _hoaDonPhatHanhHub;
         ProcessHub _processHub;
@@ -34,6 +43,7 @@ namespace Service.HoaDon
             this._processHub = _serviceProvider.GetRequiredService<ProcessHub>();
             this._hoaDonPhatHanhHub = _serviceProvider.GetRequiredService<HoaDonPhatHanhHub>();
             _hoaDonLogService = _serviceWrapper.HoaDon.HoaDonLog;
+            this._hoaDonSignService = serviceProvider.GetRequiredService<IHoaDonSignService>();
         }
         private async Task<ProcessChangedModel> CreateXmlStatusIniAsync(string progress_id, ProcessStatusRespone<ProcessStepDataBase> processStatusModel, string userId, int total)
         {
@@ -743,8 +753,6 @@ namespace Service.HoaDon
                     await _serviceWrapper.HoaDon.RsYeuCauKy.SaveYeuCauKyAsync(code, userId.ToString(), Model.Enum.e_rs_yeu_cau_ky_type.KY_SO_VA_PHAT_HANH_BANG_KE, hoaDonIds);
                     return new SuccessResult<string>(code);
                 }
-
-
             }
 
             return new ErrorResult<string>(guiYeucauResult.message);
@@ -783,7 +791,6 @@ namespace Service.HoaDon
                 var hoaDonKySoThanhCongIds = updateKySoResult.Where(x => x.is_success).Select(x => x.id).ToList();
                 var hoaDonKySoThatBaiIds = updateKySoResult.Where(x => !x.is_success).Select(x => x.id).ToList();
                 var hoaDonsKySoThanhCong = hoaDons.Where(x => hoaDonKySoThanhCongIds.Contains(x.id)).ToList();
-
                 var taskNotify = updateKySoResult.Select(result =>
                 {
                     var hoa_don_id = result.id;
@@ -825,11 +832,11 @@ namespace Service.HoaDon
         /// </summary>
         /// <param name="xmlKetQua"></param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <exception cref="NotImplementedException"></exception>       
         public async Task<bool> XuLyThongDiepKetQuaPhanHanhAsync(KetQuaThongDiepRespone thongDiepRespone, string xmlKetQua)
         {
             var maThamChieu = thongDiepRespone.TTChung.MTDTChieu;
-            var uuid = maThamChieu.Replace($"V{AppSettings.FixedValue.MNGui}", "");
+            var uuid = maThamChieu.Replace("V0103930279", "");
             var hoaDonIds = await _serviceWrapper.Cache.GetDataAsync<List<int>>(uuid + "_bang_ke_mtt");
             var hoaDons = new List<hoa_don>();
             if (hoaDonIds != null && hoaDonIds.Count > 0)
@@ -896,6 +903,7 @@ namespace Service.HoaDon
 
                 }
             }
+
             if (thongDiepRespone.TTChung.MLTDiep == "-1")
             {
                 foreach (var hoaDon in hoaDons)
@@ -990,6 +998,111 @@ namespace Service.HoaDon
             return true;
 
 
+        }
+
+        // update ky hash 
+
+        public JwtTokenInfo GetCurrentUser()
+        {
+            try
+            {
+                var httpContext = _serviceWrapper._httpContextAccessor.HttpContext;
+                return _serviceWrapper.Core.JwtToken.GetUserInfo(httpContext);
+            }
+            catch (System.Exception)
+            {
+
+                return null;
+            }
+        }
+
+        public async Task<List<HoaDonPrepareHashSignResponse>> PrepareHashSignsAsync(List<int> ids)
+        {
+            var result = new List<HoaDonPrepareHashSignResponse>();
+            var hoaDons = await _hoaDonService.SelectByIdsAsync(ids);
+            foreach (var hoaDon in hoaDons)
+            {
+                try
+                {
+                    // =====================================================
+                    // 1. TẠO XML
+                    // =====================================================
+
+                    var xmlResult = await _hoaDonService.CreateXmlKySoAsync(hoaDon);
+
+                    if (!xmlResult.is_success)
+                        continue;
+
+                    string xml = xmlResult.data;
+                    var target = new XmlSignTarget
+                    {
+                        DocId = hoaDon.id,
+                        XmlContent = xmlResult.data,
+                        IdToSign = "_" + hoaDon.id.ToString(),
+                        ObjectId = $"Obj-NBan-{hoaDon.id}",
+                        AppendXPath = "/HDon/DSCKS/NBan" // Mặc định ký vào đây
+                    };
+
+                    // =====================================================
+                    // 5. RESPONSE
+                    // =====================================================
+
+                    var prepareRes = await _hoaDonSignService.PrepareCoreGenericAsync(target);
+
+                    result.Add(prepareRes);
+                }
+                catch (Exception ex)
+                {
+                    var err = ex.Message;
+                    throw new Exception(err);
+                }
+            }
+            return result;
+        }
+
+        public async Task<(string signedXmlBase64, int hoaDonId)> FinalizeHashSignAsync(HoaDonFinalizeHashSignRequest request)
+        {
+            // 1. CHUẨN BỊ CHỨNG THƯ (Để truyền vào hàm FinalizeGeneric)
+            // Lưu ý: Export chứng thư ra Base64 để Service Generic sử dụng
+            byte[] certBytes = await File.ReadAllBytesAsync(@"E:\cert.pfx");
+            X509Certificate2 cert = new X509Certificate2(
+                certBytes,
+                "1",
+                X509KeyStorageFlags.Exportable | X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet
+            );
+            string certBase64 = Convert.ToBase64String(cert.Export(X509ContentType.Cert));
+
+            // 2. GỌI SERVICE GENERIC
+            // Hàm này đã bao gồm việc: Lấy session từ Redis, Verify, và hoàn thiện XML
+            // Trả về tuple (signedXml, hoaDonId)
+            var (signedXml, hoaDonId) = await _hoaDonSignService.FinalizeCoreGenericAsync(
+                request,
+                certBase64,
+                "/HDon/DSCKS/NBan" // XPath mục tiêu
+            );
+
+            // 3. XỬ LÝ KẾT QUẢ
+            string signedXmlBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(signedXml));
+
+            // 4. CẬP NHẬT DATABASE
+            await _hoaDonService.UpdteKySoSuccessAsync(
+                new HoaDonPhatHanhRequest
+                {
+                    id = hoaDonId,
+                    signed_text = signedXmlBase64
+                }
+            );
+
+            // 5. VERIFY (Giữ nguyên logic kiểm tra tính toàn vẹn của bạn)
+            bool verify = XmlSignatureHelper.VerifyXmlSignature(signedXml);
+            if (!verify)
+            {
+                var user = this.GetCurrentUser();
+                LogWriter.Writer("Verify signature failed. hoa don id: " + hoaDonId, "api/hoa-don/ky-lo/", user?.username);
+                throw new Exception("Verify signature failed");
+            }
+
+            return (signedXmlBase64, hoaDonId);
         }
     }
 }

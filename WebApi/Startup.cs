@@ -6,6 +6,7 @@ using Contract.Service.Core;
 using Contracts.Repository;
 using Contracts.Repository.Base;
 using Contracts.Service.Core;
+using Contracts.Service.HoaDon;
 using Contracts.Service.Pdf;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -24,8 +25,10 @@ using Service;
 using Service.Consumer;
 using Service.Core;
 using Service.Google;
+using Service.HoaDon;
 using Service.Hub;
 using Service.Pdf;
+using StackExchange.Redis;
 using WebApi.BackgroupJob;
 using WebApi.HostedService;
 using WebApi.Middleware;
@@ -79,6 +82,17 @@ namespace portal
 
             services.AddSingleton<IServiceWrapper, ServiceWrapper>();
 
+            services.AddScoped<IHoaDonSignService, HoaDonSignService>();
+            services.AddScoped<IDatabase>(sp =>
+            {
+                var multiplexer = sp.GetRequiredService<IConnectionMultiplexer>();
+                return multiplexer.GetDatabase();
+            });
+
+            // 2. Chuyển Lifetime của HoaDonSignService từ Singleton sang AddScoped cho đồng bộ đời sống Request
+            services.AddScoped<IHoaDonSignService, HoaDonSignService>();
+
+
             AddSignalR(services);
             services.AddSingleton<ReCaptchaService, ReCaptchaService>();
             if (AppSettings.FixedValue.ShowSwaggerUI)
@@ -95,6 +109,11 @@ namespace portal
                     c.EnableAnnotations();
                 });
             }
+
+            //update ky hash
+
+            services.AddSingleton<IConnectionMultiplexer>(x => ConnectionMultiplexer.Connect($"{Configuration["RedisConfig:Host"]}:{Configuration["RedisConfig:Port"]}")
+   );
 
         }
         private void AddSignalR(IServiceCollection services)

@@ -9,6 +9,8 @@ import {
   TrailingVisual,
 } from "@primer/react/lib/ActionList/Visuals";
 import { useLocation } from "react-router-dom";
+import { isDangKyPhatHanhMtt, isKyHieuMayTinhTien } from "../../utils/hoaDonKyHieu";
+
 interface ISelectBoxKyHieuPhatHanhProps {
   onValueChanged: (id: string) => void;
   value: string;
@@ -18,13 +20,8 @@ interface ISelectBoxKyHieuPhatHanhProps {
   isAutoSelectIfHasOneItem: boolean;
   isShowClearBtn?: boolean;
   isShowKyHieuTheoNam?: boolean;
+  onlyMtt?: boolean;
 }
-const isMayTinhTien = (ky_hieu: string) => {
-  if (ky_hieu && ky_hieu.length >= 4) {
-    return ky_hieu.substring(3, 4) === "M";
-  }
-  return false;
-};
 const getLeadingVisual = (isMTT: boolean) => {
   return (
     <>
@@ -51,30 +48,37 @@ const SelectBoxKyHieuPhatHanh = (props: ISelectBoxKyHieuPhatHanhProps) => {
     var uniqueData = new Set();
     hoaDonDangKyPhatHanhs
       .sort((a, b) => b.id - a.id)
-      .filter(
-        (x) =>
-          // x.hoa_don_dang_ky_phat_hanh_trang_thai_id === 1 &&
-          x.loai_hoa_don_ct_id === props.loai_hoa_don_ct_id &&
-          x.mau_so === props.mau_so,
-      )
+      .filter((x) => {
+        if (
+          x.loai_hoa_don_ct_id !== props.loai_hoa_don_ct_id ||
+          x.mau_so !== props.mau_so
+        ) {
+          return false;
+        }
+        if (props.onlyMtt || location.state?.is_may_tinh_tien === true) {
+          return isDangKyPhatHanhMtt(x);
+        }
+        return true;
+      })
       .map((x) => ({ id: x.ky_hieu, text: x.ky_hieu }))
       .forEach((item) => {
         uniqueData.add(JSON.stringify(item));
       });
     var result = Array.from(uniqueData).map((item: any) => JSON.parse(item));
 
-    //location.state?.is_may_tinh_tien === true thì chỉ lấy ký hiệu máy tính tiền
-    if (location.state?.is_may_tinh_tien === true) {
-      result = result.filter((x) => isMayTinhTien(x.text));
-    }
-
     return result.map((x) => {
       return {
         ...x,
-        trailingVisual: getLeadingVisual(isMayTinhTien(x.text)),
+        trailingVisual: getLeadingVisual(isKyHieuMayTinhTien(x.text)),
       };
     });
-  }, [hoaDonDangKyPhatHanhs, props.loai_hoa_don_ct_id, props.mau_so]);
+  }, [
+    hoaDonDangKyPhatHanhs,
+    props.loai_hoa_don_ct_id,
+    props.mau_so,
+    props.onlyMtt,
+    location.state?.is_may_tinh_tien,
+  ]);
   const filterdData = useMemo(() => {
     const data = dataSource.filter((item) =>
       item.text.toLowerCase().includes(filter.toLowerCase()),

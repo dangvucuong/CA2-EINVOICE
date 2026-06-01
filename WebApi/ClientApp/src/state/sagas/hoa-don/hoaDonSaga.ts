@@ -12,8 +12,24 @@ export function* hoaDonSaga(): any {
     yield takeEvery(eHoaDonActionTypeIds.DELETE_START, deleteWorker)
 
 }
+
 function* loadWorker(action: IHoaDonLoadStart): any {
-    const res: IBaseRespone = yield call(hoaDonApi.selectByDonViPaging, action.payload)
+
+    let apiCall = hoaDonApi.selectByDonViPaging;
+
+    if ((action.payload as any)?.tab === "cho-phat-hanh") {
+        apiCall = hoaDonApi.selectChoPhanHoiCQT;
+    }
+
+    if ((action.payload as any)?.tab === "chua-gui-cqt") {
+        apiCall = hoaDonApi.selectChuaGuiCQT;
+    }
+
+    const res: IBaseRespone = yield call(
+        apiCall,
+        action.payload
+    )
+
     if (res.is_success) {
         yield put(mainAction.loadSuccess(res.data))
     } else {

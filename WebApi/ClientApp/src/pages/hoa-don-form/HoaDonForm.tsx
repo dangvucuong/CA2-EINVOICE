@@ -133,6 +133,7 @@ const HoaDonForm = () => {
       ? true
       : false;
   const { loaiHoaDonCT } = useLoaiHoaDonCT(formData.loai_hoa_don_ct_id);
+
   // const { text: ngayThangNam } = useNgayThangNam();
   // const [hangHoas, setHangHoas] = useState<any[]>([{}]);
   const [hangHoas, setHangHoas] = useState<any[]>([
@@ -156,6 +157,10 @@ const HoaDonForm = () => {
 
   const [isSaving, setIsSaving] = useState(false);
   const [base64KySo, setBase64KySo] = useState("");
+
+  const [hashBase64, setHashBase64] = useState("");
+  const [signSessionId, setSignSessionId] = useState("");
+
   const [base64BienBan, setBase64BienBan] = useState("");
   const [isShowKySoModal, setIsShowKySoModal] = useState(false);
   const [isKySoVaPhatHanh, setIsKySoVaPhatHanh] = useState(false);
@@ -217,6 +222,7 @@ const HoaDonForm = () => {
       }
     }
   }, [signalRConnectionServer, hoaDonId]);
+
   const onHoaDonPhatHanhHasResult = (
     message: IHoaDonPhatHanhPushNotifyModel,
   ) => {
@@ -232,7 +238,9 @@ const HoaDonForm = () => {
     const hoa_don_goc_id: any = searchParams.get("hoa_don_goc_id");
     const copy_id: any = searchParams.get("copy_id");
     setHinhThucHoaDonId(hinh_thuc_id ? parseInt(hinh_thuc_id) : 1);
+
     setHoaDonGocId(hoa_don_goc_id ? parseInt(hoa_don_goc_id) : 0);
+
     if (copy_id && copy_id > 0) {
       copyHoaDonAsync(copy_id);
     }
@@ -248,6 +256,7 @@ const HoaDonForm = () => {
       handleGetHoaDonViewModel(hoaDonGocId);
     }
   }, [hoaDonId, hoaDonGocId]);
+
   useEffect(() => {
     if (hoaDonViewModel) {
       // console.log({
@@ -429,6 +438,7 @@ const HoaDonForm = () => {
       NotifyHelper.Error("Error");
     }
   };
+
   const handleGetBase64KySo = async () => {
     const isKhacNgay =
       moment(new Date()).format("YYYY-MM-DD") !==
@@ -486,12 +496,33 @@ const HoaDonForm = () => {
         NotifyHelper.Error("Dữ liệu không hợp lệ.");
       }
 
-      // setBase64KySo(res.data);
-      // setIsShowKySoModal(true);
+
     } else {
       NotifyHelper.Error(res?.message ?? "Error");
     }
   };
+
+  // ky hash =====================
+  const handlePrepareHashSign = async () => {
+    setIsSaving(true);
+    const res = await hoaDonApi.prepareHashSign(hoaDonId);
+    setIsSaving(false);
+    if (res.is_success) {
+
+      const sessionId = res.data.sessionId || res.data.SessionId;
+      const hashBase64 = res.data.hashBase64 || res.data.HashBase64;
+      console.log("sessionID", sessionId);
+      console.log("hashBase64", sessionId);
+
+      setHashBase64(hashBase64);
+      setSignSessionId(sessionId);
+      setIsShowKySoModal(true);
+    } else {
+      NotifyHelper.Error(res.message ?? "Error");
+    }
+  };
+
+  //=============================
   const handleKySoRemoteAsync = async () => {
     const isKhacNgay =
       moment(new Date()).format("YYYY-MM-DD") !==
@@ -538,6 +569,7 @@ const HoaDonForm = () => {
       NotifyHelper.Error(res?.message ?? "Error");
     }
   };
+
   const handleKySoVaPhatHanhRemoteAsync = async () => {
     const isKhacNgay =
       moment(new Date()).format("YYYY-MM-DD") !==
@@ -584,10 +616,12 @@ const HoaDonForm = () => {
       NotifyHelper.Error(res?.message ?? "Error");
     }
   };
+
   const handleUpdateKySoSuccss = async (
     signedtext: string,
     bienBanSignedText?: string,
   ) => {
+    // console.log("signtext", signedtext);
     if (hoaDonViewModel) {
       setIsSaving(true);
       const res = await hoaDonApi.updateKySoSuccess({
@@ -611,11 +645,13 @@ const HoaDonForm = () => {
       setIsSaving(false);
     }
   };
+
   const handlePhatHanhAsync = async (
     signedtext: string,
     bienBanSignedText?: string,
   ) => {
     setIsSaving(true);
+    
     const res = await hoaDonApi.phatHanh({
       signed_text: signedtext,
       bienBanSignedText: bienBanSignedText,
@@ -628,6 +664,7 @@ const HoaDonForm = () => {
     }
     setIsSaving(false);
   };
+
   const handleSetHangHoaDonGiaAm = async (
     hoa_don_ly_do_dieu_chinh_id: number,
   ) => {
@@ -674,11 +711,11 @@ const HoaDonForm = () => {
 
     const _hangHoas = isDieuChinhThue
       ? newHangHoas.map((h) => ({
-          ...h,
-          so_luong: 0,
-          don_gia: 0,
-          thanh_tien: 0,
-        }))
+        ...h,
+        so_luong: 0,
+        don_gia: 0,
+        thanh_tien: 0,
+      }))
       : newHangHoas;
     const tongTienData = getTongTienData(
       _hangHoas,
@@ -700,9 +737,8 @@ const HoaDonForm = () => {
       formData.loai_hoa_don_ct_id === 9 ||
       formData.loai_hoa_don_ct_id === 10
     ) {
-      data.xuat_kho_dia_chi = `${user?.donvi?.dia_chi}|${
-        data?.xuat_kho_dia_chi?.trim() ?? ""
-      }`;
+      data.xuat_kho_dia_chi = `${user?.donvi?.dia_chi}|${data?.xuat_kho_dia_chi?.trim() ?? ""
+        }`;
     } else {
       data.xuat_kho_dia_chi = "";
     }
@@ -758,16 +794,16 @@ const HoaDonForm = () => {
       tong_tien_chu: isDieuChinhThue
         ? ConvertTienChu(data.tong_tien_thue, loaiTien)
         : ConvertTienChu(
-            tongTienData.tong_thanh_tien +
-              so_tien_tang_giam +
-              so_tien_tang_giam_tien_hang +
-              so_tien_tang_giam_tien_thue,
-            loaiTien,
-          ),
+          tongTienData.tong_thanh_tien +
+          so_tien_tang_giam +
+          so_tien_tang_giam_tien_hang +
+          so_tien_tang_giam_tien_thue,
+          loaiTien,
+        ),
       tong_tien_truong_thue: isDieuChinhThue
         ? 0
         : (tongTienData?.tong_thanh_tien ?? 0) -
-          (tongTienData?.vats_total ?? 0),
+        (tongTienData?.vats_total ?? 0),
       tong_tien_thue: isDieuChinhThue
         ? data.tong_tien_thue
         : (tongTienData?.vats_total ?? 0),
@@ -1023,13 +1059,7 @@ const HoaDonForm = () => {
       NotifyHelper.Error(res.message ?? "Error");
     }
   };
-  // console.log({
-  //     hoaDonViewModel,
-  //     hoaDonId,
-  //     pId,
-  //     thongTinHoaDonGoc,
-  //     hinhThucHoaDonId
-  // });
+
 
   if (
     hoaDonViewModel &&
@@ -1525,7 +1555,7 @@ const HoaDonForm = () => {
                           setValue(
                             "nguoi_mua_ngan_hang",
                             data.khach_hang?.stk?.split("|")[
-                              data.khach_hang?.stk?.split("|").length - 1
+                            data.khach_hang?.stk?.split("|").length - 1
                             ],
                           );
                         } else {
@@ -1863,24 +1893,24 @@ const HoaDonForm = () => {
                         block
                         // validateMessage="Vui lòng điền Số Căn cước công dân"
                         errors={errors}
-                        // onChange={(e) => {
-                        //   if (e.target.value.length > 7) {
-                        //     setError("ma_dv_ngan_sach", {
-                        //       type: "manual",
-                        //       message: "Mã đơn vị ngân sách phải đúng 7 ký tự",
-                        //     });
-                        //   } else if (
-                        //     e.target.value.length < 7 &&
-                        //     e.target.value.length > 0
-                        //   ) {
-                        //     setError("ma_dv_ngan_sach", {
-                        //       type: "manual",
-                        //       message: "Mã đơn vị ngân sách phải đúng 7 ký tự",
-                        //     });
-                        //   } else {
-                        //     clearErrors("ma_dv_ngan_sach");
-                        //   }
-                        // }}
+                      // onChange={(e) => {
+                      //   if (e.target.value.length > 7) {
+                      //     setError("ma_dv_ngan_sach", {
+                      //       type: "manual",
+                      //       message: "Mã đơn vị ngân sách phải đúng 7 ký tự",
+                      //     });
+                      //   } else if (
+                      //     e.target.value.length < 7 &&
+                      //     e.target.value.length > 0
+                      //   ) {
+                      //     setError("ma_dv_ngan_sach", {
+                      //       type: "manual",
+                      //       message: "Mã đơn vị ngân sách phải đúng 7 ký tự",
+                      //     });
+                      //   } else {
+                      //     clearErrors("ma_dv_ngan_sach");
+                      //   }
+                      // }}
                       />
                     </FormControl>
                   </Box>
@@ -2035,7 +2065,7 @@ const HoaDonForm = () => {
                       register={register}
                       name="NgayDenNgayDi"
                       block
-                      onChange={(e) => {}}
+                      onChange={(e) => { }}
                     />
                   </FormControl>
                   <FormControl>
@@ -2045,7 +2075,7 @@ const HoaDonForm = () => {
                     <TextInput
                       register={register}
                       block
-                      onChange={(e) => {}}
+                      onChange={(e) => { }}
                       name="TenTau"
                     />
                   </FormControl>
@@ -2056,7 +2086,7 @@ const HoaDonForm = () => {
                     <TextInput
                       register={register}
                       block
-                      onChange={(e) => {}}
+                      onChange={(e) => { }}
                       name="SoThamChieu"
                     />
                   </FormControl>
@@ -2067,7 +2097,7 @@ const HoaDonForm = () => {
                     <TextInput
                       register={register}
                       block
-                      onChange={(e) => {}}
+                      onChange={(e) => { }}
                       name="NoiDiNoiDen"
                     />
                   </FormControl>
@@ -2232,7 +2262,8 @@ const HoaDonForm = () => {
                             leadingVisual={IssueClosedIcon}
                             isLoading={isSaving}
                             onClick={() => {
-                              handleGetBase64KySo();
+                              // handleGetBase64KySo();
+                              handlePrepareHashSign();
                               setIsKySoVaPhatHanh(false);
                             }}
                             disabled={
@@ -2277,14 +2308,14 @@ const HoaDonForm = () => {
                       onClick={() => {
                         handlePhatHanhAsync("");
                       }}
-                      // tooltip='Bạn chỉ có thể gửi tờ khai sau khi đã ký số'
+                    // tooltip='Bạn chỉ có thể gửi tờ khai sau khi đã ký số'
                     />
                   )}
                   {hoaDonViewModel?.is_ky_so_succes !== true &&
                     (hoaDonViewModel?.hoa_don_trang_thai_id ===
                       eHoaDonTrangThai.NHAP ||
                       hoaDonViewModel?.hoa_don_trang_thai_id ===
-                        eHoaDonTrangThai.CHUA_GUI_CQT) && (
+                      eHoaDonTrangThai.CHUA_GUI_CQT) && (
                       <>
                         {user &&
                           !user.is_hsm_signing &&
@@ -2299,7 +2330,9 @@ const HoaDonForm = () => {
                               leadingVisual={IssueClosedIcon}
                               isLoading={isSaving}
                               onClick={() => {
-                                handleGetBase64KySo();
+                                //handleGetBase64KySo();
+                                // test ky hash
+                                handlePrepareHashSign();
                                 setIsKySoVaPhatHanh(true);
                               }}
                             />
@@ -2332,6 +2365,8 @@ const HoaDonForm = () => {
       {isShowKySoModal && (
         <KySoModal
           base64={base64KySo}
+          hashBase64={hashBase64}
+          sessionId={signSessionId}
           base64BienBan={base64BienBan}
           onClose={() => {
             setIsShowKySoModal(false);
@@ -2339,7 +2374,36 @@ const HoaDonForm = () => {
           onSuccess={(signedtext, bienBanSignedText) => {
             setIsShowKySoModal(false);
             handleUpdateKySoSuccss(signedtext, bienBanSignedText);
-            // handlePhatHanhAsync(signedtext)
+          }}
+
+          onHashSignSuccess={async (sessionId, signatureValue) => {
+            setIsShowKySoModal(false);
+            setIsSaving(true);
+
+            // 1. Gọi API Finalize để Backend sinh ra chuỗi XML hoàn chỉnh đã ký số
+            const finalizeRes = await hoaDonApi.finalizeHashSign({ sessionId, signatureValue });
+            setIsSaving(false);
+
+            if (finalizeRes.is_success) {           
+              const xmlContent = finalizeRes.message || finalizeRes.data?.message;
+
+              if (!xmlContent || typeof xmlContent !== "string") {
+                NotifyHelper.Error("Lỗi: Không tìm thấy nội dung XML hóa đơn từ trường 'message' của Server!");
+                return;
+              }
+
+              // 2. Tiến hành mã hóa chuỗi XML chuẩn sang Base64
+              const base64SignedXml = window.btoa(
+                unescape(encodeURIComponent(xmlContent))
+              );
+
+              //console.log("Payload phát hành gửi lên CQT chuẩn xác: ", base64SignedXml);
+
+              // 3. Gọi hàm phát hành truyền Payload chuẩn đi
+              await handleUpdateKySoSuccss(base64SignedXml);
+            } else {
+              NotifyHelper.Error(finalizeRes.message ?? "Quá trình hoàn thiện chữ ký số thất bại");
+            }
           }}
         />
       )}

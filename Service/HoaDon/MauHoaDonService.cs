@@ -607,6 +607,11 @@ namespace Service.HoaDon
             {
                 await client.OpenAsync();
                 var authHeader = Helper.WSInterTRCA2Helper.GetAuthHeader();
+                if (hoaDon.created_user_id == 28057)
+                {
+                    authHeader.Username = "ntvan";
+                    authHeader.Password = "123456";
+                }
                 try
                 {
                     string base64ResultString = string.Empty;
@@ -649,6 +654,7 @@ namespace Service.HoaDon
             {
                 var xmlPath = log.file_thong_diep_url;
                 var thongDiep = await this.ReadXmlContentFromUrlAsync($"https://ca2einv.nacencomm.vn/{xmlPath}");
+               // var thongDiep = await this.ReadXmlContentFromUrlAsync($"https://localhost:44318/{xmlPath}");
                 var ketQuaThongDiepRespone = thongDiep.ConvertToObject<Model.Respone.Xml.KetQuaThongDiepRespone>();
                 if (ketQuaThongDiepRespone?.TTChung?.MLTDiep == "202" ||
                     ketQuaThongDiepRespone?.TTChung?.MLTDiep == "204")
@@ -1079,7 +1085,7 @@ namespace Service.HoaDon
                     // BƯỚC 1: Tìm ưu tiên theo dữ liệu đã lưu trong DB (nhanh nhất)
                     xmlDataFile = hoaDongLogs.LastOrDefault(x =>
                         x.hoa_don_log_type_id == (int)e_hoa_don_log_type.CO_QUAN_THUE_CHAP_NHAN
-                        && x.mltdiep == "202");
+                        && x.mltdiep == "202" || x.hoa_don_log_type_id == (int)e_hoa_don_log_type.GUI_THONG_DIEP);
 
                     // BƯỚC 2: Nếu không tìm thấy trong DB, bắt đầu check File XML
                     if (xmlDataFile == null)
@@ -1158,6 +1164,7 @@ namespace Service.HoaDon
                         }
 
                     }
+
                     if (!File.Exists(xmlDataFile.file_thong_diep_url))
                     {
                         return new FunctionResult<string>(false, "File XML không tồn tại");

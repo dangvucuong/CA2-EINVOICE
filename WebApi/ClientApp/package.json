@@ -54,7 +54,7 @@
     "xlsx": "^0.18.5"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "set NODE_OPTIONS=--max_old_space_size=4096 && react-scripts start",
     "start:stagging": "env-cmd -f .env.stagging react-scripts start",
     "start:product": "env-cmd -f .env.production react-scripts start",
     "build": "env-cmd -f .env.production react-scripts build",
