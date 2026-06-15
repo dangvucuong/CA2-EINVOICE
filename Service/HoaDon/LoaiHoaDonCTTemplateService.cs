@@ -2,6 +2,7 @@ using System.Xml.Xsl;
 using Common;
 using Contracts.Service.HoaDon;
 using Model.Request.HoaDon;
+using Model.Respone.HoaDon;
 using Model.Table;
 using Service.Base;
 using WebApp;
@@ -15,7 +16,10 @@ namespace Service.HoaDon
             this._repositoryBase = _repositoryWrapper.HoaDon.LoaiHoaDonCTTemplate;
         }
 
-
+        public Task<loai_hoa_don_ct_template_vm> SelectVmByIdAsync(int id)
+        {
+            return _repositoryWrapper.HoaDon.LoaiHoaDonCTTemplate.SelectVmByIdAsync(id);
+        }
 
         public async Task<string> GenerateHtmlAsync<T>(string filePath, T data)
         {
@@ -30,7 +34,7 @@ namespace Service.HoaDon
 
         public async Task<string> GenerateHtmlAsync<T>(int loai_hoa_don_ct_template_id, T data)
         {
-            var tempalte = await this.SelectByIdAsync(loai_hoa_don_ct_template_id);
+            var tempalte = await this.SelectVmByIdAsync(loai_hoa_don_ct_template_id);
             if (tempalte != null && tempalte.path.ConvertToString() != string.Empty)
             {
                 return await this.GenerateHtmlAsync(tempalte.path, data);
@@ -96,7 +100,7 @@ namespace Service.HoaDon
 
         public async Task<string> GeneratePrintHtmlAsync(int loai_hoa_don_ct_template_id, MauHoaDonCreateHtmlInput input, XsltArgumentList xsltArgumentList)
         {
-            var tempalte = await this.SelectByIdAsync(loai_hoa_don_ct_template_id);
+            var tempalte = await this.SelectVmByIdAsync(loai_hoa_don_ct_template_id);
             if (tempalte != null && tempalte.path.ConvertToString() != string.Empty)
             {
                 var result = await _serviceWrapper.Xslt.FillDataAsync(tempalte.path, input, xsltArgumentList);
@@ -111,7 +115,7 @@ namespace Service.HoaDon
 
         public async Task<string> GeneratePrintHtmlAsync(int loai_hoa_don_ct_template_id, string xmlData, XsltArgumentList xsltArgumentList)
         {
-            var tempalte = await this.SelectByIdAsync(loai_hoa_don_ct_template_id);
+            var tempalte = await this.SelectVmByIdAsync(loai_hoa_don_ct_template_id);
             if (tempalte != null && tempalte.path.ConvertToString() != string.Empty)
             {
                 var result = await _serviceWrapper.Xslt.FillDataAsXmlAsync(tempalte.path, xmlData, xsltArgumentList);

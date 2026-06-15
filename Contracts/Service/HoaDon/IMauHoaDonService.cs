@@ -15,6 +15,7 @@ namespace Contracts.Service.HoaDon
         Task<FunctionResult<string>> CreatePrintHtmlAsync(hoa_don hoaDon, int soHoaDonTrenTrang = 10, MauHoaDonInChuyenDoiParam chuyenDoiParam = null);
         Task<FunctionResult<string>> CreatePreviewHtmlAsync(HoaDonAddOrEditModel hoaDon, bool isShowMau = true);
         Task<FunctionResult<string>> CreatePreviewHtmlAsync(int hoaDonId, bool isShowMau = true);
+        Task<bool> SaveSettingsToXsltAsync(mau_hoa_don mauHoaDon);
         //
     }
 }

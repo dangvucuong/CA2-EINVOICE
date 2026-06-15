@@ -7,12 +7,15 @@ import { useAppSelector } from "../../hooks/useAppSelector";
 import { rootAction } from "../../state/actions/rootAction";
 import { eReducerStatusBase } from "../../state/reducer-models/eReducerStatusBase";
 import moment from "moment";
+import { isDangKyPhatHanhMtt } from "../../utils/hoaDonKyHieu";
+
 interface ISelectBoxLoaiHoaDonCTPhatHanhProps {
   onValueChanged: (id: number) => void;
   value: number;
   maxWidth?: any;
   isShowClearBtn?: boolean;
-  // isOnlyShowCurrentYear?: boolean
+  /** Chỉ hiển thị loại HĐ có đăng ký phát hành ký hiệu MTT */
+  onlyMtt?: boolean;
 }
 
 const SelectBoxLoaiHoaDonCTPhatHanh = (
@@ -29,7 +32,13 @@ const SelectBoxLoaiHoaDonCTPhatHanh = (
     hoaDonDangKyPhatHanhs
       ///chỉ lấy ra những bản ghi có ngay_su_dung trong năm hiện tại, dùng momentjs để lấy năm hiện tại
       .filter((x) => {
-        return moment(x?.ngay_su_dung).year() === moment().year();
+        if (moment(x?.ngay_su_dung).year() !== moment().year()) {
+          return false;
+        }
+        if (props.onlyMtt) {
+          return isDangKyPhatHanhMtt(x);
+        }
+        return true;
       })
       .map((x) => ({
         id: x.loai_hoa_don_ct_id,
@@ -41,7 +50,7 @@ const SelectBoxLoaiHoaDonCTPhatHanh = (
       });
     var result = Array.from(uniqueData).map((item: any) => JSON.parse(item));
     return result;
-  }, [hoaDonDangKyPhatHanhs]);
+  }, [hoaDonDangKyPhatHanhs, props.onlyMtt]);
   const filterdData = useMemo(() => {
     return dataSource.filter((item) =>
       item.text.toLowerCase().includes(filter.toLowerCase())

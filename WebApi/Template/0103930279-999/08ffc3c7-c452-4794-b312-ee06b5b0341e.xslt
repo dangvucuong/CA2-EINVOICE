@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <xsl:stylesheet version="1.0"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:ex="http://exslt.org/dates-and-times"
@@ -112,7 +112,7 @@
 							MẪU
 						</div>
 						<div id="background" style="paramdisable">contentDisable</div>
-						<div style="border:2px solid black;width:100%;height: auto; min-height: 100%;background-image:url(paramVien);
+						<div style="border:2px solid black;width:100%;height: auto; min-height: 100%;background-image:url(https://ca2einv.nacencomm.vn/template/watermark/vien-moc-100.png);
                                     border-color: white;
                                     background-size: 100% 100%;
                                     background-clip: padding-box;
@@ -120,10 +120,10 @@
                                     padding: 20px;
                                     border: 20px solid transparent;
                                     border-width:20px;z-index:1;border-color:white">
-							<div id="header" style="display:flex;flex-direction:paramOpacityHeaderFlexDirection;padding-top:10px;padding-right:10px">
+							<div id="header" style="display:flex;flex-direction:rowpadding-top:10px;padding-right:10px">
 								<div id="header_left" style="width:200px;display:flex;justify-content:center">
 									<img style="height:100px;align-content:center;position:static;left:0;top:0;object-fit: scale-down;"
-                                         id="imgSample" src="paramLogo" />
+                                         id="imgSample" src="" />
 								</div>
 								<div id="header_center" style="flex:1;text-align:center">
 									<span style="font-weight:bold; font-size:15pt;text-transform: uppercase;">
@@ -206,57 +206,57 @@
 							</table>
 							<hr style="background-color:black;width:100%;height:1px;margin-bottom:1px" />
 							<table style="width:100%;line-height:25px;font-size:12pt">
-								<tr style="ten_cong_ty_css_display;">
+								<tr style="">
 									<td style="padding-left:10px;width:250px" >
 										Đơn vị bán hàng
 										<i>(Seller)</i>:
 									</td>
-									<td style="padding-left:0px;ten_cong_ty_css;" colspan="2">
-										<!-- <div style="font-weight:bold; font-size:12pt;text-transform: uppercase;ten_cong_ty_css;"> -->
+									<td style="padding-left:0px;font-weight:bold;font-style:normal;font-size:12px;color:#c92121;text-align:left" colspan="2">
+										<!-- <div style="font-weight:bold; font-size:12pt;text-transform: uppercase;font-weight:bold;font-style:normal;font-size:12px;color:#c92121;text-align:left"> -->
 										<xsl:value-of select="DLHDon/NDHDon/NBan/Ten" />
 										<!-- </div> -->
 										<!-- <br/> -->
 									</td>
 								</tr>
-								<tr style="mst_css_display;">
+								<tr style="">
 									<td style="padding-left:10px;width:150px">
 										Mã số thuế
 										<i>(Tax code)</i>:
 									</td>
-									<td style="width:75%;mst_css;">
-										<!-- <div style="font-weight:bold; font-size:12pt;mst_css;"> -->
+									<td style="width:75%;font-weight:normal;font-style:normal;font-size:12px;color:#1E1E1E;text-align:left">
+										<!-- <div style="font-weight:bold; font-size:12pt;font-weight:normal;font-style:normal;font-size:12px;color:#1E1E1E;text-align:left"> -->
 										<!-- <du> -->
 										<xsl:value-of select="DLHDon/NDHDon/NBan/MST" />
 										<!-- </du> -->
 										<!-- </div> -->
 									</td>
 								</tr>
-								<tr style="dia_chi_css_display;">
+								<tr style="">
 									<td style="padding-left:10px;width:150px">
 										Địa chỉ
 										<i>(Address)</i>:
 									</td>
-									<td style="dia_chi_css;">
+									<td style="font-weight:normal;font-style:normal;font-size:12px;color:#1E1E1E;text-align:left">
 										<xsl:value-of select="DLHDon/NDHDon/NBan/DChi" />
 									</td>
 								</tr>
-								<tr style="so_tai_khoan_css_display;">
+								<tr style="">
 									<td style="padding-left:10px;">
 										Số tài khoản
 										<i>(Account No)</i>:
 									</td>
-									<td style="so_tai_khoan_css;">
+									<td style="font-weight:normal;font-style:normal;font-size:12px;color:#1E1E1E;text-align:left">
 										<xsl:value-of select="DLHDon/NDHDon/NBan/STKNHang" />
 										Tại:
 										<xsl:value-of select="DLHDon/NDHDon/NBan/TNHang" />
 									</td>
 								</tr>
-								<tr style="dien_thoai_css_display;">
+								<tr style="">
 									<td style="padding-left:10px;">
 										Điện thoại
 										<i>(Tel)</i>:
 									</td>
-									<td style="dien_thoai_css;">
+									<td style="font-weight:normal;font-style:normal;font-size:12px;color:#1E1E1E;text-align:left">
 										<xsl:value-of select="DLHDon/NDHDon/NBan/SDThoai" />
 										&#160;&#160;&#160;  &#160;&#160;&#160;  &#160;&#160;&#160;
 										<xsl:choose>
@@ -279,12 +279,12 @@
 							</table>
 							<hr style="background-color:black;width:100%;height:0.5px;margin-bottom:1px;margin-top:1px" />
 							<table style="width:100%;line-height:25px;font-size:12pt">
-								<tr style="ho_ten_nguoi_mua_css_display;">
+								<tr style="">
 									<td style="padding-left:10px;width:40%">
 										Họ tên người mua hàng
 										<i>(Customer Name)</i>:
 									</td>
-									<td style="width:60%;ho_ten_nguoi_mua_css;">
+									<td style="width:60%;font-weight:normal;font-style:normal;font-size:12px;color:#1E1E1E;text-align:left">
 										<xsl:value-of select="DLHDon/NDHDon/NMua/HVTNMHang" />
 									</td>
 								</tr>
@@ -297,30 +297,30 @@
 										<xsl:value-of select="DLHDon/NDHDon/NMua/CCCDan" />
 									</td>
 								</tr>
-								<tr style="don_vi_mua_hang_css_display;">
+								<tr style="">
 									<td style="padding-left:10px;">
 										Tên đơn vị
 										<i>(Company's)</i>:
 									</td>
-									<td style="don_vi_mua_hang_css;">
+									<td style="font-weight:normal;font-style:normal;font-size:12px;color:#1E1E1E;text-align:left">
 										<xsl:value-of select="DLHDon/NDHDon/NMua/Ten" />
 									</td>
 								</tr>
-								<tr style="mst_nguoi_mua_css_display;">
+								<tr style="">
 									<td style="padding-left:10px;">
 										Mã số thuế
 										<i>(Tax code)</i>:
 									</td>
-									<td style="mst_nguoi_mua_css;">
+									<td style="font-weight:normal;font-style:normal;font-size:12px;color:#1E1E1E;text-align:left">
 										<xsl:value-of select="DLHDon/NDHDon/NMua/MST" />
 									</td>
 								</tr>
-								<tr style="dia_chi_nguoi_mua_css_display;">
+								<tr style="">
 									<td style="padding-left:10px;">
 										Địa chỉ
 										<i>(Address)</i>:
 									</td>
-									<td style="dia_chi_nguoi_mua_css;">
+									<td style="font-weight:normal;font-style:normal;font-size:12px;color:#1E1E1E;text-align:left">
 										<xsl:value-of select="DLHDon/NDHDon/NMua/DChi" />
 									</td>
 								</tr>
@@ -337,12 +337,12 @@
 										</td>
 									</tr>
 								</xsl:if>
-								<tr style="so_tai_khoan_nguoi_mua_css_display;">
+								<tr style="">
 									<td style="padding-left:10px;">
 										Số tài khoản
 										<i>(Account No)</i>:
 									</td>
-									<td style="so_tai_khoan_nguoi_mua_css;">
+									<td style="font-weight:normal;font-style:normal;font-size:12px;color:#1E1E1E;text-align:left">
 										<xsl:value-of select="DLHDon/NDHDon/NMua/STKNHang" />
 										Tại:
 										<xsl:value-of select="DLHDon/NDHDon/NMua/TNHang" />
@@ -456,7 +456,7 @@
 
 								</xsl:otherwise>
 							</xsl:choose>
-							<div style="background:url('paramWaterMarkTable;');background-color: hsla(0,0%,100%,paramOpacity;);background-blend-mode: overlay;">
+							<div style="background:url('paramWaterMarkTable;');background-color: hsla(0,0%,100%,0.77);background-blend-mode: overlay;">
 								<table style="width:100%;text-align:center; font-size:12pt;border-top: 1px solid black;border-bottom:1px solid black;border-left:1px solid black;border-right:none;" >
 									<tr style="height:25px;">
 										<td width="5%" style="padding-top:1px;padding-bottom:1px;border: 1px solid black">

@@ -45,7 +45,11 @@ namespace Repository.HoaDon
             var param = new DynamicParameters();
             param.Add("@donvi_mst", donvi_mst);
 
-            return  _dbConnection.SelectFirstOrDefaultAsync<int>("don_vi_select_tong_sl_hoa_don_da_dung", param);
+            return _dbConnection.SelectFirstOrDefaultAsync<int>("sp2026_don_vi_select_tong_sl_hoa_don_da_dung", param);
+
+          //  return  _dbConnection.SelectFirstOrDefaultAsync<int>("don_vi_select_tong_sl_hoa_don_da_dung", param);
+
+            
         }
     }
 }

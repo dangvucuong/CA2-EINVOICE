@@ -10,7 +10,9 @@ using Model.Respone.HoaDon;
 using Model.Respone.ThongKe;
 using Model.Table;
 using Repository.Base;
+using System.Collections.Generic;
 using System.Data;
+using WebApp;
 
 namespace Repository.HoaDon
 {
@@ -87,42 +89,7 @@ namespace Repository.HoaDon
             return _dbConnection.SelectFirstOrDefaultAsync<hoa_don>("hoa_don_select_any_by_kyhieu", param);
         }
 
-        // public async Task<PagingResult<IEnumerable<hoa_don_vm>>> SelectByDonViAsync(string donvi_ma_dv, HoaDonSelectPagingRequest pagingRequest)
-        // {
-        //     var param = new DynamicParameters();
-        //     param.Add("@donvi_ma_dv", donvi_ma_dv.ConvertToString());
-        //     param.Add("@hoa_don_trang_thai_ids", pagingRequest.hoa_don_trang_thai_ids.ConvertToTableValuedParameter());
-        //     param.Add("@loai_hoa_don_ct_id", pagingRequest.loai_hoa_don_ct_id.ConvertToInt());
-        //     param.Add("@hoa_don_hinh_thuc_id", pagingRequest.hoa_don_hinh_thuc_id.ConvertToInt());
-        //     param.Add("@hoa_don_dang_ky_phat_hanh_mau_so", pagingRequest.hoa_don_dang_ky_phat_hanh_mau_so.ConvertToString());
-        //     param.Add("@hoa_don_dang_ky_phat_hanh_ky_hieu", pagingRequest.hoa_don_dang_ky_phat_hanh_ky_hieu.ConvertToString());
-        //     param.Add("@hoa_don_hinh_thuc_code", pagingRequest.hoa_don_hinh_thuc_code.ConvertToString());
-        //     param.Add("@tu_ngay", pagingRequest.tu_ngay);
-        //     param.Add("@den_ngay", pagingRequest.den_ngay);
-        //     param.Add("@page_index", pagingRequest.page_index);
-        //     param.Add("@page_size", pagingRequest.page_size);
-        //     param.Add("@sort_by", pagingRequest.sort_by.ConvertToString());
-        //     param.Add("@sort_mode", pagingRequest.sort_mode.ConvertToString());
-        //     param.Add("@search_key", pagingRequest.search_key.ConvertToString());
-
-        //     // param.Add("@khachhang_id", pagingRequest.khachhang_id.ConvertToInt());
-        //     // param.Add("@dai_ly_id", pagingRequest.dai_ly_id.ConvertToInt());
-
-        //     param.Add("@total_count", dbType: System.Data.DbType.Int64, direction: System.Data.ParameterDirection.Output);
-        //     var list = await _dbConnection.SelectAsync<hoa_don_vm>("hoa_don_select_bydonvi_paging", param);
-        //     var total_count = param.Get<long>("@total_count");
-        //     var page_size = pagingRequest?.page_size ?? 1;
-        //     if (page_size == 0) page_size = 1;
-        //     var page_count = (int)total_count / page_size;
-        //     var pagingResultSummaries = new PagingResultSummary()
-        //     {
-        //         page_count = page_count * page_size < total_count ? (page_count + 1) : page_count,
-        //         page_number = pagingRequest?.page_index ?? 0,
-        //         page_size = pagingRequest?.page_size ?? 0,
-        //         total_count = total_count
-        //     };
-        //     return new PagingResult<IEnumerable<hoa_don_vm>>(pagingResultSummaries, list);
-        // }
+        
 
         public async Task<PagingResult<IEnumerable<hoa_don_vm>>> SelectByDonViAsync(string donvi_ma_dv, HoaDonSelectPagingRequest pagingRequest)
         {
@@ -138,7 +105,9 @@ namespace Repository.HoaDon
             param.Add("@den_ngay", pagingRequest.den_ngay);
             param.Add("@page_index", pagingRequest.page_index);
             param.Add("@page_size", pagingRequest.page_size);
-            param.Add("@sort_by", pagingRequest.sort_by.ConvertToString());
+            param.Add("@sort_by", string.IsNullOrWhiteSpace(pagingRequest.sort_by)
+                ? "ma_so_hoa_don"
+                : pagingRequest.sort_by.ConvertToString());
             param.Add("@sort_mode", pagingRequest.sort_mode.ConvertToString());
             param.Add("@search_key", pagingRequest.search_key.ConvertToString());
 
@@ -199,7 +168,9 @@ namespace Repository.HoaDon
             param.Add("@den_ngay", pagingRequest.den_ngay);
             param.Add("@page_index", pagingRequest.page_index);
             param.Add("@page_size", pagingRequest.page_size);
-            param.Add("@sort_by", pagingRequest.sort_by.ConvertToString());
+            param.Add("@sort_by", string.IsNullOrWhiteSpace(pagingRequest.sort_by)
+                ? "ma_so_hoa_don"
+                : pagingRequest.sort_by.ConvertToString());
             param.Add("@sort_mode", pagingRequest.sort_mode.ConvertToString());
             param.Add("@search_key", pagingRequest.search_key.ConvertToString());
 
@@ -389,6 +360,146 @@ namespace Repository.HoaDon
             return _dbConnection.SelectFirstOrDefaultAsync<hd_thong_tin_bo_sung>("GetHoaDonThongTinBoSungByHoaDonId", param);
         }
 
+        //tach ds
+
+        public async Task<PagingResult<IEnumerable<hoa_don_vm>>> SelectChoPhanHoiCQTAsync(string donvi_ma_dv, HoaDonSelectPagingRequest pagingRequest)
+        {
+            var param = new DynamicParameters();
+            param.Add("@donvi_ma_dv", donvi_ma_dv.ConvertToString());
+            //param.Add("@hoa_don_trang_thai_ids", pagingRequest.hoa_don_trang_thai_ids.ConvertToTableValuedParameter());
+            param.Add("@loai_hoa_don_ct_id", pagingRequest.loai_hoa_don_ct_id.ConvertToInt());
+            // Chỉ add tham số này khi hoa_don_hinh_thuc_id = 1
+            param.Add("@hoa_don_dang_ky_phat_hanh_mau_so", pagingRequest.hoa_don_dang_ky_phat_hanh_mau_so.ConvertToString());
+            param.Add("@hoa_don_dang_ky_phat_hanh_ky_hieu", pagingRequest.hoa_don_dang_ky_phat_hanh_ky_hieu.ConvertToString());
+            param.Add("@hoa_don_hinh_thuc_code", pagingRequest.hoa_don_hinh_thuc_code.ConvertToString());
+            param.Add("@tu_ngay", pagingRequest.tu_ngay);
+            param.Add("@den_ngay", pagingRequest.den_ngay);
+            param.Add("@page_index", pagingRequest.page_index);
+            param.Add("@page_size", pagingRequest.page_size);
+            param.Add("@sort_by", string.IsNullOrWhiteSpace(pagingRequest.sort_by)
+                ? "ma_so_hoa_don"
+                : pagingRequest.sort_by.ConvertToString());
+            param.Add("@sort_mode", pagingRequest.sort_mode.ConvertToString());
+            param.Add("@search_key", pagingRequest.search_key.ConvertToString());
+
+            // param.Add("@khachhang_id", pagingRequest.khachhang_id.ConvertToInt());
+            // param.Add("@dai_ly_id", pagingRequest.dai_ly_id.ConvertToInt());
+
+            param.Add("@total_count", dbType: System.Data.DbType.Int64, direction: System.Data.ParameterDirection.Output);
+            string procName = "hoa_don_select_cho_phan_hoi_cqt";
+
+            if (pagingRequest.hoa_don_trang_thai_ids != null
+                && pagingRequest.hoa_don_trang_thai_ids.Contains(2))
+            {
+                if (pagingRequest.hoa_don_hinh_thuc_id.ConvertToInt() == 1)
+                {
+                    param.Add("@hoa_don_hinh_thuc_id", pagingRequest.hoa_don_hinh_thuc_id.ConvertToInt());
+                }
+
+                procName = pagingRequest.hoa_don_hinh_thuc_id switch
+                {
+                    2 => "hoa_don_select_bydonvi_paging_thaythe",
+                    3 => "hoa_don_select_bydonvi_paging_dieuchinh",
+                    _ => "hoa_don_select_bydonvi_paging"
+                };
+            }
+            else
+            {
+                param.Add("@hoa_don_hinh_thuc_id", pagingRequest.hoa_don_hinh_thuc_id.ConvertToInt());
+            }
+
+            try
+            {
+                var list = await _dbConnection.SelectAsync<hoa_don_vm>(procName, param);
+                var total_count = param.Get<long>("@total_count");
+                var page_size = pagingRequest?.page_size ?? 1;
+                if (page_size == 0) page_size = 1;
+                var page_count = (int)total_count / page_size;
+                var pagingResultSummaries = new PagingResultSummary()
+                {
+                    page_count = page_count * page_size < total_count ? (page_count + 1) : page_count,
+                    page_number = pagingRequest?.page_index ?? 0,
+                    page_size = pagingRequest?.page_size ?? 0,
+                    total_count = total_count
+                };
+                return new PagingResult<IEnumerable<hoa_don_vm>>(pagingResultSummaries, list);
+            }
+            catch (Exception ex)
+            {
+                var a = ex.Message;                
+                return new PagingResult<IEnumerable<hoa_don_vm>>(null, null);
+            }
+        }
+
+
+        public async Task<PagingResult<IEnumerable<hoa_don_vm>>> SelectChuaGuiCQTAsync(string donvi_ma_dv, HoaDonSelectPagingRequest pagingRequest)
+        {
+            var param = new DynamicParameters();
+            param.Add("@donvi_ma_dv", donvi_ma_dv.ConvertToString());
+            //param.Add("@hoa_don_trang_thai_ids", pagingRequest.hoa_don_trang_thai_ids.ConvertToTableValuedParameter());
+            param.Add("@loai_hoa_don_ct_id", pagingRequest.loai_hoa_don_ct_id.ConvertToInt());
+            // Chỉ add tham số này khi hoa_don_hinh_thuc_id = 1
+            param.Add("@hoa_don_dang_ky_phat_hanh_mau_so", pagingRequest.hoa_don_dang_ky_phat_hanh_mau_so.ConvertToString());
+            param.Add("@hoa_don_dang_ky_phat_hanh_ky_hieu", pagingRequest.hoa_don_dang_ky_phat_hanh_ky_hieu.ConvertToString());
+            param.Add("@hoa_don_hinh_thuc_code", pagingRequest.hoa_don_hinh_thuc_code.ConvertToString());
+            param.Add("@tu_ngay", pagingRequest.tu_ngay);
+            param.Add("@den_ngay", pagingRequest.den_ngay);
+            param.Add("@page_index", pagingRequest.page_index);
+            param.Add("@page_size", pagingRequest.page_size);
+            param.Add("@sort_by", string.IsNullOrWhiteSpace(pagingRequest.sort_by)
+                ? "ma_so_hoa_don"
+                : pagingRequest.sort_by.ConvertToString());
+            param.Add("@sort_mode", pagingRequest.sort_mode.ConvertToString());
+            param.Add("@search_key", pagingRequest.search_key.ConvertToString());
+
+            // param.Add("@khachhang_id", pagingRequest.khachhang_id.ConvertToInt());
+            // param.Add("@dai_ly_id", pagingRequest.dai_ly_id.ConvertToInt());
+
+            param.Add("@total_count", dbType: System.Data.DbType.Int64, direction: System.Data.ParameterDirection.Output);
+            string procName = "[hoa_don_select_chua_gui_cqt]";
+
+            if (pagingRequest.hoa_don_trang_thai_ids != null
+                && pagingRequest.hoa_don_trang_thai_ids.Contains(2))
+            {
+                if (pagingRequest.hoa_don_hinh_thuc_id.ConvertToInt() == 1)
+                {
+                    param.Add("@hoa_don_hinh_thuc_id", pagingRequest.hoa_don_hinh_thuc_id.ConvertToInt());
+                }
+
+                procName = pagingRequest.hoa_don_hinh_thuc_id switch
+                {
+                    2 => "hoa_don_select_bydonvi_paging_thaythe",
+                    3 => "hoa_don_select_bydonvi_paging_dieuchinh",
+                    _ => "hoa_don_select_bydonvi_paging"
+                };
+            }
+            else
+            {
+                param.Add("@hoa_don_hinh_thuc_id", pagingRequest.hoa_don_hinh_thuc_id.ConvertToInt());
+            }
+
+            try
+            {
+                var list = await _dbConnection.SelectAsync<hoa_don_vm>(procName, param);
+                var total_count = param.Get<long>("@total_count");
+                var page_size = pagingRequest?.page_size ?? 1;
+                if (page_size == 0) page_size = 1;
+                var page_count = (int)total_count / page_size;
+                var pagingResultSummaries = new PagingResultSummary()
+                {
+                    page_count = page_count * page_size < total_count ? (page_count + 1) : page_count,
+                    page_number = pagingRequest?.page_index ?? 0,
+                    page_size = pagingRequest?.page_size ?? 0,
+                    total_count = total_count
+                };
+                return new PagingResult<IEnumerable<hoa_don_vm>>(pagingResultSummaries, list);
+            }
+            catch (Exception ex)
+            {
+                var a = ex.Message;
+                return new PagingResult<IEnumerable<hoa_don_vm>>(null, null);
+            }
+        }
 
     }
 }

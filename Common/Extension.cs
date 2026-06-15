@@ -4,6 +4,7 @@ using System.Dynamic;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
@@ -1241,19 +1242,27 @@ namespace Common
             string randomString = sb.ToString();
             return randomString;
         }
-        public static string CreateMaTraCuu(long number)
+        public static string CreateMaTraCuu(int length = 8)
         {
-            StringBuilder result = new StringBuilder();
-            while (number > 0)
-            {
-                result.Insert(0, BASE26[(int)(number % 26)]);
-                number /= 26;
-            }
-            // Đảm bảo chuỗi có độ dài 8 ký tự, nếu chưa đủ thì đệm thêm 'a'
-            var key = result.ToString().PadLeft(8, 'a');
-            return key.ToUpper();
 
-            return $"{DateTime.Now.Year.ToString().Substring(2, 2)}{key}".ToUpper();
+            string CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+            if (length <= 0)
+                throw new ArgumentException("Length must be greater than 0");
+
+            var result = new char[length];
+            var buffer = new byte[length];
+
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(buffer);
+            }
+
+            for (int i = 0; i < length; i++)
+            {
+                result[i] = CHARS[buffer[i] % CHARS.Length];
+            }
+
+            return new string(result);
         }
         public static string ToCurl(this HttpRequestMessage request)
         {

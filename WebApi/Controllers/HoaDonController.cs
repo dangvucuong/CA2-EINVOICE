@@ -607,6 +607,52 @@ namespace WebApi.Controllers
             return this.OK(url);
         }
 
+        //update tach ds
+
+        [HttpPost("select-cho-phan-hoi-cqt")]
+        public async Task<IActionResult> SelectChoPhanHoiCQTAsync([FromBody] HoaDonSelectPagingRequest request)
+        {
+            var userInfo = this.GetUserInfo();
+            var result = await _hoaDonService.SelectChoPhanHoiCQTAsync(userInfo.donvi_ma_dv,request);
+            return Ok(new SuccessResult<object>(new
+            {
+                data = result.data,
+                total_count = result.total_count,
+                page_count = result.page_count,
+                page_number = result.page_number,
+                page_size = result.page_size
+            }));
+        }
+
+        [HttpPost("select-chua-gui-cqt")]
+        public async Task<IActionResult> SelectChuaGuiCQTAsync([FromBody] HoaDonSelectPagingRequest request)
+        {
+            var userInfo = this.GetUserInfo();
+            var result = await _hoaDonService
+                .SelectChuaGuiCQTAsync(
+                    userInfo.donvi_ma_dv,
+                    request
+                );
+            return Ok(new SuccessResult<object>(new
+            {
+                data = result.data,
+                total_count = result.total_count,
+                page_count = result.page_count,
+                page_number = result.page_number,
+                page_size = result.page_size
+            }));
+        }
+
+        [HttpPost("gui-lai-cqt/{id}")]
+        public async Task<IActionResult> GuiLaiCQTAsync(int id)
+        {
+            var result = await _hoaDonService
+                .GuiLaiCQTAsync(id);
+
+            return Ok(result);
+        }
+
+
     }
 }
 

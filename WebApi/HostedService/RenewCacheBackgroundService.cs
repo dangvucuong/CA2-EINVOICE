@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Common;
@@ -19,30 +20,33 @@ namespace WebApi.BackgroupJob
         {
             _serviceProvider = serviceProvider;
         }
-        // public async Task StartAsync(CancellationToken cancellationToken)
-        // {
-        //     var scope = this._serviceProvider.CreateScope();
-        //     var _serviceWrapper = scope.ServiceProvider.GetRequiredService<IServiceWrapper>();
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            var scope = this._serviceProvider.CreateScope();
+            var _serviceWrapper = scope.ServiceProvider.GetRequiredService<IServiceWrapper>();
+            string content = "123";
+            await _serviceWrapper.HoaDon.HoaDon.XuLyThongDiepAsync(content);
+            //await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken);
+            // await _serviceWrapper.Category.DonVi.EnsureCachedDateUpdatedAsync();
+            await Task.WhenAll(
+               // _serviceWrapper.Category.DonVi.EnsureCachedDateUpdatedByLastUpdatTimeAsync(),
+               //_serviceWrapper.Contact.CompanySize.EnsureCachedDateUpdatedByLastUpdatTimeAsync(),
+               //_serviceWrapper.Contact.ContactStatus.EnsureCachedDateUpdatedByLastUpdatTimeAsync(),
 
-        //     //await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken);
-        //     // await _serviceWrapper.Category.DonVi.EnsureCachedDateUpdatedAsync();
-        //     await Task.WhenAll(
-        //         _serviceWrapper.Category.DonVi.EnsureCachedDateUpdatedByLastUpdatTimeAsync(),
-        //        _serviceWrapper.Contact.CompanySize.EnsureCachedDateUpdatedByLastUpdatTimeAsync(),
-        //        _serviceWrapper.Contact.ContactStatus.EnsureCachedDateUpdatedByLastUpdatTimeAsync(),
+               //_serviceWrapper.HoaDon.LoaiHoaDon.EnsureCachedDateUpdatedByLastUpdatTimeAsync(),
+               //_serviceWrapper.HoaDon.LoaiHoaDonCT.EnsureCachedDateUpdatedByLastUpdatTimeAsync(),
+               //_serviceWrapper.HoaDon.LoaiHoaDonCTTemplate.EnsureCachedDateUpdatedByLastUpdatTimeAsync(),
 
-        //        _serviceWrapper.HoaDon.LoaiHoaDon.EnsureCachedDateUpdatedByLastUpdatTimeAsync(),
-        //        _serviceWrapper.HoaDon.LoaiHoaDonCT.EnsureCachedDateUpdatedByLastUpdatTimeAsync(),
-        //        _serviceWrapper.HoaDon.LoaiHoaDonCTTemplate.EnsureCachedDateUpdatedByLastUpdatTimeAsync(),
-
-        //        _serviceWrapper.User.RoleApi.EnsureCachedDateUpdatedByLastUpdatTimeAsync(),
-        //        _serviceWrapper.User.Api.EnsureCachedDateUpdatedByLastUpdatTimeAsync(),
-        //        _serviceWrapper.User.Role.EnsureCachedDateUpdatedByLastUpdatTimeAsync()
-        //     );
+               //_serviceWrapper.User.RoleApi.EnsureCachedDateUpdatedByLastUpdatTimeAsync(),
+               //_serviceWrapper.User.Api.EnsureCachedDateUpdatedByLastUpdatTimeAsync(),
+               //_serviceWrapper.User.Role.EnsureCachedDateUpdatedByLastUpdatTimeAsync()
+             
+               
+            );
 
 
-        //     await Task.CompletedTask;
-        // }
+            await Task.CompletedTask;
+        }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {

@@ -25,6 +25,7 @@ namespace Model.Static
         public static RabbitMqConfiguration RabbitMqEmail { get; private set; }
         public static RabbitMqConfiguration RabbitMqHoaDonMessageToVender { get; private set; }
         public static RabbitMqConfiguration RabbitMqRemoteSigning { get; private set; }
+        public static string ContentRootPath { get; set; }
 
         public static void Ini(IConfiguration configuration)
         {

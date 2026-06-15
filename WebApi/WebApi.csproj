@@ -8,6 +8,9 @@
     <SpaRoot>ClientApp\</SpaRoot>
     <DefaultItemExcludes>$(DefaultItemExcludes);$(SpaRoot)node_modules\**</DefaultItemExcludes>
      <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Tránh lỗi StaticWebAssets fingerprint khi build bằng SDK 9 trên project net7.0 -->
+    <StaticWebAssetFingerprintingEnabled>false</StaticWebAssetFingerprintingEnabled>
+    <StaticWebAssetsFingerprintContent>false</StaticWebAssetsFingerprintContent>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(RunConfiguration)' == 'portal' " />

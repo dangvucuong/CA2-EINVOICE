@@ -133,6 +133,7 @@ const HoaDonForm = () => {
       ? true
       : false;
   const { loaiHoaDonCT } = useLoaiHoaDonCT(formData.loai_hoa_don_ct_id);
+
   // const { text: ngayThangNam } = useNgayThangNam();
   // const [hangHoas, setHangHoas] = useState<any[]>([{}]);
   const [hangHoas, setHangHoas] = useState<any[]>([
@@ -217,6 +218,7 @@ const HoaDonForm = () => {
       }
     }
   }, [signalRConnectionServer, hoaDonId]);
+
   const onHoaDonPhatHanhHasResult = (
     message: IHoaDonPhatHanhPushNotifyModel,
   ) => {
@@ -232,7 +234,9 @@ const HoaDonForm = () => {
     const hoa_don_goc_id: any = searchParams.get("hoa_don_goc_id");
     const copy_id: any = searchParams.get("copy_id");
     setHinhThucHoaDonId(hinh_thuc_id ? parseInt(hinh_thuc_id) : 1);
+
     setHoaDonGocId(hoa_don_goc_id ? parseInt(hoa_don_goc_id) : 0);
+
     if (copy_id && copy_id > 0) {
       copyHoaDonAsync(copy_id);
     }
@@ -248,6 +252,7 @@ const HoaDonForm = () => {
       handleGetHoaDonViewModel(hoaDonGocId);
     }
   }, [hoaDonId, hoaDonGocId]);
+
   useEffect(() => {
     if (hoaDonViewModel) {
       // console.log({
@@ -492,6 +497,7 @@ const HoaDonForm = () => {
       NotifyHelper.Error(res?.message ?? "Error");
     }
   };
+  
   const handleKySoRemoteAsync = async () => {
     const isKhacNgay =
       moment(new Date()).format("YYYY-MM-DD") !==
@@ -538,6 +544,7 @@ const HoaDonForm = () => {
       NotifyHelper.Error(res?.message ?? "Error");
     }
   };
+
   const handleKySoVaPhatHanhRemoteAsync = async () => {
     const isKhacNgay =
       moment(new Date()).format("YYYY-MM-DD") !==
@@ -584,6 +591,7 @@ const HoaDonForm = () => {
       NotifyHelper.Error(res?.message ?? "Error");
     }
   };
+
   const handleUpdateKySoSuccss = async (
     signedtext: string,
     bienBanSignedText?: string,
@@ -611,11 +619,13 @@ const HoaDonForm = () => {
       setIsSaving(false);
     }
   };
+
   const handlePhatHanhAsync = async (
     signedtext: string,
     bienBanSignedText?: string,
   ) => {
     setIsSaving(true);
+    console.log("signedtext",signedtext);
     const res = await hoaDonApi.phatHanh({
       signed_text: signedtext,
       bienBanSignedText: bienBanSignedText,
@@ -628,6 +638,7 @@ const HoaDonForm = () => {
     }
     setIsSaving(false);
   };
+
   const handleSetHangHoaDonGiaAm = async (
     hoa_don_ly_do_dieu_chinh_id: number,
   ) => {

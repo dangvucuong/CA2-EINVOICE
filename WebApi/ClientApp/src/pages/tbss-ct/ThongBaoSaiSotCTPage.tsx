@@ -28,6 +28,8 @@ import { parseSoapResponse } from "../../helpers/common";
 import { axiosClient } from "../../api/axiosClient";
 import { useAuth } from "../../hooks/useAuth";
 import XemKetQuaTBSSCT from "./XemKetQuaTBSSCT";
+import { EyeIcon } from "@primer/octicons-react";
+import XemThongBaoSaiSotModal from "./XemThongBaoSaiSotModal";
 
 const ThongBaoSaiSotCTPage = () => {
   const [isShowLogModal, setIsShowLogModal] = useState(false);
@@ -38,6 +40,10 @@ const ThongBaoSaiSotCTPage = () => {
   const [openHistoryModal, setOpenHistoryModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpenResultModal, setIsOpenResultModal] = useState(false);
+
+  const [htmlPreview, setHtmlPreview] = useState("");
+  const [isOpenHtmlModal, setIsOpenHtmlModal] = useState(false);
+
 
   useEffect(() => {
     // Giả sử mã đơn vị là "DV001"
@@ -98,6 +104,74 @@ const ThongBaoSaiSotCTPage = () => {
     }
   }, []);
 
+
+  const LayHtmlThongBaoSaiSot = async (   
+    matbss: string, madv: any,
+  ): Promise<string> => {
+    try {
+      const soap = `<?xml version="1.0" encoding="utf-8"?>
+<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
+    <GetHTMLTBSS  xmlns="http://tempuri.org/">
+      <matbss>${matbss}</matbss>
+      <madv>${madv}</madv>
+    </GetHTMLTBSS>
+  </soap12:Body>
+</soap12:Envelope>`;    
+      const res : string =
+        await axiosClient.post(
+          process.env.REACT_APP_API_CHUNG_TU as string,
+          soap,
+          {
+            headers: {
+              "Content-Type": "text/xml; charset=utf-8"
+            }
+          }
+        ); 
+
+      const parseRes = parseSoapResponse(res);
+           if (parseRes.status === "success") 
+            {
+              
+             console.log(parseRes.data);
+            }
+      const html =
+        parseRes?.data || "";
+      return html.trim();
+    }
+    catch {
+      return "";
+    }
+  };
+
+  const handleViewChungTu = async (data: any) => {
+    try {
+      
+      setIsLoading(true);
+      const html =
+        await LayHtmlThongBaoSaiSot(          
+          data.MaTBSSCT,
+          user?.donvi_ma_dv,
+        );    
+      if (!html) {
+        NotifyHelper.Warning(
+          "Không tìm thấy nội dung thông báo sai sót"
+        );
+        return;
+      }
+      setHtmlPreview(html);
+      setIsOpenHtmlModal(true);
+    }
+    catch {
+      NotifyHelper.Error(
+        "Không xem được chứng từ"
+      );
+    }
+    finally {
+      setIsLoading(false);
+    }
+  };
+  
   return (
     <Box>
       <Helmet>
@@ -139,7 +213,7 @@ const ThongBaoSaiSotCTPage = () => {
           {
             id: "actions",
             header: "",
-            width: "120px",
+            width: "220px",
             renderCell: (data: any) => {
               return (
                 <>
@@ -152,17 +226,13 @@ const ThongBaoSaiSotCTPage = () => {
                       gap: 1,
                     }}
                   >
-                    {/* {data?.Trangthai === 1 && (
-                      <IconButton
-                        aria-label={`Edit: ${data.MaTBSSCT}`}
-                        title={`Edit: ${data.MaTBSSCT}`}
-                        icon={PencilIcon}
-                        variant="invisible"
-                        onClick={() => {
-                          history.push(`../../tbss-ct/${data.MaTBSSCT}`);
-                        }}
-                      />
-                    )} */}
+                    <IconButton
+                      aria-label={`View ${data.MaTBSSCT}`}
+                      title="Xem chứng từ"
+                      icon={EyeIcon}
+                      variant="invisible"
+                      onClick={() => handleViewChungTu(data)}
+                    />
                     {data?.Trangthai === 3 && (
                       <IconButton
                         aria-label={`History: ${data.MaTBSSCT}`}
@@ -264,6 +334,19 @@ const ThongBaoSaiSotCTPage = () => {
           type={5}
         />
       )}
+
+      {
+        isOpenHtmlModal &&
+        (
+          <XemThongBaoSaiSotModal
+            isOpen={isOpenHtmlModal}
+            html={htmlPreview}
+            onClose={() =>
+              setIsOpenHtmlModal(false)
+            }
+          />
+        )
+      }
     </Box>
   );
 };

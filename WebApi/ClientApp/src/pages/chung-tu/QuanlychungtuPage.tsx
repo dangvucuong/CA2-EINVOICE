@@ -164,7 +164,7 @@ const QuanlychungtuPage = () => {
       <matracuu></matracuu>
       <madonvi>${user?.donvi?.ma_dv}</madonvi>
       <pageIndex>${payload?.pageIndex}</pageIndex>
-      <pageSize>${pagination.pageSize}</pageSize>
+      <pageSize>${payload?.pageSize ?? pagination.pageSize}</pageSize>
     </${apiName}>
   </soap12:Body>
 </soap12:Envelope>`;
@@ -191,11 +191,11 @@ const QuanlychungtuPage = () => {
           tab === "da-gui-cqt"
             ? item?.GhichuCT
             : PhanbietChungtu(
-                item?.PhanbietCT,
-                item?.SoCTLienquan,
-                item?.KHMSCTLienquan,
-                item?.KHCTLienquan
-              ),
+              item?.PhanbietCT,
+              item?.SoCTLienquan,
+              item?.KHMSCTLienquan,
+              item?.KHCTLienquan
+            ),
       }));
 
       setDataTable(newData);
@@ -296,6 +296,48 @@ const QuanlychungtuPage = () => {
     });
   };
 
+
+  const GuiMailChungTu = async (machungtu: number) => {
+    const soap = `<?xml version="1.0" encoding="utf-8"?>
+<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                 xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                 xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
+    <GuiMailCT xmlns="http://tempuri.org/">
+      <machungtu>${machungtu}</machungtu>
+      <madonvi>${user?.donvi?.ma_dv}</madonvi>
+    </GuiMailCT>
+  </soap12:Body>
+</soap12:Envelope>`;
+
+    setIsSending(true);
+
+    try {
+      const res: string = await axiosClient.post(
+        process.env.REACT_APP_API_CHUNG_TU as string,
+        soap,
+        {
+          headers: {
+            "Content-Type": "text/xml; charset=utf-8"
+          }
+        }
+      );
+
+      const parseRes = parseSoapResponse(res);
+      console.log("result sentmail", parseRes);
+      if (parseRes === 1) {
+        NotifyHelper.Success("Gửi email thành công");
+      } else {
+        NotifyHelper.Error(parseRes.message);
+      }
+
+    } catch (err) {
+      NotifyHelper.Error("Không gọi được service gửi mail");
+    }
+
+    setIsSending(false);
+  };
+
   const handleChangePage = async (pageIndex: number) => {
     await LayDanhSachChungTu({
       ///0 theo ngày, 1 theo số chứng từ, 2 theo mã tra cứu
@@ -307,7 +349,8 @@ const QuanlychungtuPage = () => {
       soct: "",
       matracuu: "",
       madonvi: user?.donvi?.ma_dv,
-      pageIndex: pageIndex + 1,
+        pageIndex: pageIndex + 1,
+    pageSize: pagination.pageSize
     });
   };
 
@@ -664,11 +707,11 @@ const QuanlychungtuPage = () => {
                             pageIndex: 1,
                           });
                         }}
-                        // title={
-                        //   tab === "cho-phat-hanh"
-                        //     ? "Gửi cấp mã Thuế"
-                        //     : "Ký số và gửi cấp mã"
-                        // }
+                      // title={
+                      //   tab === "cho-phat-hanh"
+                      //     ? "Gửi cấp mã Thuế"
+                      //     : "Ký số và gửi cấp mã"
+                      // }
                       />
                     )}
                     {/* <Button
@@ -684,6 +727,7 @@ const QuanlychungtuPage = () => {
                 text="Refresh"
                 leadingVisual={SyncIcon}
                 onClick={() => {
+                  setHoaDonSelectedIds([]);
                   setDataFilter({
                     ...dataFileter,
                     ky_hieu: "",
@@ -710,6 +754,7 @@ const QuanlychungtuPage = () => {
                 dataFilter={dataFileter}
                 setValueFilter={async (data) => {
                   setDataFilter(data);
+                  setHoaDonSelectedIds([]);
                 }}
                 loadData={async (
                   changes: Partial<{
@@ -753,11 +798,11 @@ const QuanlychungtuPage = () => {
                         tab === "da-gui-cqt"
                           ? x?.GhichuCT
                           : PhanbietChungtu(
-                              x?.PhanbietCT,
-                              x?.SoCTLienquan,
-                              x?.KHMSCTLienquan,
-                              x?.KHCTLienquan
-                            ),
+                            x?.PhanbietCT,
+                            x?.SoCTLienquan,
+                            x?.KHMSCTLienquan,
+                            x?.KHCTLienquan
+                          ),
                       "Trạng thái": GetTinhtrangCT(x?.TinhtrangCT),
                       "Trạng thái gửi CQT": x?.TrangthaiguiCQT,
                       "Lý do": x?.DSLDo ? formatXml(x?.DSLDo) : "",
@@ -792,6 +837,7 @@ const QuanlychungtuPage = () => {
               title={`Tổng số: ${(
                 pagination.totalCount ?? 0
               ).toLocaleString()}`}
+              subTitle={`Đã chọn: ${hoaDonSelectedIds?.length ?? 0}`}
               data={dataTable}
               height={window.innerHeight - 100}
               isLoading={loading}
@@ -831,18 +877,41 @@ const QuanlychungtuPage = () => {
                 pageIndex: pagination.pageIndex - 1,
                 pageSize: pagination.pageSize,
                 totalCount: pagination.totalCount,
+
+                // thêm 2 dòng này
+                pageSizeItems: [10, 20, 50, 100, 200],
+                onPageSizeChanged: (size) => {
+                  setPagination(prev => ({
+                    ...prev,
+                    pageSize: size,
+                    pageIndex: 1
+                  }));
+
+                  LayDanhSachChungTu({
+                    loaiTimKiem: 0,
+                    mau_so: dataFileter.mau_so,
+                    ky_hieu: dataFileter.ky_hieu,
+                    tu_ngay: dataFileter.tu_ngay,
+                    den_ngay: dataFileter.den_ngay,
+                    soct: "",
+                    matracuu: "",
+                    madonvi: user?.donvi?.ma_dv,
+                    pageIndex: 1,
+                    pageSize: size
+                  });
+                }
               }}
               selection={
                 !tab || tab === "da-gui-cqt" || tab === "nhap"
                   ? {
-                      mode: "multiple",
-                      keyExpr: "MaCT",
-                      selectedRowKeys: hoaDonSelectedIds,
-                      onSelectionChanged: (keys) => {
-                        // dispatch(hoaDonAction.changeSelectedId(keys));
-                        setHoaDonSelectedIds(keys);
-                      },
-                    }
+                    mode: "multiple",
+                    keyExpr: "MaCT",
+                    selectedRowKeys: hoaDonSelectedIds,
+                    onSelectionChanged: (keys) => {
+                      // dispatch(hoaDonAction.changeSelectedId(keys));
+                      setHoaDonSelectedIds(keys);
+                    },
+                  }
                   : undefined
               }
               columns={[
@@ -994,15 +1063,19 @@ const QuanlychungtuPage = () => {
                                       Thông báo sai sót
                                     </ActionList.Item>
                                     <ActionList.Divider />
+
                                     <ActionList.Item
-                                      // variant="danger"
-                                      onSelect={() => {
-                                        // dispatch(
-                                        //   hoaDonAction.changeSelectedId([
-                                        //     row.id,
-                                        //   ])
-                                        // );
-                                        setisShowSendEmailConfirm(true);
+                                      onSelect={async () => {
+
+                                        setDataDetail(row);
+                                        await confirm({
+                                          title: "Gửi email",
+                                          content: "Bạn có chắc muốn gửi email chứng từ này?",
+                                          confirmButtonContent: "Gửi",
+                                          cancelButtonContent: "Huỷ",
+                                        });
+
+                                        await GuiMailChungTu(row.MaCT);
                                       }}
                                     >
                                       <ActionList.LeadingVisual>

@@ -1,7 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Reflection;
-using Contract.Service;
+﻿using Contract.Service;
 using Contract.Service.Core;
 using Contracts.Repository;
 using Contracts.Repository.Base;
@@ -26,6 +23,10 @@ using Service.Core;
 using Service.Google;
 using Service.Hub;
 using Service.Pdf;
+using StackExchange.Redis;
+using System;
+using System.IO;
+using System.Reflection;
 using WebApi.BackgroupJob;
 using WebApi.HostedService;
 using WebApi.Middleware;
@@ -35,9 +36,10 @@ namespace portal
     public class Startup
     {
         private readonly IHostApplicationLifetime _appLifetime;
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, IWebHostEnvironment env)
         {
             Configuration = configuration;
+            AppSettings.ContentRootPath = env.ContentRootPath;
         }
 
         public IConfiguration Configuration { get; }
@@ -78,6 +80,13 @@ namespace portal
 
 
             services.AddSingleton<IServiceWrapper, ServiceWrapper>();
+
+            services.AddScoped<IDatabase>(sp =>
+            {
+                var multiplexer = sp.GetRequiredService<IConnectionMultiplexer>();
+                return multiplexer.GetDatabase();
+            });
+            services.AddSingleton<IConnectionMultiplexer>(x => ConnectionMultiplexer.Connect($"{Configuration["RedisConfig:Host"]}:{Configuration["RedisConfig:Port"]}"));
 
             AddSignalR(services);
             services.AddSingleton<ReCaptchaService, ReCaptchaService>();
@@ -125,6 +134,7 @@ namespace portal
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IExceptionService exceptionService, IJwtTokenService tokenService)
         {
+            AppSettings.ContentRootPath = env.ContentRootPath;
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

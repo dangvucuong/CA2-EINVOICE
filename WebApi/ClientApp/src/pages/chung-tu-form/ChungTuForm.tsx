@@ -174,8 +174,8 @@ const ChungTuForm = () => {
     const parseRes = parseSoapResponse(res);
 
     if (parseRes.status === "success") {
-        const ttchungtu = parseRes.data[0];
-        console.log(ttchungtu);
+      const ttchungtu = parseRes.data[0];
+      console.log(ttchungtu);
       setchungtuViewModel(parseRes.data[0]);
 
       reset({
@@ -264,8 +264,8 @@ const ChungTuForm = () => {
     }
   };
 
-  const handleKySoRemoteAsync = async () => {};
-  const handleKySoVaPhatHanhRemoteAsync = async () => {};
+  const handleKySoRemoteAsync = async () => { };
+  const handleKySoVaPhatHanhRemoteAsync = async () => { };
   const handleUpdateKySoSuccess = async (signedtext: string) => {
     console.log(signedtext);
     // if (chungtuViewModel) {
@@ -364,11 +364,12 @@ const ChungTuForm = () => {
 
     if (data?.ho_chieu) {
       // nếu quá 12 ký tự thì báo lỗi
-      if (data.ho_chieu?.length !== 9) {
-        NotifyHelper.Error("Số hộ chiếu người mua hàng phải đúng 9 ký tự");
+      const len = data.ho_chieu.trim().length;
+      if (len !== 8 && len !== 9) {
+        NotifyHelper.Error("Số hộ chiếu người mua hàng phải đúng 8 hoặc 9 ký tự");
         setError("ho_chieu" as any, {
           type: "manual",
-          message: "Số hộ chiếu người mua hàng phải đúng 9 ký tự",
+          message: "Số hộ chiếu người mua hàng phải đúng 8 hoặc 9 ký tự",
         });
         setFocus("ho_chieu" as any);
         isValid = false;
@@ -416,19 +417,16 @@ const ChungTuForm = () => {
       <quoctich>${data.quoc_tich}</quoctich>
       <khoanthunhap>${data.khoan_thu_nhap}</khoanthunhap>
       <canhancutru>${formData?.ca_nhan_cu_tru ? 1 : 0}</canhancutru>
-      <tongthunhapchiuthue>${
-        data?.tong_thu_nhap_chiu_thue
+      <tongthunhapchiuthue>${data?.tong_thu_nhap_chiu_thue
       }</tongthunhapchiuthue>
-      <tongthunhaptinhthue>${
-        data?.tong_thu_nhap_tinh_thue
+      <tongthunhaptinhthue>${data?.tong_thu_nhap_tinh_thue
       }</tongthunhaptinhthue>
       <thuetncn>${data?.thue_thu_nhap_ca_nhan}</thuetncn>
       <baohiem>${data?.bao_hiem}</baohiem>
       <tthien>${data?.khoan_dong_tu_thien}</tthien>
       <TinhchatCT>${hinhthucchungtu}</TinhchatCT>
       <LoaiCTLienquan>1</LoaiCTLienquan>
-      <KHMSCTLienquan>${
-        thongTinChungTuGoc?.mau_so_chung_tu_goc
+      <KHMSCTLienquan>${thongTinChungTuGoc?.mau_so_chung_tu_goc
       }</KHMSCTLienquan>
       <KHCTLienquan>${thongTinChungTuGoc?.ky_hieu_chung_tu_goc}</KHCTLienquan>
       <SoCTLienquan>${thongTinChungTuGoc?.so_chung_tu_goc}</SoCTLienquan>
@@ -461,11 +459,11 @@ const ChungTuForm = () => {
     }
   };
 
-    const TaoChungTu = async (data: any) => {
-      //  ;
-        const soCCCD = data?.nguoi_mua_cccd ? data.nguoi_mua_cccd : data?.ho_chieu;
-        var a = formData?.ky_hieu_chung_tu;
-      console.log("form data", formData);
+  const TaoChungTu = async (data: any) => {
+    //  ;
+    const soCCCD = data?.nguoi_mua_cccd ? data.nguoi_mua_cccd : data?.ho_chieu;
+    var a = formData?.ky_hieu_chung_tu;
+    console.log("form data", formData);
     //  alert(formData?.ky_hieu_chung_tu);
     const soap = `<?xml version="1.0" encoding="utf-8"?>
 <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
@@ -488,11 +486,9 @@ const ChungTuForm = () => {
       <quoctich>${data.quoc_tich}</quoctich>
       <khoanthunhap>${data.khoan_thu_nhap}</khoanthunhap>
       <canhancutru>${formData?.ca_nhan_cu_tru ? 1 : 0}</canhancutru>
-      <tongthunhapchiuthue>${
-        data?.tong_thu_nhap_chiu_thue
+      <tongthunhapchiuthue>${data?.tong_thu_nhap_chiu_thue
       }</tongthunhapchiuthue>
-      <tongthunhaptinhthue>${
-        data?.tong_thu_nhap_tinh_thue
+      <tongthunhaptinhthue>${data?.tong_thu_nhap_tinh_thue
       }</tongthunhaptinhthue>
       <thuetncn>${data?.thue_thu_nhap_ca_nhan}</thuetncn>
       <baohiem>${data?.bao_hiem}</baohiem>
@@ -545,11 +541,9 @@ const ChungTuForm = () => {
       <quoctich>${data.quoc_tich}</quoctich>
       <khoanthunhap>${data.khoan_thu_nhap}</khoanthunhap>
       <canhancutru>${formData?.ca_nhan_cu_tru ? 1 : 0}</canhancutru>
-      <tongthunhapchiuthue>${
-        data?.tong_thu_nhap_chiu_thue
+      <tongthunhapchiuthue>${data?.tong_thu_nhap_chiu_thue
       }</tongthunhapchiuthue>
-      <tongthunhaptinhthue>${
-        data?.tong_thu_nhap_tinh_thue
+      <tongthunhaptinhthue>${data?.tong_thu_nhap_tinh_thue
       }</tongthunhaptinhthue>
       <thuetncn>${data?.thue_thu_nhap_ca_nhan}</thuetncn>
       <baohiem>${data?.bao_hiem}</baohiem>
@@ -809,8 +803,7 @@ const ChungTuForm = () => {
                       <FormControl.Label>Ký hiệu</FormControl.Label>
                       <SelectBoxKyHieuChungTuPhatHanh
                         value={formData?.ky_hieu_chung_tu ?? ""}
-                                              onValueChanged={(value) => {
-                                                  alert(value);
+                        onValueChanged={(value) => {
                           clearErrors("ky_hieu_chung_tu");
                           setFormData({
                             ...formData,
@@ -1131,24 +1124,28 @@ const ChungTuForm = () => {
                       errors={errors}
                       type="text"
                       onChange={(e) => {
-                        if (e.target.value.length > 9) {
-                          setError("ho_chieu" as any, {
+                        const len = e.target.value.length;
+                        if (len > 9) {
+                          setError("ho_chieu", {
                             type: "manual",
-                            message:
-                              "Số hộ chiếu phải đúng 9 ký tự (không bao gồm dấu cách)",
+                            message: "Số hộ chiếu tối đa 9 ký tự",
                           });
-                        } else if (
-                          e.target.value.length < 9 &&
-                          e.target.value.length > 0
-                        ) {
-                          setError("ho_chieu" as any, {
-                            type: "manual",
-                            message:
-                              "Số hộ chiếu phải đúng 9 ký tự (không bao gồm dấu cách)",
-                          });
-                        } else {
-                          clearErrors("ho_chieu" as any);
+
                         }
+                        else if (len > 0 && len < 8) {
+
+                          setError("ho_chieu", {
+                            type: "manual",
+                            message: "Số hộ chiếu phải 8 hoặc 9 ký tự",
+                          });
+
+                        }
+                        else {
+
+                          clearErrors("ho_chieu");
+
+                        }
+
                       }}
                     />
                   </FormControl>
@@ -1413,10 +1410,10 @@ const ChungTuForm = () => {
                       leadingVisual={IssueClosedIcon}
                       isLoading={isSaving}
                       onClick={handleKySo}
-                      // disabled={
-                      //   !isAllowPhatHanh ||
-                      //   (chungtuViewModel?.TinhtrangCT ?? false)
-                      // }
+                    // disabled={
+                    //   !isAllowPhatHanh ||
+                    //   (chungtuViewModel?.TinhtrangCT ?? false)
+                    // }
                     />
                   )}
                   {chungtuViewModel?.TinhtrangCT === 2 && (
@@ -1438,7 +1435,7 @@ const ChungTuForm = () => {
                           thongdiep: chungtuViewModel?.XMLChungtu,
                         });
                       }}
-                      // tooltip='Bạn chỉ có thể gửi tờ khai sau khi đã ký số'
+                    // tooltip='Bạn chỉ có thể gửi tờ khai sau khi đã ký số'
                     />
                   )}
                 </>

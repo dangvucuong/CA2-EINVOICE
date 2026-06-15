@@ -16,6 +16,7 @@ using Model.Request.ToKhai;
 using Model.Request.Xml;
 using Model.Respone.HoaDon;
 using Model.Respone.MauHoaDon;
+using Model.Static;
 using Model.Table;
 using Service.Base;
 using WebApp;
@@ -607,6 +608,11 @@ namespace Service.HoaDon
             {
                 await client.OpenAsync();
                 var authHeader = Helper.WSInterTRCA2Helper.GetAuthHeader();
+                if (hoaDon.created_user_id == 28057)
+                {
+                    authHeader.Username = "ntvan";
+                    authHeader.Password = "123456";
+                }
                 try
                 {
                     string base64ResultString = string.Empty;
@@ -649,6 +655,7 @@ namespace Service.HoaDon
             {
                 var xmlPath = log.file_thong_diep_url;
                 var thongDiep = await this.ReadXmlContentFromUrlAsync($"https://ca2einv.nacencomm.vn/{xmlPath}");
+               // var thongDiep = await this.ReadXmlContentFromUrlAsync($"https://localhost:44318/{xmlPath}");
                 var ketQuaThongDiepRespone = thongDiep.ConvertToObject<Model.Respone.Xml.KetQuaThongDiepRespone>();
                 if (ketQuaThongDiepRespone?.TTChung?.MLTDiep == "202" ||
                     ketQuaThongDiepRespone?.TTChung?.MLTDiep == "204")
@@ -798,60 +805,7 @@ namespace Service.HoaDon
                 //     : (x.hoa_don_log_type_id == (int)e_hoa_don_log_type.GUI_THONG_DIEP)
                 // );
 
-                hoa_don_log xmlDataFile = null;
-
-                if (isCoMa)
-                {
-                    // BƯỚC 1: Tìm ưu tiên theo dữ liệu đã lưu trong DB (nhanh nhất)
-                    xmlDataFile = hoaDongLogs.LastOrDefault(x =>
-                        x.hoa_don_log_type_id == (int)e_hoa_don_log_type.CO_QUAN_THUE_CHAP_NHAN
-                        && x.mltdiep == "202");
-
-                    // BƯỚC 2: Nếu không tìm thấy trong DB, bắt đầu check File XML
-                    if (xmlDataFile == null)
-                    {
-                        // Lấy danh sách các log CQT chấp nhận mà có đường dẫn file để kiểm tra
-                        // Sắp xếp giảm dần theo ID hoặc thời gian để lấy bản ghi mới nhất trước (tương tự LastOrDefault)
-                        var candidates = hoaDongLogs
-                            .Where(x => x.hoa_don_log_type_id == (int)e_hoa_don_log_type.CO_QUAN_THUE_CHAP_NHAN
-                                     && !string.IsNullOrEmpty(x.file_thong_diep_url))
-                            .OrderByDescending(x => x.id) // Giả sử có trường ID hoặc NgayTao
-                            .ToList();
-
-                        foreach (var log in candidates)
-                        {
-                            try
-                            {
-                                if (File.Exists(log.file_thong_diep_url))
-                                {
-                                    // Đọc file XML
-                                    var xDoc = XDocument.Load(log.file_thong_diep_url);
-
-                                    // Tìm thẻ <MLTDiep> xem có phải 202 không
-                                    // Cấu trúc: TDiep -> TTChung -> MLTDiep
-                                    var mltDiepVal = xDoc.Descendants("MLTDiep").FirstOrDefault()?.Value;
-
-                                    if (mltDiepVal == "202")
-                                    {
-                                        xmlDataFile = log;
-                                        break; // Đã tìm thấy, thoát vòng lặp ngay
-                                    }
-                                }
-                            }
-                            catch
-                            {
-                                // Nếu lỗi đọc file (file lỗi, không quyền truy cập...) thì bỏ qua check file tiếp theo
-                                continue;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    // Logic cũ cho trường hợp không có mã (Gửi thông điệp)
-                    xmlDataFile = hoaDongLogs.LastOrDefault(x =>
-                        x.hoa_don_log_type_id == (int)e_hoa_don_log_type.GUI_THONG_DIEP || x.hoa_don_log_type_id == (int)e_hoa_don_log_type.KY_SO_SUCCESS);
-                }
+                var xmlDataFile = SelectXmlLogForPrint(hoaDongLogs, hoaDon.hoa_don_hinh_thuc_code);
 
 
                 var xmlStringRoot = "";
@@ -1029,8 +983,6 @@ namespace Service.HoaDon
 
                     html += htmlTrang;
                 }
-
-
             }
             var css = @"
 <style>
@@ -1066,66 +1018,7 @@ namespace Service.HoaDon
                 var isCoMa = hoaDon.hoa_don_hinh_thuc_code == "C";
                 var hoaDongLogs = await _serviceWrapper.HoaDon.HoaDonLog.SelectByHoaDonAsync(hoaDon.id);
 
-                // var xmlDataFile = hoaDongLogs.LastOrDefault(x =>
-                //     isCoMa
-                //     ? (x.hoa_don_log_type_id == (int)e_hoa_don_log_type.CO_QUAN_THUE_CHAP_NHAN && x.mltdiep == "202")
-                //     : (x.hoa_don_log_type_id == (int)e_hoa_don_log_type.GUI_THONG_DIEP)
-                // );
-
-                hoa_don_log xmlDataFile = null;
-
-                if (isCoMa)
-                {
-                    // BƯỚC 1: Tìm ưu tiên theo dữ liệu đã lưu trong DB (nhanh nhất)
-                    xmlDataFile = hoaDongLogs.LastOrDefault(x =>
-                        x.hoa_don_log_type_id == (int)e_hoa_don_log_type.CO_QUAN_THUE_CHAP_NHAN
-                        && x.mltdiep == "202");
-
-                    // BƯỚC 2: Nếu không tìm thấy trong DB, bắt đầu check File XML
-                    if (xmlDataFile == null)
-                    {
-                        // Lấy danh sách các log CQT chấp nhận mà có đường dẫn file để kiểm tra
-                        // Sắp xếp giảm dần theo ID hoặc thời gian để lấy bản ghi mới nhất trước (tương tự LastOrDefault)
-                        var candidates = hoaDongLogs
-                            .Where(x => x.hoa_don_log_type_id == (int)e_hoa_don_log_type.CO_QUAN_THUE_CHAP_NHAN
-                                     && !string.IsNullOrEmpty(x.file_thong_diep_url))
-                            .OrderByDescending(x => x.id) // Giả sử có trường ID hoặc NgayTao
-                            .ToList();
-
-                        foreach (var log in candidates)
-                        {
-                            try
-                            {
-                                if (File.Exists(log.file_thong_diep_url))
-                                {
-                                    // Đọc file XML
-                                    var xDoc = XDocument.Load(log.file_thong_diep_url);
-
-                                    // Tìm thẻ <MLTDiep> xem có phải 202 không
-                                    // Cấu trúc: TDiep -> TTChung -> MLTDiep
-                                    var mltDiepVal = xDoc.Descendants("MLTDiep").FirstOrDefault()?.Value;
-
-                                    if (mltDiepVal == "202")
-                                    {
-                                        xmlDataFile = log;
-                                        break; // Đã tìm thấy, thoát vòng lặp ngay
-                                    }
-                                }
-                            }
-                            catch
-                            {
-                                // Nếu lỗi đọc file (file lỗi, không quyền truy cập...) thì bỏ qua check file tiếp theo
-                                continue;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    // Logic cũ cho trường hợp không có mã (Gửi thông điệp)
-                    xmlDataFile = hoaDongLogs.LastOrDefault(x =>
-                  x.hoa_don_log_type_id == (int)e_hoa_don_log_type.GUI_THONG_DIEP || x.hoa_don_log_type_id == (int)e_hoa_don_log_type.KY_SO_SUCCESS);
-                }
+                var xmlDataFile = SelectXmlLogForPrint(hoaDongLogs, hoaDon.hoa_don_hinh_thuc_code);
 
 
                 var xmlStringRoot = "";
@@ -1158,6 +1051,7 @@ namespace Service.HoaDon
                         }
 
                     }
+
                     if (!File.Exists(xmlDataFile.file_thong_diep_url))
                     {
                         return new FunctionResult<string>(false, "File XML không tồn tại");
@@ -1781,5 +1675,247 @@ namespace Service.HoaDon
             return new SuccessResult<string>(html);
         }
 
+        private static string NormalizeRelativePath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return path;
+
+            return path
+                .Trim()
+                .Replace('/', Path.DirectorySeparatorChar)
+                .Replace('\\', Path.DirectorySeparatorChar)
+                .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        }
+
+        public static string GetContentFullPath(string relativeOrAbsolutePath)
+        {
+            if (string.IsNullOrWhiteSpace(relativeOrAbsolutePath))
+                return relativeOrAbsolutePath;
+
+            var normalized = NormalizeRelativePath(relativeOrAbsolutePath);
+            if (Path.IsPathRooted(normalized))
+                return Path.GetFullPath(normalized);
+
+            if (!string.IsNullOrWhiteSpace(AppSettings.ContentRootPath))
+                return Path.GetFullPath(Path.Combine(AppSettings.ContentRootPath, normalized));
+
+            return Path.GetFullPath(normalized);
+        }
+
+        private static IEnumerable<string> EnumerateContentPathCandidates(string relativeOrAbsolutePath)
+        {
+            if (string.IsNullOrWhiteSpace(relativeOrAbsolutePath))
+                yield break;
+
+            var normalized = NormalizeRelativePath(relativeOrAbsolutePath);
+
+            yield return GetContentFullPath(relativeOrAbsolutePath);
+
+            if (Path.IsPathRooted(normalized))
+            {
+                yield return Path.GetFullPath(normalized);
+
+                var fileName = Path.GetFileName(normalized);
+                if (!string.IsNullOrWhiteSpace(fileName))
+                    yield return GetContentFullPath(Path.Combine("Template", fileName));
+            }
+
+            if (!string.IsNullOrWhiteSpace(AppSettings.ContentRootPath))
+            {
+                foreach (var sub in new[] { "bin/Debug/net7.0", "bin/Release/net7.0" })
+                {
+                    yield return Path.GetFullPath(Path.Combine(AppSettings.ContentRootPath, sub, normalized));
+                }
+            }
+
+            yield return Path.GetFullPath(normalized);
+        }
+
+        public static string ResolveContentPath(string relativeOrAbsolutePath)
+        {
+            foreach (var candidate in EnumerateContentPathCandidates(relativeOrAbsolutePath)
+                .Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                if (File.Exists(candidate))
+                    return candidate;
+            }
+
+            return GetContentFullPath(relativeOrAbsolutePath);
+        }
+
+        public static string ToRelativeContentPath(string fullPath)
+        {
+            if (string.IsNullOrWhiteSpace(fullPath))
+                return fullPath;
+
+            if (!string.IsNullOrWhiteSpace(AppSettings.ContentRootPath)
+                && fullPath.StartsWith(AppSettings.ContentRootPath, StringComparison.OrdinalIgnoreCase))
+            {
+                return fullPath
+                    .Substring(AppSettings.ContentRootPath.Length)
+                    .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                    .Replace('\\', '/');
+            }
+
+            return fullPath.Replace('\\', '/');
+        }
+
+        public static string BuildTemplateDestPath(string donviMaDv)
+        {
+            var fileName = Guid.NewGuid().ToString() + ".xslt";
+            if (!string.IsNullOrWhiteSpace(AppSettings.ContentRootPath))
+            {
+                return Path.Combine(AppSettings.ContentRootPath, "Template", donviMaDv, fileName);
+            }
+
+            return Path.Combine("Template", donviMaDv, fileName);
+        }
+
+        public async Task<bool> SaveSettingsToXsltAsync(mau_hoa_don mauHoaDon)
+        {
+            try
+            {
+                if (mauHoaDon == null)
+                    return false;
+
+                var template = await _repositoryWrapper.HoaDon.LoaiHoaDonCTTemplate
+                    .SelectVmByIdAsync(mauHoaDon.loai_hoa_don_ct_template_id);
+
+                string xsltFullPath;
+                var xsltPath = mauHoaDon.xslt_path.ConvertToString().Trim();
+                if (xsltPath == "")
+                {
+                    var donviMaDv = mauHoaDon.donvi_ma_dv.ConvertToString().Trim();
+                    if (donviMaDv == "")
+                        return false;
+
+                    xsltFullPath = BuildTemplateDestPath(donviMaDv);
+                    mauHoaDon.xslt_path = ToRelativeContentPath(xsltFullPath);
+                }
+                else
+                {
+                    xsltFullPath = GetContentFullPath(xsltPath);
+                }
+
+                string xsltContent = null;
+                var existingXsltPath = ResolveContentPath(xsltPath == "" ? mauHoaDon.xslt_path : xsltPath);
+                if (File.Exists(existingXsltPath))
+                    xsltContent = await File.ReadAllTextAsync(existingXsltPath);
+
+                if (xsltContent == null && template != null && template.path.ConvertToString().Trim() != "")
+                {
+                    var templateFullPath = ResolveContentPath(template.path.ConvertToString().Trim());
+                    if (File.Exists(templateFullPath))
+                        xsltContent = await File.ReadAllTextAsync(templateFullPath);
+                }
+
+                if (xsltContent == null)
+                {
+                    LogWriter.Writer(
+                        "SaveSettingsToXsltAsync",
+                        "Error",
+                        $"Khong tim thay file XSLT. xslt_path={mauHoaDon.xslt_path}, template_path={template?.path}, contentRoot={AppSettings.ContentRootPath}");
+                    return false;
+                }
+
+                xsltContent = ApplyMauHoaDonSettingsToXsltContent(xsltContent, mauHoaDon);
+
+                var directoryPath = Path.GetDirectoryName(xsltFullPath);
+                if (!string.IsNullOrEmpty(directoryPath) && !Directory.Exists(directoryPath))
+                    Directory.CreateDirectory(directoryPath);
+
+                await File.WriteAllTextAsync(xsltFullPath, xsltContent, Encoding.UTF8);
+                mauHoaDon.xslt_path = ToRelativeContentPath(xsltFullPath);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LogWriter.Writer("SaveSettingsToXsltAsync", "Error", ex.ToString());
+                return false;
+            }
+        }
+
+        private static string ApplyMauHoaDonSettingsToXsltContent(string xsltContent, mau_hoa_don mauHoaDon)
+        {
+            var logoSrc = mauHoaDon.logo_path.ConvertToString().Replace('\\', '/');
+            var watermarkSrc = mauHoaDon.watermark_path.ConvertToString().Replace('\\', '/');
+            var vienSrc = mauHoaDon.vien_path.ConvertToString().Replace('\\', '/');
+            var watermarkOpacity = mauHoaDon.watermark_opacity ?? 50;
+            var paramOpacity = (1 - (watermarkOpacity * 1.0 / 100))
+                .ConvertToDouble(2)
+                .ToString()
+                .Replace(",", ".");
+
+            xsltContent = xsltContent.Replace("paramLogo", logoSrc);
+            xsltContent = xsltContent.Replace("paramVien", vienSrc);
+            xsltContent = xsltContent.Replace("paramOpacity;", paramOpacity);
+            xsltContent = xsltContent
+                .Replace("paramOpacityHeaderFlexDirection;", mauHoaDon.logo_position.ConvertToString() == "right" ? "row-reverse" : "row");
+
+            if (mauHoaDon.is_show_wattermark_inner_table == true)
+            {
+                xsltContent = xsltContent.Replace("paramWaterMarkTable;", watermarkSrc);
+            }
+
+            var advancedSettings = mauHoaDon.advanced_settings_json.ConvertToString()
+                .TryDeserializeObject<CssEditorElementData[]>();
+            if (advancedSettings != null)
+            {
+                foreach (var ad in advancedSettings)
+                {
+                    if (string.IsNullOrWhiteSpace(ad.elementId))
+                        continue;
+
+                    var keyCss = $"{ad.elementId}_css;";
+                    var keyCssDisplay = $"{ad.elementId}_css_display;";
+                    var css = new List<string>()
+                    {
+                        $"font-weight:{(ad.cssValue?.isBold == true ? "bold" : "normal")}",
+                        $"font-style:{(ad.cssValue?.isItalic == true ? "italic" : "normal")}",
+                        $"font-size:{ad.cssValue?.fontSize ?? 12}px",
+                        $"color:{ad.cssValue?.color ?? "#1E1E1E"}",
+                        $"text-align:{ad.cssValue?.align ?? "left"}"
+                    }.Join(";");
+
+                    xsltContent = xsltContent.Replace(keyCss, css);
+                    xsltContent = xsltContent.Replace(keyCssDisplay, ad.isDisplay ? "" : "display:none");
+                }
+            }
+
+            return xsltContent;
+        }
+
+        /// <summary>
+        /// Chọn log XML để in/xem theo loại hóa đơn (C / K / M).
+        /// </summary>
+        private static hoa_don_log SelectXmlLogForPrint(IEnumerable<hoa_don_log> hoaDonLogs, string hoaDonHinhThucCode)
+        {
+            var logs = hoaDonLogs as IList<hoa_don_log> ?? hoaDonLogs.ToList();
+            var hinhThucCode = hoaDonHinhThucCode?.Trim().ToUpperInvariant() ?? "";
+
+            var xmlLogs = logs
+                .Where(x => !string.IsNullOrWhiteSpace(x.file_thong_diep_url))
+                .ToList();
+            var kySoLogs = logs
+                .Where(x =>
+                    (x.hoa_don_log_type_id == (int)e_hoa_don_log_type.KY_SO_SUCCESS
+                     || x.hoa_don_log_type_id == (int)e_hoa_don_log_type.GUI_THONG_DIEP)
+                    && !string.IsNullOrWhiteSpace(x.file_thong_diep_url))
+                .ToList();
+
+            if (hinhThucCode == "C")
+            {
+                var logMltdiep202 = xmlLogs.LastOrDefault(x => x.mltdiep == "202");
+                if (logMltdiep202 != null)
+                    return logMltdiep202;
+
+                return kySoLogs.LastOrDefault();
+            }
+
+            if (hinhThucCode == "K" || hinhThucCode == "M")
+                return kySoLogs.LastOrDefault();
+
+            return xmlLogs.LastOrDefault() ?? kySoLogs.LastOrDefault();
+        }
     }
 }

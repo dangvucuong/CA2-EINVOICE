@@ -28,6 +28,34 @@ namespace Service.HoaDon
         }
         public override async Task<bool> UpdateAsync(hoa_don_dang_ky_phat_hanh obj)
         {
+
+            var CKM = this.GetHoaDonType(obj.ky_hieu);
+            if (CKM == "M")
+            {
+                var soHoaDonMax = (await _repositoryWrapper.HoaDon.HoaDon.GetMaxMaSoHoaDonMTT(obj.donvi_ma_dv, obj.mau_so, DateTime.Now.Year)).ConvertToInt();
+                if (Convert.ToInt16(obj.so_bat_dau) > Convert.ToInt16(obj.so_ket_thuc))
+                {
+                    return false;
+                }
+                if (Convert.ToInt16(obj.so_ket_thuc) < soHoaDonMax)
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                var soHoaDonMax = (await _repositoryWrapper.HoaDon.HoaDon.GetMaxMaSoHoaDon(obj.donvi_ma_dv, obj.mau_so, obj.ky_hieu)).ConvertToInt();
+                if (Convert.ToInt16(obj.so_bat_dau) > Convert.ToInt16(obj.so_ket_thuc))
+                {
+                    return false;
+                }
+                if (Convert.ToInt16(obj.so_ket_thuc) < soHoaDonMax)
+                {
+                    return false;
+                }
+            }
+
+
             var isUpdated = await _hoaDonDangKyPhatHanhRepository.UpdateAsync(obj);
             if (isUpdated)
             {

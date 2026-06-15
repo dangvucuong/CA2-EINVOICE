@@ -116,7 +116,8 @@ namespace Service.ToKhai
                     obj.is_sd_hoadon_thuong_mai = model.is_sd_hoadon_thuong_mai;
                     obj.so_ho_chieu = model.so_ho_chieu;
 
-
+                    //tam ngung su dung
+                    obj.tam_ngung_su_dung = model.tam_ngung_su_dung;
 
                     await this.UpdateAsync(obj);
                     var log = new to_khai_log()
@@ -201,7 +202,6 @@ namespace Service.ToKhai
 
             string kq = "";
             // Tao thong tin XML chung
-
             string linkelement = "";
 
             var doc = new XmlDocument();
@@ -556,6 +556,44 @@ namespace Service.ToKhai
                 }
             }
 
+            //thông tin tạm ngưng sử dụng hóa đơn điện tử
+            var TTTNgungsdung = toKhai.tam_ngung_su_dung.ConvertToString() != ""
+           ? toKhai.tam_ngung_su_dung.ConvertToString() :
+           "";
+            if (TTTNgungsdung != "")
+            {
+                XmlNode TTTNSDungNode = doc.CreateElement("", "TTTNSDung", linkelement);
+                NDTKhaiNode.AppendChild(TTTNSDungNode);
+                try
+                {
+                    var data = Newtonsoft.Json.JsonConvert.DeserializeObject<TTTNSDungRoot>(TTTNgungsdung);
+                    var listTamngung = data?.TTTNSDung?.TNSDung;
+                    if (listTamngung != null)
+                    {
+                        foreach (var item in listTamngung)
+                        {
+                            XmlNode TNSDungNode = doc.CreateElement("", "TNSDung", linkelement);
+                            TTTNSDungNode.AppendChild(TNSDungNode);
+                            AddElementWithText(doc, TNSDungNode, "STT", item.STT);
+                            AddElementWithText(doc, TNSDungNode, "TTCGP", item.TTCGP);
+                            AddElementWithText(doc, TNSDungNode, "MSTTCGP", item.MSTTCGP);
+                            AddElementWithText(doc, TNSDungNode, "TNgay", item.TNgay);
+                            AddElementWithText(doc, TNSDungNode, "DNgay", item.DNgay);
+                        }
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    XmlNode TNSDungNode = doc.CreateElement("", "TNSDung", linkelement);
+                    TTTNSDungNode.AppendChild(TNSDungNode);
+                    AddElementWithText(doc, TNSDungNode, "STT", "1");
+                    AddElementWithText(doc, TNSDungNode, "TTCGP", "CÔNG TY CỔ PHẦN CÔNG NGHỆ THẺ NACENCOMM");
+                    AddElementWithText(doc, TNSDungNode, "MSTTCGP", "0103930279");
+                    AddElementWithText(doc, TNSDungNode, "TNgay", "2021-12-01");
+                    AddElementWithText(doc, TNSDungNode, "DNgay", "2030-12-31");
+                }
+            }
+
 
 
             // Create 'DSCTSSDung' element
@@ -584,7 +622,16 @@ namespace Service.ToKhai
                 AddElementWithText(doc, CTSNode, "Seri", cert.serial_number.ToUpper());
                 AddElementWithText(doc, CTSNode, "TNgay", cert.not_before.ToString("yyyy-MM-ddTHH:mm:ss"));
                 AddElementWithText(doc, CTSNode, "DNgay", cert.not_after.ToString("yyyy-MM-ddTHH:mm:ss"));
-                AddElementWithText(doc, CTSNode, "HThuc", "1");
+                if (TTTNgungsdung != "")
+                {
+                    AddElementWithText(doc, CTSNode, "HThuc", "3");
+                }
+                else
+                {
+                    AddElementWithText(doc, CTSNode, "HThuc", "1");
+                }
+               
+                
             }
 
             // Create 'DSCKS' element
@@ -916,6 +963,24 @@ namespace Service.ToKhai
         public string id { get; set; }
         public string TTCTN { get; set; }
         public string MSTTCTN { get; set; }
+        public string TNgay { get; set; }
+        public string DNgay { get; set; }
+    }
+    public class TTTNSDungRoot
+    {
+        public TTTNSDungData TTTNSDung { get; set; }
+    }
+
+    public class TTTNSDungData
+    {
+        public List<TNSDung> TNSDung { get; set; }
+    }
+
+    public class TNSDung
+    {
+        public string STT { get; set; }
+        public string TTCGP { get; set; }
+        public string MSTTCGP { get; set; }
         public string TNgay { get; set; }
         public string DNgay { get; set; }
     }

@@ -743,8 +743,6 @@ namespace Service.HoaDon
                     await _serviceWrapper.HoaDon.RsYeuCauKy.SaveYeuCauKyAsync(code, userId.ToString(), Model.Enum.e_rs_yeu_cau_ky_type.KY_SO_VA_PHAT_HANH_BANG_KE, hoaDonIds);
                     return new SuccessResult<string>(code);
                 }
-
-
             }
 
             return new ErrorResult<string>(guiYeucauResult.message);
@@ -783,7 +781,6 @@ namespace Service.HoaDon
                 var hoaDonKySoThanhCongIds = updateKySoResult.Where(x => x.is_success).Select(x => x.id).ToList();
                 var hoaDonKySoThatBaiIds = updateKySoResult.Where(x => !x.is_success).Select(x => x.id).ToList();
                 var hoaDonsKySoThanhCong = hoaDons.Where(x => hoaDonKySoThanhCongIds.Contains(x.id)).ToList();
-
                 var taskNotify = updateKySoResult.Select(result =>
                 {
                     var hoa_don_id = result.id;
@@ -825,11 +822,12 @@ namespace Service.HoaDon
         /// </summary>
         /// <param name="xmlKetQua"></param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <exception cref="NotImplementedException"></exception>       
         public async Task<bool> XuLyThongDiepKetQuaPhanHanhAsync(KetQuaThongDiepRespone thongDiepRespone, string xmlKetQua)
         {
             var maThamChieu = thongDiepRespone.TTChung.MTDTChieu;
-            var uuid = maThamChieu.Replace($"V{AppSettings.FixedValue.MNGui}", "");
+           // var uuid = maThamChieu.Replace($"V{AppSettings.FixedValue.MNGui}", "");
+            var uuid = maThamChieu.Replace($"V0103930279", "");
             var hoaDonIds = await _serviceWrapper.Cache.GetDataAsync<List<int>>(uuid + "_bang_ke_mtt");
             var hoaDons = new List<hoa_don>();
             if (hoaDonIds != null && hoaDonIds.Count > 0)
@@ -896,6 +894,7 @@ namespace Service.HoaDon
 
                 }
             }
+
             if (thongDiepRespone.TTChung.MLTDiep == "-1")
             {
                 foreach (var hoaDon in hoaDons)

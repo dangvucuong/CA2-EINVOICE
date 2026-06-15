@@ -292,7 +292,9 @@ const MauHoDonPage = () => {
         ...mauHoaDonEditing,
         ...data,
         donvi_ma_dv: user?.donvi_ma_dv ?? "",
-        loai_hoa_don_ct_template_id: loaiHoaDonCTTemplate?.id,
+        loai_hoa_don_ct_template_id:
+          loaiHoaDonCTTemplate?.id ??
+          mauHoaDonEditing?.loai_hoa_don_ct_template_id,
         logo_path: basicSetings.logoFile?.url ?? "",
         vien_path: basicSetings.vienFile?.url ?? "",
         watermark_path: basicSetings.waterMarkFile?.url ?? "",

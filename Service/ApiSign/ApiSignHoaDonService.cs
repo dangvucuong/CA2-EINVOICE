@@ -5,6 +5,7 @@ using Model.Respone.ApiSign;
 using Common;
 using Model.Table;
 using WebApp;
+using System.Xml;
 
 namespace Service.ApiSign
 {
@@ -32,7 +33,8 @@ namespace Service.ApiSign
                         var data = await client.CA2KySo_HDAsync(base64Xml, mst, serial);
                         if (data != null)
                         {
-                            var result = Newtonsoft.Json.JsonConvert.DeserializeObject<ApiSignResultModel>(data.ToString());
+                            var json = ((XmlNode[])data)[0].InnerText;
+                            var result = Newtonsoft.Json.JsonConvert.DeserializeObject<ApiSignResultModel>(json);
                             return result;
                         }
                     }

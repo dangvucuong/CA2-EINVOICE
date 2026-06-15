@@ -123,11 +123,12 @@ const CommonProvider = ({ children }: CommonContextType) => {
         if (eventName === "SERVER") {
           const ketquas = data.split("|");
           const [returnCode, code, signedtext] = ketquas;
-          // console.log({
-          //     returnCode,
-          //     code,
-          //     signedtext
-          // });
+          console.log({
+              returnCode,
+              code,
+              signedtext
+          });
+
           if (signedtext === "CertInf") {
             const [nhaCungCap, serial, tuNgay, denNgay, subject] =
               ketquas.slice(3);
@@ -147,6 +148,7 @@ const CommonProvider = ({ children }: CommonContextType) => {
           }
         }
       });
+
       sethubProxy(hubProxy);
       connection
         .start()
@@ -240,6 +242,7 @@ const CommonProvider = ({ children }: CommonContextType) => {
         });
     } catch (error) { }
   };
+
   const SignLogin = (code: string, serial: string) => {
     // var code = uuidv4();
     var content = code + "|" + serial + "|Login|Text";
@@ -257,6 +260,7 @@ const CommonProvider = ({ children }: CommonContextType) => {
         // return false;
       });
   };
+
   const getMSTFromCertSubject = (subject: string) => {
     // Tìm vị trí của MST:
     const indexOfMST = subject.indexOf("MST:");
@@ -294,6 +298,7 @@ const CommonProvider = ({ children }: CommonContextType) => {
     console.log("Không tìm thấy MST trong chuỗi");
     return "";
   };
+
   const handleReconnect = () => {
     if (connection && !isConnected) {
       setIsStoppedConnect(false);
@@ -321,6 +326,7 @@ const CommonProvider = ({ children }: CommonContextType) => {
       }, reConnectTime);
     }
   };
+
   const handleDisconnect = () => {
     if (connection) {
       connection.stop();

@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Model.Request.HoaDon;
 using Model.Respone.MauHoaDon;
 using Model.Table;
+using Service.HoaDon;
 using WebApi.Filters;
 
 namespace WebApi.Controllers
@@ -175,18 +176,21 @@ namespace WebApi.Controllers
             model.donvi_ma_dv = user.donvi_ma_dv;
             model.is_active = false;
             //
-            var mauHoaDonTemplate = await _serviceWrapper.HoaDon.LoaiHoaDonCTTemplate.SelectByIdAsync(model.loai_hoa_don_ct_template_id);
+            var mauHoaDonTemplate = await _serviceWrapper.HoaDon.LoaiHoaDonCTTemplate.SelectVmByIdAsync(model.loai_hoa_don_ct_template_id);
             if (mauHoaDonTemplate != null)
             {
-                var sourceFile = mauHoaDonTemplate.path;
-                var destFile = @"Template/" + model.donvi_ma_dv + @"/" + Guid.NewGuid().ToString() + ".xslt";
-                string destinationDirectory = Path.GetDirectoryName(destFile);
+                var sourceFile = MauHoaDonService.ResolveContentPath(mauHoaDonTemplate.path);
+                if (!System.IO.File.Exists(sourceFile))
+                    return this.BadRequest("Không tìm thấy file template XSLT");
+
+                var destFile = MauHoaDonService.BuildTemplateDestPath(model.donvi_ma_dv);
+                var destinationDirectory = Path.GetDirectoryName(destFile);
                 if (!Directory.Exists(destinationDirectory))
                 {
                     Directory.CreateDirectory(destinationDirectory);
                 }
-                System.IO.File.Copy(sourceFile, destFile);
-                model.xslt_path = destFile;
+                System.IO.File.Copy(sourceFile, destFile, true);
+                model.xslt_path = MauHoaDonService.ToRelativeContentPath(destFile);
             }
             //
             model.id = await _mauHoaDonService.InsertAsync(model);
@@ -194,6 +198,16 @@ namespace WebApi.Controllers
 
             if (model.id > 0)
             {
+                if (!await _mauHoaDonService.SaveSettingsToXsltAsync(model))
+                    return this.BadRequest("Không thể lưu thiết lập vào file XSLT");
+
+                var inserted = await _mauHoaDonService.SelectByIdAsync(model.id);
+                if (inserted != null && inserted.xslt_path != model.xslt_path)
+                {
+                    inserted.xslt_path = model.xslt_path;
+                    await _mauHoaDonService.UpdateAsync(inserted);
+                }
+
                 await this.SaveLogAsync($"Thêm mẫu hóa đơn: {model.name}", model);
                 return this.OK(model);
             }
@@ -215,18 +229,26 @@ namespace WebApi.Controllers
             if (obj.is_locked.HasValue && obj.is_locked.Value == true) return this.BadRequest("Mẫu hóa đơn đã khóa, không thể chỉnh sửa");
 
             //
-            var mauHoaDonTemplate = await _serviceWrapper.HoaDon.LoaiHoaDonCTTemplate.SelectByIdAsync(model.loai_hoa_don_ct_template_id);
-            if (mauHoaDonTemplate != null && obj.xslt_path.ConvertToString() == "")
+            var mauHoaDonTemplate = await _serviceWrapper.HoaDon.LoaiHoaDonCTTemplate.SelectVmByIdAsync(
+                model.loai_hoa_don_ct_template_id > 0
+                    ? model.loai_hoa_don_ct_template_id
+                    : obj.loai_hoa_don_ct_template_id);
+            var existingXsltPath = MauHoaDonService.ResolveContentPath(obj.xslt_path.ConvertToString());
+            if (mauHoaDonTemplate != null
+                && (obj.xslt_path.ConvertToString() == "" || !System.IO.File.Exists(existingXsltPath)))
             {
-                var sourceFile = mauHoaDonTemplate.path;
-                var destFile = @"Template\" + model.donvi_ma_dv + @"\" + Guid.NewGuid().ToString() + ".xslt";
-                string destinationDirectory = Path.GetDirectoryName(destFile);
+                var sourceFile = MauHoaDonService.ResolveContentPath(mauHoaDonTemplate.path);
+                if (!System.IO.File.Exists(sourceFile))
+                    return this.BadRequest("Không tìm thấy file template XSLT");
+
+                var destFile = MauHoaDonService.BuildTemplateDestPath(obj.donvi_ma_dv.ConvertToString());
+                var destinationDirectory = Path.GetDirectoryName(destFile);
                 if (!Directory.Exists(destinationDirectory))
                 {
                     Directory.CreateDirectory(destinationDirectory);
                 }
-                System.IO.File.Copy(sourceFile, destFile);
-                obj.xslt_path = destFile;
+                System.IO.File.Copy(sourceFile, destFile, true);
+                obj.xslt_path = MauHoaDonService.ToRelativeContentPath(destFile);
             }
             //
 
@@ -241,6 +263,10 @@ namespace WebApi.Controllers
             obj.watermark_opacity = model.watermark_opacity;
             obj.advanced_settings_json = model.advanced_settings_json;
             obj.SetUpdateInfo(user_id);
+
+            if (!await _mauHoaDonService.SaveSettingsToXsltAsync(obj))
+                return this.BadRequest("Không thể lưu thiết lập vào file XSLT");
+
             var isUpdated = await _mauHoaDonService.UpdateAsync(obj);
             if (isUpdated)
             {
@@ -266,7 +292,7 @@ namespace WebApi.Controllers
             if (obj.is_locked.HasValue && obj.is_locked.Value == true) return this.BadRequest("Mẫu hóa đơn đã khóa, không thể chỉnh sửa");
             var userInfo = this.GetUserInfo();
             var list = await _mauHoaDonService.SelectByDonViAsync(userInfo.donvi_ma_dv);
-            var objLoaiHoaDonCTTemplate = await _serviceWrapper.HoaDon.LoaiHoaDonCTTemplate.SelectByIdAsync(obj.loai_hoa_don_ct_template_id);
+            var objLoaiHoaDonCTTemplate = await _serviceWrapper.HoaDon.LoaiHoaDonCTTemplate.SelectVmByIdAsync(obj.loai_hoa_don_ct_template_id);
             if (model.is_active)
             {
                 var checkOtherActive = list.Where(x => x.is_active == true &&

@@ -10,5 +10,6 @@ export interface IHoaDonSelectPagingRequest extends IPagingRequest {
     den_ngay?: string,
     hoa_don_hinh_thuc_code?: string,
     nguoi_mua_mst?: string,
-    ma_dai_ly?: string
+    ma_dai_ly?: string,
+    tab?: string;
 }
