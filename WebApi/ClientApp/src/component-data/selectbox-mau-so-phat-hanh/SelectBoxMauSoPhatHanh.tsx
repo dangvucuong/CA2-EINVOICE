@@ -1,8 +1,7 @@
 import { Box, Button, SelectPanel } from "@primer/react";
 import { useEffect, useMemo, useState } from "react";
-import { useDispatch } from "react-redux";
-import { useAppSelector } from "../../hooks/useAppSelector";
 import { TriangleDownIcon, XCircleFillIcon } from "@primer/octicons-react";
+import { useHoaDonDangKyPhatHanhLoader } from "../../hooks/useHoaDonDangKyPhatHanhLoader";
 import { isDangKyPhatHanhMtt } from "../../utils/hoaDonKyHieu";
 
 interface ISelectBoxMauSoPhatHanhProps {
@@ -17,14 +16,10 @@ interface ISelectBoxMauSoPhatHanhProps {
 
 const SelectBoxMauSoPhatHanh = (props: ISelectBoxMauSoPhatHanhProps) => {
   const [open, setOpen] = useState(false);
-  const { hoaDonDangKyPhatHanhs, status } = useAppSelector(
-    (x) => x.hoaDon.hoaDonDangKyPhatHanhReducer
-  );
+  const { hoaDonDangKyPhatHanhs, isLoading } = useHoaDonDangKyPhatHanhLoader();
   const [filter, setFilter] = useState("");
-  const dispatch = useDispatch();
   const dataSource = useMemo(() => {
     var uniqueData = new Set();
-    // 
     hoaDonDangKyPhatHanhs
       .sort((a, b) => b.id - a.id)
       .filter((x) => {
@@ -52,17 +47,20 @@ const SelectBoxMauSoPhatHanh = (props: ISelectBoxMauSoPhatHanhProps) => {
     return dataSource.find((item) => item.id === props.value);
   }, [props.value, dataSource]);
   useEffect(() => {
-    if (props.value === "") {
+    if (props.value === "" && props.isAutoSelectIfHasOneItem) {
       if (dataSource.length === 1) {
         props.onValueChanged(dataSource[0].id);
       }
     }
-  }, [props.value, dataSource]);
-  // useEffect(() => {
-  //     if (status === eReducerStatusBase.is_not_initialization) {
-  //         dispatch(rootAction.hoaDon.hoaDonDangKyPhatHanhAction.loadStart())
-  //     }
-  // }, [status])
+  }, [props.value, dataSource, props.isAutoSelectIfHasOneItem]);
+
+  const placeholderText =
+    isLoading && !props.loai_hoa_don_ct_id
+      ? "Đang tải..."
+      : props.loai_hoa_don_ct_id <= 0
+        ? "Chọn loại HĐ trước"
+        : "Chọn mẫu số";
+
   return (
     <>
       <SelectPanel
@@ -77,6 +75,7 @@ const SelectBoxMauSoPhatHanh = (props: ISelectBoxMauSoPhatHanhProps) => {
             }}
             trailingAction={TriangleDownIcon}
             aria-labelledby={` ${ariaLabelledBy}`}
+            disabled={isLoading || props.loai_hoa_don_ct_id <= 0}
             {...anchorProps}
           >
             <p
@@ -86,7 +85,7 @@ const SelectBoxMauSoPhatHanh = (props: ISelectBoxMauSoPhatHanhProps) => {
                 textOverflow: "ellipsis",
               }}
             >
-              {children || "Chọn mẫu số"}
+              {children || placeholderText}
             </p>
           </Button>
         )}

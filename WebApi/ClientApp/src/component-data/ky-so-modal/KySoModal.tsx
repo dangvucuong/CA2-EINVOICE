@@ -9,6 +9,7 @@ import { useAuth } from "../../hooks/useAuth";
 import Text from "../../component-ui/text";
 import { DownloadIcon } from "@primer/octicons-react";
 import { userApi } from "../../api/user/userApi";
+import { getSignalRErrorMessage } from "../../api/apiErrorHelper";
 
 interface IKySoModalProps {
   base64: string;
@@ -155,7 +156,7 @@ const KySoModal = (props: IKySoModalProps) => {
           CheckAndSendBienBan();
         })
         .fail(function (error: any) {
-          NotifyHelper.Error("Có lỗi");
+          NotifyHelper.Error(getSignalRErrorMessage(error));
           console.log("Invocation failed. Error: " + error);
         });
     } catch (error) {
@@ -185,7 +186,7 @@ const KySoModal = (props: IKySoModalProps) => {
           // });
         })
         .fail(function (error: any) {
-          NotifyHelper.Error("Có lỗi");
+          NotifyHelper.Error(getSignalRErrorMessage(error));
           console.log("Invocation failed. Error: " + error);
         });
     } catch (error) {
@@ -216,7 +217,7 @@ const KySoModal = (props: IKySoModalProps) => {
               setkySoSuccessHoaDonSuccessResult(signedtext);
             } else {
               if (!shownErrorCodes.has(code)) {
-                NotifyHelper.Error(signedtext ?? "Có lỗi");
+                NotifyHelper.Error(signedtext?.trim() || "Ký số thất bại");
                 shownErrorCodes.add(code);
               }
             }
@@ -233,7 +234,7 @@ const KySoModal = (props: IKySoModalProps) => {
               // onSuccess(signedtext);
             } else {
               if (!shownErrorCodes.has(code)) {
-                NotifyHelper.Error(signedtext ?? "Có lỗi");
+                NotifyHelper.Error(signedtext?.trim() || "Ký số thất bại");
                 shownErrorCodes.add(code);
               }
             }

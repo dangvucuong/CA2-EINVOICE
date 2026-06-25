@@ -10,6 +10,7 @@ import { NotifyHelper } from "../../helpers/toast";
 import { useAuth } from "../../hooks/useAuth";
 import { eHoaDonTrangThai } from "../../models/commons/eHoaDonTrangThai";
 import { IHoaDonPhatHanhPushNotifyModel } from "../../models/responses/hub/IHoaDonPhatHanhPushNotifyModel";
+import { getSignalRErrorMessage } from "../../api/apiErrorHelper";
 interface IHoaDonKySoPhatHanhMultipleToolProps {
   ids: number[];
   onClose: () => void;
@@ -94,7 +95,7 @@ const HoaDonKySoPhatHanhMultipleTool = (
       setReRenderkey(createUUID());
       SendToToolKySo();
     } else {
-      NotifyHelper.Error(res.message ?? "Error");
+      NotifyHelper.Error(res.message ?? "Không thể lấy dữ liệu ký số");
     }
   };
 
@@ -117,7 +118,7 @@ const HoaDonKySoPhatHanhMultipleTool = (
             .invoke("send", content)
             .done(function () {})
             .fail(function (error: any) {
-              NotifyHelper.Error("Có lỗi");
+              NotifyHelper.Error(getSignalRErrorMessage(error));
               console.log("Invocation failed. Error: " + error);
             });
           if (hd.bien_ban_base64) {
@@ -137,7 +138,7 @@ const HoaDonKySoPhatHanhMultipleTool = (
                 });
               })
               .fail(function (error: any) {
-                NotifyHelper.Error("Có lỗi");
+                NotifyHelper.Error(getSignalRErrorMessage(error));
                 console.log("Invocation failed. Error: " + error);
               });
           }
@@ -236,6 +237,15 @@ const HoaDonKySoPhatHanhMultipleTool = (
             }
           }
         }
+        setReRenderkey(createUUID());
+      } else if (returnCode !== "1" && hoaDon && !isCodeBienBan) {
+        const errorMessage = signedtext?.trim() || "Ký số thất bại";
+        _refHoaDon.current[hoaDonIdx] = {
+          ...hoaDon,
+          status_id: 6,
+          message: errorMessage,
+        };
+        NotifyHelper.Error(errorMessage);
         setReRenderkey(createUUID());
       }
     } finally {
@@ -448,7 +458,7 @@ const HoaDonKySoPhatHanhMultipleTool = (
     if (res.is_success) {
       handlePhatHanhAsync(hoaDonId, signedtext);
     } else {
-      NotifyHelper.Error(res.message ?? "Có lỗi");
+      NotifyHelper.Error(res.message ?? "Có lỗi không xác định");
     }
   };
   const handlePhatHanhAsync = async (hoaDonId: number, signedtext: string) => {
@@ -470,7 +480,7 @@ const HoaDonKySoPhatHanhMultipleTool = (
       });
       setReRenderkey(createUUID());
     } else {
-      NotifyHelper.Error(res.message ?? "Có lỗi");
+      NotifyHelper.Error(res.message ?? "Có lỗi không xác định");
     }
   };
 

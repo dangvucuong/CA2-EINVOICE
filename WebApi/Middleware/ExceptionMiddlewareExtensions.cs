@@ -3,7 +3,9 @@ using System.Net;
 using Contract.Service.Core;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
 using Model.Respone.Account;
 
 namespace WebApi.Middleware
@@ -11,7 +13,8 @@ namespace WebApi.Middleware
     public static class ExceptionMiddlewareExtensions
     {
         public static void ConfigureExceptionHandler(this IApplicationBuilder app, Contract.Service.Core.IExceptionService exceptionService,
-        IJwtTokenService jwtTokenService
+        IJwtTokenService jwtTokenService,
+        IWebHostEnvironment env
         )
         // ITokenService tokenService, IExceptionService exceptionService)
         {
@@ -51,15 +54,32 @@ namespace WebApi.Middleware
                         {
 
                         }
+                        var errorMessage = GetExceptionMessage(contextFeature.Error, env.IsDevelopment());
                         await context.Response.WriteAsync(Newtonsoft.Json.JsonConvert.SerializeObject(new
                         {
                             is_success = false,
                             status_code = context.Response.StatusCode,
-                            message = "Có lỗi."
+                            message = errorMessage
                         }));
                     }
                 });
             });
+        }
+
+        private static string GetExceptionMessage(Exception ex, bool isDevelopment)
+        {
+            if (ex == null)
+            {
+                return "Có lỗi không xác định.";
+            }
+
+            var message = ex.Message;
+            if (isDevelopment && ex.InnerException != null && !string.IsNullOrWhiteSpace(ex.InnerException.Message))
+            {
+                message = $"{message} ({ex.InnerException.Message})";
+            }
+
+            return string.IsNullOrWhiteSpace(message) ? "Có lỗi không xác định." : message;
         }
     }
 }

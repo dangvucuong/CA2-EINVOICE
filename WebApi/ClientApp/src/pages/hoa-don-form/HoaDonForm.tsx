@@ -46,6 +46,7 @@ import { useCommonContext } from "../../contexts/common";
 import { NotifyHelper } from "../../helpers/toast";
 import { useAuth } from "../../hooks/useAuth";
 import { useLoaiHoaDonCT } from "../../hooks/useLoaiHoaDonCT";
+import { useHoaDonDangKyPhatHanhLoader } from "../../hooks/useHoaDonDangKyPhatHanhLoader";
 import { useWindowSize } from "../../hooks/useWindowSize";
 import { eHoaDonTrangThai } from "../../models/commons/eHoaDonTrangThai";
 import { eLyDoDieuChinh } from "../../models/commons/eLyDoDieuChinh";
@@ -133,6 +134,7 @@ const HoaDonForm = () => {
       ? true
       : false;
   const { loaiHoaDonCT } = useLoaiHoaDonCT(formData.loai_hoa_don_ct_id);
+  useHoaDonDangKyPhatHanhLoader();
 
   // const { text: ngayThangNam } = useNgayThangNam();
   // const [hangHoas, setHangHoas] = useState<any[]>([{}]);
@@ -365,7 +367,8 @@ const HoaDonForm = () => {
         setIsOpenHoaDonGocModal(false);
       }
     } else {
-      NotifyHelper.Error("Error");
+      setIsLoadHoaDonDone(true);
+      NotifyHelper.Error(res?.message ?? "Không thể tải dữ liệu hóa đơn gốc");
     }
   };
 
@@ -431,7 +434,8 @@ const HoaDonForm = () => {
         setGiam_thue_ty_le(res.data.giam_thue_ty_le ?? -1);
       }
     } else {
-      NotifyHelper.Error("Error");
+      setIsLoadHoaDonDone(true);
+      NotifyHelper.Error(res?.message ?? "Không thể tải dữ liệu hóa đơn gốc");
     }
   };
   const handleGetBase64KySo = async () => {
@@ -494,7 +498,7 @@ const HoaDonForm = () => {
       // setBase64KySo(res.data);
       // setIsShowKySoModal(true);
     } else {
-      NotifyHelper.Error(res?.message ?? "Error");
+      NotifyHelper.Error(res?.message ?? "Có lỗi không xác định");
     }
   };
   
@@ -541,7 +545,7 @@ const HoaDonForm = () => {
       handleGetHoaDonViewModel(hoaDonId);
       NotifyHelper.Success("Ký số thành công");
     } else {
-      NotifyHelper.Error(res?.message ?? "Error");
+      NotifyHelper.Error(res?.message ?? "Có lỗi không xác định");
     }
   };
 
@@ -588,7 +592,7 @@ const HoaDonForm = () => {
       handleGetHoaDonViewModel(hoaDonId);
       NotifyHelper.Success("Ký số và gửi phát hành thành công");
     } else {
-      NotifyHelper.Error(res?.message ?? "Error");
+      NotifyHelper.Error(res?.message ?? "Có lỗi không xác định");
     }
   };
 
@@ -1031,7 +1035,7 @@ const HoaDonForm = () => {
       history.replace("../../hoa-don/form/" + res.data.id);
       NotifyHelper.Success("Success");
     } else {
-      NotifyHelper.Error(res.message ?? "Error");
+      NotifyHelper.Error(res.message ?? "Có lỗi không xác định");
     }
   };
   // console.log({
@@ -1275,7 +1279,7 @@ const HoaDonForm = () => {
                             hoa_don_dang_ky_phat_hanh_ky_hieu: id,
                           });
                         }}
-                        isShowKyHieuTheoNam={true}
+                        isShowKyHieuTheoNam={hinhThucHoaDonId === 1}
                       />
                       {errors &&
                         errors["hoa_don_dang_ky_phat_hanh_ky_hieu"] && (

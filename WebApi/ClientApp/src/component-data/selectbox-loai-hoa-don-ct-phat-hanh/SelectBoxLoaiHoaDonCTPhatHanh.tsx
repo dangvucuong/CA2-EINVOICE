@@ -1,13 +1,10 @@
 import { TriangleDownIcon, XCircleFillIcon } from "@primer/octicons-react";
 
 import { Box, Button, SelectPanel } from "@primer/react";
-import { useEffect, useMemo, useState } from "react";
-import { useDispatch } from "react-redux";
-import { useAppSelector } from "../../hooks/useAppSelector";
-import { rootAction } from "../../state/actions/rootAction";
-import { eReducerStatusBase } from "../../state/reducer-models/eReducerStatusBase";
-import moment from "moment";
+import { useMemo, useState } from "react";
+import { useHoaDonDangKyPhatHanhLoader } from "../../hooks/useHoaDonDangKyPhatHanhLoader";
 import { isDangKyPhatHanhMtt } from "../../utils/hoaDonKyHieu";
+import { isDangKyPhatHanhInCurrentYear } from "../../utils/dangKyPhatHanhFilter";
 
 interface ISelectBoxLoaiHoaDonCTPhatHanhProps {
   onValueChanged: (id: number) => void;
@@ -22,17 +19,14 @@ const SelectBoxLoaiHoaDonCTPhatHanh = (
   props: ISelectBoxLoaiHoaDonCTPhatHanhProps
 ) => {
   const [open, setOpen] = useState(false);
-  const { hoaDonDangKyPhatHanhs, status } = useAppSelector(
-    (x) => x.hoaDon.hoaDonDangKyPhatHanhReducer
-  );
+  const { hoaDonDangKyPhatHanhs, isLoading, isLoadError } =
+    useHoaDonDangKyPhatHanhLoader();
   const [filter, setFilter] = useState("");
-  const dispatch = useDispatch();
   const dataSource = useMemo(() => {
     var uniqueData = new Set();
     hoaDonDangKyPhatHanhs
-      ///chỉ lấy ra những bản ghi có ngay_su_dung trong năm hiện tại, dùng momentjs để lấy năm hiện tại
       .filter((x) => {
-        if (moment(x?.ngay_su_dung).year() !== moment().year()) {
+        if (!isDangKyPhatHanhInCurrentYear(x?.ngay_su_dung)) {
           return false;
         }
         if (props.onlyMtt) {
@@ -59,11 +53,12 @@ const SelectBoxLoaiHoaDonCTPhatHanh = (
   const _selectedData = useMemo(() => {
     return dataSource.find((item) => item.id === props.value);
   }, [props.value, dataSource]);
-  useEffect(() => {
-    if (status === eReducerStatusBase.is_not_initialization) {
-      dispatch(rootAction.hoaDon.hoaDonDangKyPhatHanhAction.loadStart());
-    }
-  }, [status]);
+
+  const placeholderText = isLoading
+    ? "Đang tải..."
+    : isLoadError
+      ? "Lỗi tải dữ liệu"
+      : "Chọn loại hóa đơn";
 
   return (
     <>
@@ -79,6 +74,7 @@ const SelectBoxLoaiHoaDonCTPhatHanh = (
             }}
             trailingAction={TriangleDownIcon}
             aria-labelledby={` ${ariaLabelledBy}`}
+            disabled={isLoading}
             {...anchorProps}
           >
             <p
@@ -88,7 +84,7 @@ const SelectBoxLoaiHoaDonCTPhatHanh = (
                 textOverflow: "ellipsis",
               }}
             >
-              {children || "Chọn loại hóa đơn"}
+              {children || placeholderText}
             </p>
           </Button>
         )}

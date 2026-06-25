@@ -9,10 +9,13 @@ export const useLoaiHoaDonCTs = () => {
     const dispatch = useAppDispatch();
 
     useEffect(() => {
-        if (status === eReducerStatusBase.is_not_initialization) {
+        if (
+            status === eReducerStatusBase.is_not_initialization ||
+            status === eReducerStatusBase.is_load_err
+        ) {
             dispatch(rootAction.hoaDon.loaiHoaDonCTAction.loadStart())
         }
-    }, [status])
+    }, [status, dispatch])
     return {
         loaiHoaDonCTs
     };

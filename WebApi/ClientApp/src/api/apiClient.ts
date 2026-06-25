@@ -3,6 +3,7 @@ import { axiosClient } from './axiosClient';
 import { IBaseRespone } from '../models/responses/IBaseRespone';
 import { appInfo } from '../AppInfo';
 import { AxiosRequestConfig } from 'axios';
+import { getApiErrorMessage, getApiStatusCode } from './apiErrorHelper';
 
 export const formatQueryString = (obj: any): string => {
     if (obj) {
@@ -130,6 +131,24 @@ const configIfTokenExpired = async () => {
 
     }
 }
+const forbiddenMessage = "Bạn không được phân quyền để thực hiện thao tác này. Vui lòng liên hệ Quản trị viên để được hỗ trợ.";
+
+const handleApiError = (error: any, statusCodes: number[] = []): IBaseRespone => {
+    const status = error?.response?.status;
+    if (status && statusCodes.includes(status)) {
+        return {
+            status_code: parseInt(status),
+            is_success: false,
+            message: forbiddenMessage
+        };
+    }
+    return {
+        status_code: getApiStatusCode(error),
+        is_success: false,
+        message: getApiErrorMessage(error)
+    };
+};
+
 const apiClient = {
     get: async (path: string): Promise<IBaseRespone> => {
         const url = `${appInfo.baseApiURL}/${path}`
@@ -145,20 +164,7 @@ const apiClient = {
             localStorage.setItem("last_active_time", new Date().getTime().toString())
             return res;
         } catch (error: any) {
-            if (error.response.status === 401) {
-                return {
-                    status_code: parseInt(error.response.status),
-                    is_success: false,
-                    message: "Bạn không được phân quyền để thực hiện thao tác này. Vui lòng liên hệ Quản trị viên để được hỗ trợ."
-                }
-            } else {
-                return {
-                    status_code: error.response.data.status_code,
-                    is_success: false,
-                    message: error.response.data.message || "Có lỗi"
-                };
-            }
-
+            return handleApiError(error, [401]);
         }
     }
     ,
@@ -177,21 +183,7 @@ const apiClient = {
             localStorage.setItem("last_active_time", new Date().getTime().toString())
             return res;
         } catch (error: any) {
-            //console.log('object', error);
-            if (error.response.status === 403) {
-                return {
-                    status_code: parseInt(error.response.status),
-                    is_success: false,
-                    message: "Bạn không được phân quyền để thực hiện thao tác này. Vui lòng liên hệ Quản trị viên để được hỗ trợ."
-                }
-            } else {
-                return {
-                    status_code: error.response.data.status_code,
-                    is_success: false,
-                    message: error.response.data.message || "Có lỗi"
-                };
-            }
-
+            return handleApiError(error, [403]);
         }
     },
     put: async (path: string, data?: any): Promise<IBaseRespone> => {
@@ -209,20 +201,7 @@ const apiClient = {
             localStorage.setItem("last_active_time", new Date().getTime().toString())
             return res;
         } catch (error: any) {
-            if (error.response.status === 403) {
-                return {
-                    status_code: parseInt(error.response.status),
-                    is_success: false,
-                    message: "Bạn không được phân quyền để thực hiện thao tác này. Vui lòng liên hệ Quản trị viên để được hỗ trợ."
-                }
-            } else {
-                return {
-                    status_code: error.response.data.status_code,
-                    is_success: false,
-                    message: error.response.data.message || "Có lỗi"
-                };
-            }
-
+            return handleApiError(error, [403]);
         }
     },
     delete: async (path: string): Promise<IBaseRespone> => {
@@ -239,20 +218,7 @@ const apiClient = {
             localStorage.setItem("last_active_time", new Date().getTime().toString())
             return res;
         } catch (error: any) {
-            if (error.response.status === 401) {
-                return {
-                    status_code: parseInt(error.response.status),
-                    is_success: false,
-                    message: "Bạn không được phân quyền để thực hiện thao tác này. Vui lòng liên hệ Quản trị viên để được hỗ trợ."
-                }
-            } else {
-                return {
-                    status_code: error.response.data.status_code,
-                    is_success: false,
-                    message: error.response.data.message || "Có lỗi"
-                };
-            }
-
+            return handleApiError(error, [401]);
         }
     },
     upload: async (path: string, data?: any): Promise<IBaseRespone> => {
@@ -270,20 +236,7 @@ const apiClient = {
             localStorage.setItem("last_active_time", new Date().getTime().toString())
             return res;
         } catch (error: any) {
-            if (error.response.status == 401) {
-                return {
-                    status_code: parseInt(error.response.status),
-                    is_success: false,
-                    message: "Bạn không được phân quyền để thực hiện thao tác này. Vui lòng liên hệ Quản trị viên để được hỗ trợ."
-                }
-            } else {
-                return {
-                    status_code: error.response.data.status_code,
-                    is_success: false,
-                    message: error.response.data.message || "Có lỗi"
-                };
-            }
-
+            return handleApiError(error, [401]);
         }
     },
     download: async (path: string, file_name: string, data?: any, domain?: string): Promise<IBaseRespone> => {
@@ -328,20 +281,7 @@ const apiClient = {
             };
         } catch (error: any) {
             console.log(error);
-            if (error.response.status === 403) {
-                return {
-                    status_code: parseInt(error.response.status),
-                    is_success: false,
-                    message: "Bạn không được phân quyền để thực hiện thao tác này. Vui lòng liên hệ Quản trị viên để được hỗ trợ."
-                }
-            } else {
-                return {
-                    status_code: error.response.data.status_code,
-                    is_success: false,
-                    message: error.response.data.message || "Có lỗi"
-                };
-            }
-
+            return handleApiError(error, [403]);
         }
     },
 }

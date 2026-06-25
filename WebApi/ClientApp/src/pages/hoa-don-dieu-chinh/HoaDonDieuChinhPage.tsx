@@ -9,7 +9,7 @@ import { Helmet } from "react-helmet";
 
 import { Box, IconButton, Link as LinkHref, useConfirm } from "@primer/react";
 import moment from "moment";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useHistory } from "react-router-dom";
 import { hoaDonApi } from "../../api/hoa-don/hoaDonApi";
 import Button from "../../component-ui/button";
@@ -20,23 +20,25 @@ import { useAppDispatch } from "../../hooks/useAppDispatch";
 import { eHoaDonHinhThuc } from "../../models/commons/eHoaDonHinhThuc";
 import { eSortMode } from "../../models/commons/eSortMode";
 import { IHoaDonSelectPagingRequest } from "../../models/requests/hoa-don/IHoaDonSelectPagingRequest";
-import {
-  IPagingResultSummary,
-  getPagingSummary,
-} from "../../models/responses/IBasePagingRespone";
 import { IHoaDon } from "../../models/responses/hoa-don/IHoaDon";
 import { HoaDonTimelineModal } from "../hoa-don/HoaDonTimelineModal";
 import HoaDonDieuChinhFilter from "./HoaDonDieuChinhFilter";
 import HoaDonStatus from "../../component-data/hoa-don-status";
 import { eHoaDonTrangThai } from "../../models/commons/eHoaDonTrangThai";
 import { rootAction } from "../../state/actions/rootAction";
-import { hoaDonAction } from "../../state/actions/hoa-don/hoaDonAction";
 import { useAppSelector } from "../../hooks/useAppSelector";
 import ConfirmModal from "../../component-ui/confirm-modal";
 import { eReducerStatusBase } from "../../state/reducer-models/eReducerStatusBase";
+import { useHoaDonDangKyPhatHanhLoader } from "../../hooks/useHoaDonDangKyPhatHanhLoader";
+import { usePagedHoaDonLoader } from "../../hooks/usePagedHoaDonLoader";
+import { getDefaultDateRange } from "../../utils/hoaDonListFilter";
 
 const HoaDonDieuChinhPage = () => {
   const history = useHistory();
+  const dispatch = useAppDispatch();
+  const confirm = useConfirm();
+  useHoaDonDangKyPhatHanhLoader();
+  const { tu_ngay, den_ngay } = getDefaultDateRange();
   const [filter, setFilter] = useState<IHoaDonSelectPagingRequest>({
     hoa_don_trang_thai_ids: [],
     loai_hoa_don_ct_id: 0,
@@ -48,39 +50,37 @@ const HoaDonDieuChinhPage = () => {
     search_key: undefined,
     sort_by: "ma_so_hoa_don",
     sort_mode: eSortMode.DESC,
+    tu_ngay,
+    den_ngay,
   });
-  const [hoaDons, setHoaDons] = useState<IHoaDon[]>([]);
-  const [pagingResult, setPagingResult] = useState<IPagingResultSummary>();
-  const [isLoading, setIsLoading] = useState(false);
+  const fetchHoaDons = useCallback(
+    (request: IHoaDonSelectPagingRequest) =>
+      hoaDonApi.selectByDonViPaging(request),
+    []
+  );
+  const { hoaDons, pagingResult, isLoading, reload } = usePagedHoaDonLoader(
+    filter,
+    fetchHoaDons
+  );
   const [isShowHistoryModal, setIsShowHistoryModal] = useState(false);
   const [hoaDonSelectedId, setHoaDonSelectedId] = useState(0);
-  const confirm = useConfirm();
+  const confirmDelete = useConfirm();
   const { status, isShowDeleteConfirm, hoaDonEditing } = useAppSelector(
     (x) => x.hoaDon.hoaDonReducer
   );
 
   useEffect(() => {
-    handleGetDataAsync();
-  }, [filter]);
-
-  const handleGetDataAsync = async () => {
-    setIsLoading(true);
-    const res = await hoaDonApi.selectByDonViPaging(filter);
-    setIsLoading(false);
-    if (res.is_success) {
-      setHoaDons(res.data.data);
-      setPagingResult(getPagingSummary(res.data));
-    } else {
-      NotifyHelper.Error("Error");
+    if (status === eReducerStatusBase.is_deleted) {
+      reload();
     }
-  };
+  }, [status, reload]);
 
   const handleDeletesHoaDon = async (
     isHuyNoiBo: boolean,
     hoaDonId?: number
   ) => {
     if (
-      await confirm({
+      await confirmDelete({
         content: `Bạn có chắc chắn muốn ${
           isHuyNoiBo ? "hủy nội bộ" : "xóa"
         } hóa đơn đã chọn`,
@@ -97,18 +97,13 @@ const HoaDonDieuChinhPage = () => {
       // setIsSaving(false);
       if (res.is_success) {
         NotifyHelper.Success("Success");
-        dispatch(
-          hoaDonAction.loadStart({
-            ...filter,
-          })
-        );
+        reload();
       } else {
-        NotifyHelper.Error(res.message ?? "Error");
+        NotifyHelper.Error(res.message ?? "Không thể xóa hóa đơn");
       }
     }
   };
 
-  const dispatch = useAppDispatch();
   return (
     <Box>
       <Helmet>

@@ -33,7 +33,7 @@ function* loadWorker(action: IHoaDonLoadStart): any {
     if (res.is_success) {
         yield put(mainAction.loadSuccess(res.data))
     } else {
-        yield put(mainAction.loadError(res.message ?? ""))
+        yield put(mainAction.loadError(res.message || "Không thể tải danh sách hóa đơn"))
     }
 }
 
@@ -42,7 +42,7 @@ function* saveWorker(action: IHoaDonSaveStart): any {
     if (res.is_success) {
         yield put(mainAction.saveSuccess(res.data))
     } else {
-        yield put(mainAction.saveError(res.message ?? ""))
+        yield put(mainAction.saveError(res.message || "Lưu hóa đơn thất bại"))
     }
 }
 function* deleteWorker(action: IHoaDonDeleteStart): any {
@@ -50,6 +50,6 @@ function* deleteWorker(action: IHoaDonDeleteStart): any {
     if (res.is_success) {
         yield put(mainAction.deleteSuccess())
     } else {
-        yield put(mainAction.deleteError(res.message ?? ""))
+        yield put(mainAction.deleteError(res.message || "Xóa hóa đơn thất bại"))
     }
 }

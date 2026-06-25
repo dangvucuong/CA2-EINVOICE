@@ -13,6 +13,7 @@ import {
 } from "../../models/responses/hub/IProcessChangedModel";
 import HoaDonKySoPhatHanhMultipleTool from "./HoaDonKySoPhatHanhMultipleTool";
 import HoaDonKySoPhatHanhMultipleRS from "./HoaDonKySoPhatHanhMultipleRS";
+import { getSignalRErrorMessage } from "../../api/apiErrorHelper";
 interface IHoaDonKySoPhatHanhMultipleProps {
   ids: number[];
   onClose: () => void;
@@ -170,7 +171,7 @@ const HoaDonKySoPhatHanhMultiple = (
           .invoke("send", content)
           .done(function () {})
           .fail(function (error: any) {
-            NotifyHelper.Error("Có lỗi");
+            NotifyHelper.Error(getSignalRErrorMessage(error));
             console.log("Invocation failed. Error: " + error);
           });
       });
@@ -217,7 +218,7 @@ const HoaDonKySoPhatHanhMultiple = (
                 setReRenderkey(createUUID());
               }
             } else {
-              NotifyHelper.Error("Có lỗi");
+              NotifyHelper.Error(signedtext?.trim() || "Ký số thất bại");
               if (_refProgress.current) {
                 _refProgress.current.processStatus.steps.forEach(
                   (step, idx) => {

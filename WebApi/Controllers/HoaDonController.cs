@@ -1,8 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
-using Common;
+﻿using Common;
 using Contract.Service;
 using Contracts.Service.HoaDon;
 using Microsoft.AspNetCore.Mvc;
@@ -14,6 +10,11 @@ using Model.Request.ToKhai;
 using Model.Respone.HoaDon;
 using Model.Respone.Upload;
 using Model.Static;
+using Model.Table;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using System.Threading.Tasks;
 using WebApi.Filters;
 
 namespace WebApi.Controllers
@@ -161,7 +162,8 @@ namespace WebApi.Controllers
             var user_id = user.id;
 
             var obj = await _hoaDonService.SelectByIdAsync(model.id);
-            if (obj == null || obj.hoa_don_trang_thai_id != (int)e_hoa_don_trang_thai.NHAP || obj.donvi_ma_dv != user.donvi_ma_dv) return this.BadRequest();
+            if (obj == null || obj.hoa_don_trang_thai_id != (int)e_hoa_don_trang_thai.NHAP || obj.donvi_ma_dv != user.donvi_ma_dv)
+                return this.BadRequest("Hóa đơn không tồn tại, không ở trạng thái nháp hoặc không thuộc đơn vị của bạn.");
             obj.SetUpdateInfo(user_id);
             var result = await _hoaDonService.SaveHoaDonAsync(model);
             if (result.is_success)
@@ -186,7 +188,8 @@ namespace WebApi.Controllers
         {
             var hoaDon = await _hoaDonService.SelectByIdAsync(id);
             var hoaDonTrangThaiDeleteIds = new List<int>() { (int)e_hoa_don_trang_thai.NHAP, (int)e_hoa_don_trang_thai.CHUA_GUI_CQT, (int)e_hoa_don_trang_thai.KHONG_HOP_LE };
-            if (hoaDon == null || !hoaDonTrangThaiDeleteIds.Contains(hoaDon.hoa_don_trang_thai_id)) return this.BadRequest();
+            if (hoaDon == null || !hoaDonTrangThaiDeleteIds.Contains(hoaDon.hoa_don_trang_thai_id))
+                return this.BadRequest("Hóa đơn không tồn tại hoặc không thể xóa/hủy ở trạng thái hiện tại.");
             var user_id = this.GetUserId();
             // var isDeleted = await _hoaDonService.DeleteAsync(hoaDon.id);
             // if (isDeleted) await this.SaveLogAsync($"Xóa hóa đơn id: {hoaDon.id}", null);
@@ -239,34 +242,37 @@ namespace WebApi.Controllers
             if (checkNotHoaDonNhaps.Count > 0) return this.BadRequest($"Có {checkNotHoaDonNhaps.Count} hóa đơn không phải hóa đơn nháp hoặc chưa phát hành");
             foreach (var hoaDon in hoaDons)
             {
-                if (hoaDon.hoa_don_trang_thai_id == (int)e_hoa_don_trang_thai.NHAP)
-                {
-                    var isDeleted = await _hoaDonService.DeleteAsync(hoaDon.id);
-                    if (isDeleted)
-                    {
-                        hoaDon.is_deleted = true;
-                        await this.SaveLogAsync($"Xóa hóa đơn id: {hoaDon.id}", null);
-                        await _serviceWrapper.HoaDon.PushMessageToVender.CheckAndPushMessageAsync(hoaDon);
-                    }
-                }
-                if (hoaDon.hoa_don_trang_thai_id == (int)e_hoa_don_trang_thai.CHUA_GUI_CQT ||
-                hoaDon.hoa_don_trang_thai_id == (int)e_hoa_don_trang_thai.KHONG_HOP_LE
-
-                )
-                {
-                    hoaDon.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.DA_HUY;
-                    hoaDon.hoa_don_hinh_thuc_id = (int)e_hoa_don_hinh_thuc.HOA_DON_DA_HUY_NOI_BO;
-                    hoaDon.SetUpdateInfo(user_id);
-                    var isUpdated = await _hoaDonService.UpdateAsync(hoaDon);
-                    if (isUpdated)
-                    {
-                        await _serviceWrapper.HoaDon.PushMessageToVender.CheckAndPushMessageAsync(hoaDon);
-                        await this.SaveLogAsync($"Hủy nộ bộ id: {hoaDon.id}", null);
-                    }
-                }
+                await DeleteOrCancelHoaDonAsync(hoaDon, user_id);
             }
             return this.OK();
         }
+        private async Task DeleteOrCancelHoaDonAsync(hoa_don hoaDon, int userId)
+        {
+            var maSoHoaDon = hoaDon.ma_so_hoa_don ?? 0;
+            if (hoaDon.hoa_don_trang_thai_id == (int)e_hoa_don_trang_thai.NHAP && maSoHoaDon == 0)
+            {
+                var isDeleted = await _hoaDonService.DeleteAsync(hoaDon.id);
+                if (isDeleted)
+                {
+                    hoaDon.is_deleted = true;
+                    await this.SaveLogAsync($"Xóa hóa đơn id: {hoaDon.id}", null);
+                    await _serviceWrapper.HoaDon.PushMessageToVender.CheckAndPushMessageAsync(hoaDon);
+                }
+            }
+            else if (maSoHoaDon > 0)
+            {
+                hoaDon.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.DA_HUY;
+                hoaDon.hoa_don_hinh_thuc_id = (int)e_hoa_don_hinh_thuc.HOA_DON_DA_HUY_NOI_BO;
+                hoaDon.SetUpdateInfo(userId);
+                var isUpdated = await _hoaDonService.UpdateAsync(hoaDon);
+                if (isUpdated)
+                {
+                    await _serviceWrapper.HoaDon.PushMessageToVender.CheckAndPushMessageAsync(hoaDon);
+                    await this.SaveLogAsync($"Hủy nộ bộ id: {hoaDon.id}", null);
+                }
+            }
+        }
+
         /// <summary>
         /// Lấy xml để ký số của 1 hóa đơn
         /// </summary>
@@ -358,10 +364,8 @@ namespace WebApi.Controllers
                         return this.OK(base64);
                     }
                 }
-
-
             }
-            return this.BadRequest();
+            return this.BadRequest("Không tìm thấy hóa đơn.");
 
         }
         [Route("ky-so-multiple")]

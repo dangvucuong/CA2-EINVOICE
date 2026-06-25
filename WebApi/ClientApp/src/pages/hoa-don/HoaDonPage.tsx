@@ -32,7 +32,7 @@ import {
   useConfirm,
 } from "@primer/react";
 import moment from "moment";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { Helmet } from "react-helmet";
 import { Link, useHistory, useParams } from "react-router-dom";
 import { HOA_DON_API, hoaDonApi } from "../../api/hoa-don/hoaDonApi";
@@ -64,6 +64,12 @@ import { HoaDonTimelineModal } from "./HoaDonTimelineModal";
 import { useWindowSize } from "../../hooks/useWindowSize";
 import { useHoaDonTrangThaiAllReport } from "../../hooks/useHoaDonTrangThaiAllReport";
 import ViewHoaDonButtonActionListItem from "../../component-data/view-hoa-don-modal";
+import { useHoaDonDangKyPhatHanhLoader } from "../../hooks/useHoaDonDangKyPhatHanhLoader";
+import { useHoaDonListLoadWatcher } from "../../hooks/useHoaDonListLoadWatcher";
+import {
+  buildHoaDonListFilterForTab,
+  canLoadHoaDonList,
+} from "../../utils/hoaDonListFilter";
 
 const hoaDonAction = rootAction.hoaDon.hoaDonAction;
 
@@ -74,14 +80,20 @@ export interface IHoaDonPageProps {
 const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
   const isMtt = variant === "mtt";
   const routeSlug = isMtt ? "hoa-don-mtt" : "hoa-don";
-  const applyListFilter = <T extends object>(f: T): T =>
-    isMtt ? { ...f, hoa_don_hinh_thuc_code: "M" } : f;
+  const applyListFilter = useCallback(
+    <T extends object>(f: T): T =>
+      isMtt ? { ...f, hoa_don_hinh_thuc_code: "M" } : f,
+    [isMtt]
+  );
 
   const { tab }: any = useParams();
 
   const history = useHistory();
   const confirm = useConfirm();
+  const dispatch = useAppDispatch();
+  const { checkAccesiableTo } = useCommonContext();
   const { dataReport, handleSelectReport } = useHoaDonTrangThaiAllReport();
+  useHoaDonDangKyPhatHanhLoader();
 
   const [isSaving, setIsSaving] = useState(false);
   const [hoaDonsDieuChinhThayThe, setHoaDonsDieuChinhThayThe] = useState<
@@ -106,6 +118,8 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
     hoaDonSelectedIds,
   } = useAppSelector((x) => x.hoaDon.hoaDonReducer);
 
+  useHoaDonListLoadWatcher(tab, filter, applyListFilter);
+
 
 
   const hoaDonKhacNgay = hoaDons
@@ -126,22 +140,21 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
 
   useEffect(() => {
     dispatch(
-      hoaDonAction.changeFilter({
-        hoa_don_trang_thai_ids: [],
-        loai_hoa_don_ct_id: 0,
-        hoa_don_dang_ky_phat_hanh_mau_so: "",
-        hoa_don_dang_ky_phat_hanh_ky_hieu: "",
-        hoa_don_hinh_thuc_code: isMtt ? "M" : undefined,
-        page_index: 0,
-        page_size: 20,
-        search_key: undefined,
-        sort_by: "ma_so_hoa_don",
-        sort_mode: eSortMode.DESC,
-      })
+      hoaDonAction.changeFilter(
+        applyListFilter(
+          buildHoaDonListFilterForTab(tab, isMtt, {
+            tu_ngay: filter.tu_ngay,
+            den_ngay: filter.den_ngay,
+            page_size: filter.page_size,
+            sort_by: filter.sort_by,
+            sort_mode: filter.sort_mode,
+          })
+        )
+      )
     );
-  }, []);
-  const dispatch = useAppDispatch();
-  const { checkAccesiableTo } = useCommonContext();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, isMtt]);
+
   const selectedEmailAddress = useMemo(() => {
     if (hoaDonSelectedIds && hoaDonSelectedIds?.length === 1) {
       // 
@@ -200,86 +213,7 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
   };
 
   useEffect(() => {
-    if (tab === "nhap") {
-      dispatch(
-        hoaDonAction.changeFilter(
-          applyListFilter({
-            ...filter,
-            hoa_don_hinh_thuc_code: isMtt ? "M" : undefined,
-            hoa_don_trang_thai_ids: [eHoaDonTrangThai.NHAP],
-          })
-        )
-      );
-    }
-    if (!tab || tab === "da-phat-hanh") {
-      dispatch(
-        hoaDonAction.changeFilter(
-          applyListFilter({
-            ...filter,
-            hoa_don_hinh_thuc_code: isMtt ? "M" : undefined,
-            hoa_don_trang_thai_ids: [
-              eHoaDonTrangThai.DA_PHAT_HANH,
-              eHoaDonTrangThai.DA_GUI_LEN_CQT_CHUA_PHAN_HOI_KIEM_TRA_DU_LIEU,
-              eHoaDonTrangThai.DA_GUI_CQT_CHUA_PHAN_HOI,
-            ],
-          })
-        )
-      );
-    }
-    if (tab === "cho-phat-hanh") {
-      dispatch(
-        hoaDonAction.changeFilter(
-          applyListFilter({
-            ...filter,
-            hoa_don_trang_thai_ids: [eHoaDonTrangThai.CHUA_GUI_CQT],
-          })
-        )
-      );
-    }
-    if (tab === "chua-gui-cqt") {
-      dispatch(
-        hoaDonAction.changeFilter(
-          applyListFilter({
-            ...filter,
-            hoa_don_trang_thai_ids: [],
-          })
-        )
-      );
-    }
-    if (tab === "phat-hanh-loi") {
-      dispatch(
-        hoaDonAction.changeFilter(
-          applyListFilter({
-            ...filter,
-            hoa_don_hinh_thuc_code: isMtt ? "M" : undefined,
-            hoa_don_trang_thai_ids: [
-              eHoaDonTrangThai.DA_GUI_LEN_CQT_PHAN_HOI_KY_THUAT,
-              eHoaDonTrangThai.CHUA_CO_KET_QUA_PHAN_HOI,
-              eHoaDonTrangThai.KHONG_HOP_LE,
-              eHoaDonTrangThai.LOI_THONG_DIEP,
-            ],
-          })
-        )
-      );
-    }
-    if (tab === "da-huy") {
-      dispatch(
-        hoaDonAction.changeFilter(
-          applyListFilter({
-            ...filter,
-            hoa_don_hinh_thuc_code: isMtt ? "M" : undefined,
-            hoa_don_trang_thai_ids: [eHoaDonTrangThai.DA_HUY],
-          })
-        )
-      );
-    }
-  }, [tab]);
-
-
-
-
-  useEffect(() => {
-    if (filter.hoa_don_trang_thai_ids.length > 0 || tab === "chua-gui-cqt") {
+    if (canLoadHoaDonList(tab, filter)) {
       dispatch(
         hoaDonAction.loadStart({
           ...applyListFilter(filter),
@@ -287,7 +221,7 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
         })
       );
     }
-  }, [filter]);
+  }, [filter, tab, dispatch, applyListFilter]);
 
   useEffect(() => {
     if (tab === "cho-phat-hanh") {
@@ -310,7 +244,7 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
       status === eReducerStatusBase.is_saved ||
       status === eReducerStatusBase.is_deleted
     ) {
-      if (filter.hoa_don_trang_thai_ids.length > 0 || tab === "chua-gui-cqt") {
+      if (canLoadHoaDonList(tab, filter)) {
         dispatch(
           hoaDonAction.loadStart({
             ...applyListFilter(filter),

@@ -82,7 +82,7 @@ const HoaDonKySoPhatHanhMultipleRS = (
       setReRenderkey(createUUID());
       // SendToToolKySo()
     } else {
-      NotifyHelper.Error(res.message ?? "Error");
+      NotifyHelper.Error(res.message ?? "Ký số phát hành thất bại");
     }
   };
 

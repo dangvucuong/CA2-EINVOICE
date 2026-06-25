@@ -62,11 +62,19 @@ namespace WebApi.Controllers
         }
         protected ContentResult BadRequest(string message = "")
         {
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                message = "Yêu cầu không hợp lệ.";
+            }
             return new ResponeBaseErr(message).ToContentResult();
 
         }
         protected Task<ContentResult> BadRequestAsync(string message = "")
         {
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                message = "Yêu cầu không hợp lệ.";
+            }
             return new ResponeBaseErr(message).ToContentResultAsync();
         }
         protected async Task<string> MessageLocalized(string code)

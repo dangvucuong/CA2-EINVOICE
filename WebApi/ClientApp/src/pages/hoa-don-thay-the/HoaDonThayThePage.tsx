@@ -3,28 +3,27 @@ import { Helmet } from "react-helmet";
 
 import { Box, Link as LinkHref } from "@primer/react";
 import moment from "moment";
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Link, useHistory } from "react-router-dom";
 import { hoaDonApi } from "../../api/hoa-don/hoaDonApi";
 import HoaDonStatus from "../../component-data/hoa-don-status";
 import Button from "../../component-ui/button";
 import DataTableRemotePaging from "../../component-ui/data-table";
 import Heading from "../../component-ui/heading";
-import { NotifyHelper } from "../../helpers/toast";
-import { useAppDispatch } from "../../hooks/useAppDispatch";
 import { eHoaDonHinhThuc } from "../../models/commons/eHoaDonHinhThuc";
 import { eSortMode } from "../../models/commons/eSortMode";
 import { IHoaDonSelectPagingRequest } from "../../models/requests/hoa-don/IHoaDonSelectPagingRequest";
-import {
-  IPagingResultSummary,
-  getPagingSummary,
-} from "../../models/responses/IBasePagingRespone";
 import { IHoaDon } from "../../models/responses/hoa-don/IHoaDon";
 import { HoaDonTimelineModal } from "../hoa-don/HoaDonTimelineModal";
 import HoaDonThayTheFilter from "./HoaDonThayTheFilter";
+import { useHoaDonDangKyPhatHanhLoader } from "../../hooks/useHoaDonDangKyPhatHanhLoader";
+import { usePagedHoaDonLoader } from "../../hooks/usePagedHoaDonLoader";
+import { getDefaultDateRange } from "../../utils/hoaDonListFilter";
 
 const HoaDonThayThePage = () => {
   const history = useHistory();
+  useHoaDonDangKyPhatHanhLoader();
+  const { tu_ngay, den_ngay } = getDefaultDateRange();
   const [filter, setFilter] = useState<IHoaDonSelectPagingRequest>({
     hoa_don_trang_thai_ids: [],
     loai_hoa_don_ct_id: 0,
@@ -36,29 +35,21 @@ const HoaDonThayThePage = () => {
     search_key: undefined,
     sort_by: "ma_so_hoa_don",
     sort_mode: eSortMode.DESC,
+    tu_ngay,
+    den_ngay,
   });
-  const [hoaDons, setHoaDons] = useState<IHoaDon[]>([]);
-  const [pagingResult, setPagingResult] = useState<IPagingResultSummary>();
-  const [isLoading, setIsLoading] = useState(false);
+  const fetchHoaDons = useCallback(
+    (request: IHoaDonSelectPagingRequest) =>
+      hoaDonApi.selectByDonViPaging(request),
+    []
+  );
+  const { hoaDons, pagingResult, isLoading } = usePagedHoaDonLoader(
+    filter,
+    fetchHoaDons
+  );
   const [isShowHistoryModal, setIsShowHistoryModal] = useState(false);
   const [hoaDonSelectedId, sethoaDonSelectedId] = useState(0);
 
-  useEffect(() => {
-    handleGetDataAsync();
-  }, [filter]);
-  const handleGetDataAsync = async () => {
-    setIsLoading(true);
-    const res = await hoaDonApi.selectByDonViPaging(filter);
-    setIsLoading(false);
-    if (res.is_success) {
-      setHoaDons(res.data.data);
-      setPagingResult(getPagingSummary(res.data));
-    } else {
-      NotifyHelper.Error("Error");
-    }
-  };
-
-  const dispatch = useAppDispatch();
   return (
     <Box>
       <Helmet>
