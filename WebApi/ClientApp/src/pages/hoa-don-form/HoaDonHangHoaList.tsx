@@ -34,12 +34,17 @@ import HoaDonHangHoaImportModal from "./HoaDonHangHoaImportModal";
 import HangHoaDacTrungForm from "./HangHoaDacTrungForm";
 import HoaDonLoaiPhiList from "./HoaDonLoaiPhiList";
 import AutoResizeText from "../../component-data/auto-resize-text";
+import {
+  recalcHangHoasDieuChinh,
+} from "../../helpers/dieuChinhHangHoaHelper";
 
 interface IHoaDonHangHoaListProps {
   tienTe?: string;
   hangHoas: IHoaDonHangHoa[];
   isHoaDonBanHang: boolean;
   isSoAm?: boolean;
+  isDieuChinh?: boolean;
+  hangHoasGoc?: IHoaDonHangHoa[];
   limit?: number;
   onValueChanged: (hangHoas: IHoaDonHangHoa[]) => void;
   control: any;
@@ -385,10 +390,38 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
     props.onValueChanged(hangHoas);
   };
 
+  const applyHangHoaThanhTien = (updated: IHoaDonHangHoa[]): IHoaDonHangHoa[] => {
+    if (props.isDieuChinh && (props.hangHoasGoc?.length ?? 0) > 0) {
+      return recalcHangHoasDieuChinh(
+        updated,
+        props.hangHoasGoc!,
+        props.tienTe ?? "VND",
+      );
+    }
+    return updated.map((x) => ({
+      ...x,
+      thanh_tien: getThanhTien(
+        x.so_luong,
+        x.don_gia,
+        x.ty_le_chiet_khau,
+        props.tienTe ?? "VND",
+      ),
+    }));
+  };
+
+  const hangHoasGocSelectable = useMemo(() => {
+    return (props.hangHoasGoc ?? []).filter(
+      (x) =>
+        x.hang_hoa_tinh_chat_id === eTinhChatHangHoa.HANG_HOA_DICH_VU ||
+        x.hang_hoa_tinh_chat_id === 5,
+    );
+  }, [props.hangHoasGoc]);
+
   const isApDungDieuChinh5DongVaoThueSuat = useMemo(() => {
     const vats = [...Array.from(new Set(hangHoas.map((x) => x.thue_vat)))];
     return vats.length === 1;
   }, [hangHoas]);
+
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
 
@@ -695,44 +728,84 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                       </>
                     </td>
                     <td>
-                      <TextInputMaHangHoa
-                        className="noborder"
-                        value={hangHoa.ma_hang}
-                        onValueChanged={(data) => {
-                          if (data.hang_hoa) {
-                            setHangHoas(
-                              hangHoas.map((x, i) => {
-                                if (i === idx) {
+                      {props.isDieuChinh && hangHoasGocSelectable.length > 0 ? (
+                        <select
+                          className="noborder"
+                          value={hangHoa.ma_hang ?? ""}
+                          onChange={(e) => {
+                            const gocItem = hangHoasGocSelectable.find(
+                              (x) => x.ma_hang === e.target.value,
+                            );
+                            const updated = hangHoas.map((x, i) => {
+                              if (i !== idx) return x;
+                              if (!gocItem) {
+                                return { ...x, ma_hang: e.target.value };
+                              }
+                              return {
+                                ...x,
+                                ma_hang: gocItem.ma_hang,
+                                ten_hang: gocItem.ten_hang ?? "",
+                                dvt: gocItem.dvt ?? "",
+                                thue_vat: gocItem.thue_vat ?? "",
+                                so_luong: 0,
+                                don_gia: 0,
+                                thanh_tien: 0,
+                              };
+                            });
+                            setHangHoas(applyHangHoaThanhTien(updated));
+                          }}
+                          style={{ width: "100%", border: "none" }}
+                        >
+                          <option value="">-- Chọn mã hàng gốc --</option>
+                          {hangHoasGocSelectable.map((g) => (
+                            <option key={g.ma_hang} value={g.ma_hang}>
+                              {g.ma_hang} - {g.ten_hang}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <TextInputMaHangHoa
+                          className="noborder"
+                          value={hangHoa.ma_hang}
+                          onValueChanged={(data) => {
+                            if (data.hang_hoa) {
+                              setHangHoas(
+                                applyHangHoaThanhTien(
+                                  hangHoas.map((x, i) => {
+                                    if (i === idx) {
+                                      return {
+                                        ...x,
+                                        ma_hang: data.text,
+                                        ten_hang:
+                                          data.hang_hoa?.ten_hang_hoa ?? "",
+                                        dvt: data.hang_hoa?.dvt ?? "",
+                                        don_gia: data.hang_hoa?.don_gia ?? 0,
+                                      };
+                                    }
+                                    return {
+                                      ...x,
+                                    };
+                                  }),
+                                ),
+                              );
+                            } else {
+                              setHangHoas(
+                                hangHoas.map((x, i) => {
+                                  if (i === idx) {
+                                    return {
+                                      ...x,
+                                      ma_hang: data.text,
+                                    };
+                                  }
                                   return {
                                     ...x,
-                                    ma_hang: data.text,
-                                    ten_hang: data.hang_hoa?.ten_hang_hoa ?? "",
-                                    dvt: data.hang_hoa?.dvt ?? "",
-                                    don_gia: data.hang_hoa?.don_gia ?? 0,
                                   };
-                                }
-                                return {
-                                  ...x,
-                                };
-                              }),
-                            );
-                          } else {
-                            setHangHoas(
-                              hangHoas.map((x, i) => {
-                                if (i === idx) {
-                                  return {
-                                    ...x,
-                                    ma_hang: data.text,
-                                  };
-                                }
-                                return {
-                                  ...x,
-                                };
-                              }),
-                            );
-                          }
-                        }}
-                      />
+                                }),
+                              );
+                            }
+                          }}
+                        />
+                      )}
                     </td>
                     <td>
                       <AutoResizeText
@@ -929,25 +1002,16 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                         disabled={isType4}
                         value={hangHoa.so_luong}
                         onBlur={(e) => {
-                          setHangHoas(
-                            hangHoas.map((x, i) => {
-                              if (i === idx) {
-                                return {
-                                  ...x,
-                                  so_luong: parseFloat(e.target.value) ?? 0,
-                                  thanh_tien: getThanhTien(
-                                    parseFloat(e.target.value) ?? 0,
-                                    x.don_gia,
-                                    x.ty_le_chiet_khau,
-                                    props.tienTe ?? "VND",
-                                  ),
-                                };
-                              }
+                          const updated = hangHoas.map((x, i) => {
+                            if (i === idx) {
                               return {
                                 ...x,
+                                so_luong: parseFloat(e.target.value) ?? 0,
                               };
-                            }),
-                          );
+                            }
+                            return x;
+                          });
+                          setHangHoas(applyHangHoaThanhTien(updated));
                         }}
                         onChange={(e) => {
                           setHangHoas(
@@ -974,28 +1038,19 @@ const HoaDonHangHoaList = (props: IHoaDonHangHoaListProps) => {
                         disabled={isType4}
                         value={hangHoa.don_gia}
                         onValueChanged={(value) => {
-                          setHangHoas(
-                            hangHoas.map((x, i) => {
-                              if (i === idx) {
-                                return {
-                                  ...x,
-                                  don_gia: getDonGia(
-                                    value,
-                                    props.tienTe ?? "VND",
-                                  ),
-                                  thanh_tien: getThanhTien(
-                                    x.so_luong,
-                                    value ?? 0,
-                                    x.ty_le_chiet_khau,
-                                    props.tienTe ?? "VND",
-                                  ),
-                                };
-                              }
+                          const updated = hangHoas.map((x, i) => {
+                            if (i === idx) {
                               return {
                                 ...x,
+                                don_gia: getDonGia(
+                                  value,
+                                  props.tienTe ?? "VND",
+                                ),
                               };
-                            }),
-                          );
+                            }
+                            return x;
+                          });
+                          setHangHoas(applyHangHoaThanhTien(updated));
                         }}
                       />
                     </td>

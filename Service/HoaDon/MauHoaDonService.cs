@@ -72,15 +72,18 @@ namespace Service.HoaDon
             xsltContent = xsltContent.Replace("paramqrcode", $"https://api.qrserver.com/v1/create-qr-code/?size=100x100&amp;data={hoaDon.CreateQRCode()}");
             if (mauHoaDon.is_show_wattermark_inner_table == true)
             {
-
-                xsltContent = xsltContent.Replace("viewstyle", "position:relative;width:900px;margin:auto; border:2px solid black; padding-top:20px;z-index:1;background-image: url(''); background-size:80%; background-position: center;width:900px;background-color: hsla(0,0%,100%,0.60);background-blend-mode: overlay;background-repeat:no-repeatwidth:900px;margin:auto; border:2px solid black; padding-top:20px;z-index:1;  background-image: url('" + mauHoaDon.watermark_path.ConvertToString() + "'); background-size:80%; background-position: center;width:900px;background-color: hsla(0,0%,100%,0.60);background-blend-mode: overlay;background-repeat:no-repeat");
-                xsltContent = xsltContent.Replace("paramTableBG", "background-image: url('" + mauHoaDon.watermark_path.ConvertToString() + "'); background-size:cover; background-position: center;background-color: hsla(0,0%,100%,0.60);background-blend-mode: overlay;background-repeat:no-repeat");
+                var watermarkSrc = mauHoaDon.watermark_path.ConvertToString().Replace('\\', '/');
+                ApplyInnerTableWatermarkToXslt(
+                    ref xsltContent,
+                    mauHoaDon,
+                    watermarkSrc,
+                    GetWatermarkOpacityValue(mauHoaDon));
             }
             else
             {
                 xsltContent = xsltContent.Replace("viewstyle", "position:relative;width:900px;margin:auto; border:2px solid black; padding-top:20px;z-index:1;  background-image: url('" + mauHoaDon.watermark_path + "'); background-size:80%; background-position: center;width:900px;background-color: hsla(0,0%,100%,0.60);background-blend-mode: overlay;background-repeat:no-repeat");
                 xsltContent = xsltContent.Replace("paramTableBG", "");
-
+                xsltContent = xsltContent.Replace("paramWaterMarkTable;", "");
             }
             if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DIEU_CHINH)
             {
@@ -489,8 +492,7 @@ namespace Service.HoaDon
             var html = await _serviceWrapper.HoaDon.LoaiHoaDonCTTemplate.GeneratePrintHtmlAsync(mauHoaDon, hoaDonData, xsltArgument);
             LogWriter.Writer("CreatePreviewHtmlAsync GeneratePrintHtmlAsync done", $"{hoaDon.id}", "");
             // var bgstyle = "width:900px;margin:auto; border:2px solid black; padding-top:20px;z-index:1;position: relative;";
-            var bgstyle = "margin:auto; border:2px solid black; padding-top:0px;z-index:1;position: relative;";
-            bgstyle = bgstyle + "background-image: url('{paramWaterMark}'); background-size:80%; background-position: center;background-color: hsla(0,0%,100%,paramOpacity;);background-blend-mode: overlay;background-repeat:no-repeat";
+            var bgstyle = BuildOuterBgStyle(mauHoaDon.is_show_wattermark_inner_table == true);
             var noidungdisabled = "&#160;";
             var styledisabled = "position:absolute;z-index:0;width:300px;height:140px;border:5px solid red;background:transparent;display:none;top:45%;left:40%;color:red;font-size:70pt;text-align:center;padding-top:10px;";
             var stylemau = "position:absolute;z-index:0;width:300px;height:140px;border:5px solid red;background:transparent;top:45%;left:40%;color:red;font-size:70pt;text-align:center;padding-top:10px;";
@@ -523,13 +525,11 @@ namespace Service.HoaDon
 
             if (mauHoaDon.is_show_wattermark_inner_table == true)
             {
-                html = html.Replace("{paramLogo}", mauHoaDon.logo_path.ConvertToString().Replace('\\', '/') ?? "")
-                                .Replace("paramWaterMarkTable;", mauHoaDon.watermark_path.ConvertToString().Replace('\\', '/') ?? "");
+                html = ApplyWatermarkToHtml(html, mauHoaDon, mauHoaDon.logo_path.ConvertToString().Replace('\\', '/') ?? "");
             }
             else
             {
-                html = html.Replace("{paramLogo}", mauHoaDon.logo_path?.ConvertToString().Replace('\\', '/') ?? "")
-                                .Replace("{paramWaterMark}", mauHoaDon.watermark_path?.ConvertToString().Replace('\\', '/') ?? "");
+                html = ApplyWatermarkToHtml(html, mauHoaDon, mauHoaDon.logo_path?.ConvertToString().Replace('\\', '/') ?? "");
             }
             if (mauHoaDon.vien_path.ConvertToString() != "")
             {
@@ -544,6 +544,10 @@ namespace Service.HoaDon
             var paramOpacity = (1 - (mauHoaDon.watermark_opacity * 1.0 / 100).ConvertToDouble(2)).ToString().Replace(",", ".");
             html = html.Replace("paramOpacity;", paramOpacity);
             html = html.Replace("paramOpacity;", paramOpacity);
+            if (mauHoaDon.is_show_wattermark_inner_table == true)
+            {
+                html = FixInnerTableWatermarkHtml(html);
+            }
             var advancedSettings = mauHoaDon.advanced_settings_json.ConvertToString().TryDeserializeObject<CssEditorElementData[]>();
             html = html.Replace("12pt", "12px");
             html = html.Replace("<table style=\"width:100%;line-height:25px;font-size:12pt\">", "<table style=\"width:100%;line-height:20px;font-size:12px\">");
@@ -728,15 +732,18 @@ namespace Service.HoaDon
             xsltContent = xsltContent.Replace("paramqrcode", $"https://api.qrserver.com/v1/create-qr-code/?size=100x100&amp;data={hoaDon.CreateQRCode()}");
             if (mauHoaDon.is_show_wattermark_inner_table == true)
             {
-
-                xsltContent = xsltContent.Replace("viewstyle", "position:relative;width:900px;margin:auto; border:2px solid black; padding-top:20px;z-index:1;background-image: url(''); background-size:80%; background-position: center;width:900px;background-color: hsla(0,0%,100%,0.60);background-blend-mode: overlay;background-repeat:no-repeatwidth:900px;margin:auto; border:2px solid black; padding-top:20px;z-index:1;  background-image: url('" + mauHoaDon.watermark_path.ConvertToString() + "'); background-size:80%; background-position: center;width:900px;background-color: hsla(0,0%,100%,0.60);background-blend-mode: overlay;background-repeat:no-repeat");
-                xsltContent = xsltContent.Replace("paramTableBG", "background-image: url('" + mauHoaDon.watermark_path.ConvertToString() + "'); background-size:cover; background-position: center;background-color: hsla(0,0%,100%,0.60);background-blend-mode: overlay;background-repeat:no-repeat");
+                var watermarkSrc = mauHoaDon.watermark_path.ConvertToString().Replace('\\', '/');
+                ApplyInnerTableWatermarkToXslt(
+                    ref xsltContent,
+                    mauHoaDon,
+                    watermarkSrc,
+                    GetWatermarkOpacityValue(mauHoaDon));
             }
             else
             {
                 xsltContent = xsltContent.Replace("viewstyle", "position:relative;width:900px;margin:auto; border:2px solid black; padding-top:20px;z-index:1;  background-image: url('" + mauHoaDon.watermark_path + "'); background-size:80%; background-position: center;width:900px;background-color: hsla(0,0%,100%,0.60);background-blend-mode: overlay;background-repeat:no-repeat");
                 xsltContent = xsltContent.Replace("paramTableBG", "");
-
+                xsltContent = xsltContent.Replace("paramWaterMarkTable;", "");
             }
             if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DIEU_CHINH)
             {
@@ -1310,8 +1317,7 @@ namespace Service.HoaDon
                 html = await _serviceWrapper.HoaDon.LoaiHoaDonCTTemplate.GeneratePrintHtmlAsync(mauHoaDon, hoaDonData, xsltArgument);
             }
             // var bgstyle = "width:900px;margin:auto; border:2px solid black; padding-top:20px;z-index:1;position: relative;";
-            var bgstyle = "margin:auto; border:2px solid black; padding-top:0px;z-index:1;position: relative;";
-            bgstyle = bgstyle + "background-image: url('{paramWaterMark}'); background-size:80%; background-position: center;background-color: hsla(0,0%,100%,paramOpacity;);background-blend-mode: overlay;background-repeat:no-repeat";
+            var bgstyle = BuildOuterBgStyle(mauHoaDon.is_show_wattermark_inner_table == true);
             var noidungdisabled = "&#160;";
             var styledisabled = "position:absolute;z-index:0;width:300px;height:140px;border:5px solid red;background:transparent;display:none;top:45%;left:40%;color:red;font-size:70pt;text-align:center;padding-top:10px;";
             var stylemau = $"position:absolute;z-index:0;width:300px;height:140px;border:5px solid red;background:transparent;display:none;top:45%;left:40%;color:red;font-size:70pt;text-align:center;padding-top:10px;";
@@ -1374,13 +1380,11 @@ namespace Service.HoaDon
 
             if (mauHoaDon.is_show_wattermark_inner_table == true)
             {
-                html = html.Replace("{paramLogo}", logoSrc)
-                                .Replace("paramWaterMarkTable;", mauHoaDon.watermark_path.ConvertToString().Replace('\\', '/') ?? "");
+                html = ApplyWatermarkToHtml(html, mauHoaDon, logoSrc);
             }
             else
             {
-                html = html.Replace("{paramLogo}", logoSrc)
-                                .Replace("{paramWaterMark}", mauHoaDon.watermark_path?.ConvertToString().Replace('\\', '/') ?? "");
+                html = ApplyWatermarkToHtml(html, mauHoaDon, logoSrc);
             }
             if (mauHoaDon.vien_path.ConvertToString() != "")
             {
@@ -1394,6 +1398,10 @@ namespace Service.HoaDon
             var paramOpacity = (1 - (mauHoaDon.watermark_opacity * 1.0 / 100).ConvertToDouble(2)).ToString().Replace(",", ".");
             html = html.Replace("paramOpacity;", paramOpacity);
             html = html.Replace("paramOpacity;", paramOpacity);
+            if (mauHoaDon.is_show_wattermark_inner_table == true)
+            {
+                html = FixInnerTableWatermarkHtml(html);
+            }
             html = html.Replace("12pt", "12px");
             html = html.Replace("<table style=\"width:100%;line-height:25px;font-size:12pt\">", "<table style=\"width:100%;line-height:20px;font-size:12px\">");
             html = html.Replace("line-height:25px", "line-height:20px");
@@ -1492,8 +1500,7 @@ namespace Service.HoaDon
                 var getXmlKySoPreview = await _serviceWrapper.HoaDon.HoaDon.CreateXmlKySoAsync(hoaDon.id, true);
                 if (!getXmlKySoPreview.is_success) return new ErrorResult<string>(getXmlKySoPreview.message, null);
                 var html = await _serviceWrapper.HoaDon.LoaiHoaDonCTTemplate.GeneratePrintHtmlAsync(mauHoaDon, getXmlKySoPreview.data, new XsltArgumentList());
-                var bgstyle = "margin:auto; border:2px solid black; padding-top:0px;z-index:1;position: relative;";
-                bgstyle = bgstyle + "background-image: url('{paramWaterMark}'); background-size:80%; background-position: center;background-color: hsla(0,0%,100%,paramOpacity;);background-blend-mode: overlay;background-repeat:no-repeat";
+                var bgstyle = BuildOuterBgStyle(mauHoaDon.is_show_wattermark_inner_table == true);
                 var noidungdisabled = "&#160;";
                 var styledisabled = "position:absolute;z-index:0;width:300px;height:140px;border:5px solid red;background:transparent;display:none;top:45%;left:40%;color:red;font-size:70pt;text-align:center;padding-top:10px;";
                 var stylemau = "position:absolute;z-index:0;width:300px;height:140px;border:5px solid red;background:transparent;top:45%;left:40%;color:red;font-size:70pt;text-align:center;padding-top:10px;";
@@ -1533,16 +1540,7 @@ namespace Service.HoaDon
                  ? mauHoaDon.logo_path.ConvertToString().Replace('\\', '/')
                  : transparentImg; // <-- Nếu rỗng thì dùng ảnh trong suốt
 
-                if (mauHoaDon.is_show_wattermark_inner_table == true)
-                {
-                    html = html.Replace("{paramLogo}", logoSrc)
-                               .Replace("paramWaterMarkTable;", mauHoaDon.watermark_path.ConvertToString().Replace('\\', '/') ?? "");
-                }
-                else
-                {
-                    html = html.Replace("{paramLogo}", logoSrc)
-                        .Replace("{paramWaterMark}", mauHoaDon.watermark_path?.ConvertToString().Replace('\\', '/') ?? "");
-                }
+                html = ApplyWatermarkToHtml(html, mauHoaDon, logoSrc);
                 if (mauHoaDon.vien_path.ConvertToString() != "")
                 {
                     html = html.Replace("{paramVien}", mauHoaDon.vien_path?.ConvertToString().Replace('\\', '/') ?? "");
@@ -1556,6 +1554,10 @@ namespace Service.HoaDon
                 var paramOpacity = (1 - (mauHoaDon.watermark_opacity * 1.0 / 100).ConvertToDouble(2)).ToString().Replace(",", ".");
                 html = html.Replace("paramOpacity;", paramOpacity);
                 html = html.Replace("paramOpacity;", paramOpacity);
+                if (mauHoaDon.is_show_wattermark_inner_table == true)
+                {
+                    html = FixInnerTableWatermarkHtml(html);
+                }
                 var advancedSettings = mauHoaDon.advanced_settings_json.ConvertToString().TryDeserializeObject<CssEditorElementData[]>();
                 html = html.Replace("12pt", "12px");
                 html = html.Replace("<table style=\"width:100%;line-height:25px;font-size:12pt\">", "<table style=\"width:100%;line-height:20px;font-size:12px\">");
@@ -1607,15 +1609,18 @@ namespace Service.HoaDon
 
             if (mauHoaDon.is_show_wattermark_inner_table == true)
             {
-
-                xsltContent = xsltContent.Replace("viewstyle", "position:relative;width:900px;margin:auto; border:2px solid black; padding-top:20px;z-index:1;background-image: url(''); background-size:80%; background-position: center;width:900px;background-color: hsla(0,0%,100%,0.60);background-blend-mode: overlay;background-repeat:no-repeatwidth:900px;margin:auto; border:2px solid black; padding-top:20px;z-index:1;  background-image: url('" + mauHoaDon.watermark_path.ConvertToString() + "'); background-size:80%; background-position: center;width:900px;background-color: hsla(0,0%,100%,0.60);background-blend-mode: overlay;background-repeat:no-repeat");
-                xsltContent = xsltContent.Replace("paramTableBG", "background-image: url('" + mauHoaDon.watermark_path.ConvertToString() + "'); background-size:cover; background-position: center;background-color: hsla(0,0%,100%,0.60);background-blend-mode: overlay;background-repeat:no-repeat");
+                var watermarkSrc = mauHoaDon.watermark_path.ConvertToString().Replace('\\', '/');
+                ApplyInnerTableWatermarkToXslt(
+                    ref xsltContent,
+                    mauHoaDon,
+                    watermarkSrc,
+                    GetWatermarkOpacityValue(mauHoaDon));
             }
             else
             {
                 xsltContent = xsltContent.Replace("viewstyle", "position:relative;width:900px;margin:auto; border:2px solid black; padding-top:20px;z-index:1;  background-image: url('" + mauHoaDon.watermark_path + "'); background-size:80%; background-position: center;width:900px;background-color: hsla(0,0%,100%,0.60);background-blend-mode: overlay;background-repeat:no-repeat");
                 xsltContent = xsltContent.Replace("paramTableBG", "");
-
+                xsltContent = xsltContent.Replace("paramWaterMarkTable;", "");
             }
             if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DIEU_CHINH)
             {
@@ -1855,6 +1860,15 @@ namespace Service.HoaDon
             if (mauHoaDon.is_show_wattermark_inner_table == true)
             {
                 xsltContent = xsltContent.Replace("paramWaterMarkTable;", watermarkSrc);
+                xsltContent = xsltContent.Replace(
+                    "paramTableBG",
+                    BuildTableBackgroundStyle(watermarkSrc, paramOpacity));
+                xsltContent = FixInnerTableWatermarkHtml(xsltContent);
+            }
+            else
+            {
+                xsltContent = xsltContent.Replace("paramWaterMarkTable;", "");
+                xsltContent = xsltContent.Replace("paramTableBG", "");
             }
 
             var advancedSettings = mauHoaDon.advanced_settings_json.ConvertToString()
@@ -1916,6 +1930,105 @@ namespace Service.HoaDon
                 return kySoLogs.LastOrDefault();
 
             return xmlLogs.LastOrDefault() ?? kySoLogs.LastOrDefault();
+        }
+
+        private const string ViewStyleInnerTableV1 =
+            "position:relative;width:900px;margin:auto; border:2px solid black; padding-top:20px;z-index:1;background-image: url(''); background-size:80%; background-position: center;background-color: hsla(0,0%,100%,0.60);background-blend-mode: overlay;background-repeat:no-repeat";
+
+        private static string BuildOuterBgStyle(bool showWatermarkInnerTable)
+        {
+            var bgstyle = "margin:auto; border:2px solid black; padding-top:0px;z-index:1;position: relative;";
+            if (showWatermarkInnerTable)
+            {
+                bgstyle += "background-image: url(''); background-size:80%; background-position: center;background-color: hsla(0,0%,100%,paramOpacity;);background-blend-mode: overlay;background-repeat:no-repeat";
+            }
+            else
+            {
+                bgstyle += "background-image: url('{paramWaterMark}'); background-size:80%; background-position: center;background-color: hsla(0,0%,100%,paramOpacity;);background-blend-mode: overlay;background-repeat:no-repeat";
+            }
+            return bgstyle;
+        }
+
+        private static string GetWatermarkOpacityValue(mau_hoa_don mauHoaDon)
+        {
+            return (1 - ((mauHoaDon.watermark_opacity ?? 50) * 1.0 / 100).ConvertToDouble(2))
+                .ToString()
+                .Replace(",", ".");
+        }
+
+        private static string BuildTableBackgroundStyle(string watermarkUrl, string paramOpacity)
+        {
+            return $"background-image:url('{watermarkUrl}');background-size:cover;background-position:center;background-repeat:no-repeat;background-color:hsla(0,0%,100%,{paramOpacity});background-blend-mode:overlay;";
+        }
+
+        private static string FixInnerTableWatermarkHtml(string html)
+        {
+            const string innerTableCss =
+                "<style>table.inner-watermark-table td,table.inner-watermark-table th,table[style*=\"background-image\"] td,table[style*=\"background-image\"] th{background-color:transparent !important;}</style>";
+            if (!html.Contains("inner-watermark-table") && html.Contains("</head>"))
+            {
+                html = html.Replace("</head>", innerTableCss + "</head>");
+            }
+
+            return Regex.Replace(
+                html,
+                @"<div style=""background:url\('([^']*)'\);background-color:\s*hsla\(0,0%,100%,([^)]+)\);background-blend-mode:\s*overlay;"">\s*<table style=""",
+                m =>
+                    $"<div><table class=\"inner-watermark-table\" style=\"background-image:url('{m.Groups[1].Value}');background-size:cover;background-position:center;background-repeat:no-repeat;background-color:hsla(0,0%,100%,{m.Groups[2].Value});background-blend-mode:overlay;",
+                RegexOptions.IgnoreCase);
+        }
+
+        private static string ApplyWatermarkToHtml(string html, mau_hoa_don mauHoaDon, string logoSrc)
+        {
+            var watermarkUrl = mauHoaDon.watermark_path?.ConvertToString().Replace('\\', '/') ?? "";
+            var logo = logoSrc ?? mauHoaDon.logo_path?.ConvertToString().Replace('\\', '/') ?? "";
+
+            if (mauHoaDon.is_show_wattermark_inner_table == true)
+            {
+                html = html.Replace("{paramLogo}", logo);
+                html = html.Replace("{paramWaterMark}", "");
+                if (!string.IsNullOrEmpty(watermarkUrl))
+                {
+                    html = html.Replace("paramWaterMarkTable;", watermarkUrl);
+                    html = html.Replace(
+                        "paramTableBG",
+                        BuildTableBackgroundStyle(watermarkUrl, GetWatermarkOpacityValue(mauHoaDon)));
+                }
+                else
+                {
+                    html = html.Replace("paramWaterMarkTable;", "");
+                    html = html.Replace("paramTableBG", "");
+                }
+            }
+            else
+            {
+                html = html.Replace("{paramLogo}", logo);
+                html = html.Replace("{paramWaterMark}", watermarkUrl);
+                html = html.Replace("paramWaterMarkTable;", "");
+                html = html.Replace("paramTableBG", "");
+            }
+
+            return html;
+        }
+
+        private static void ApplyInnerTableWatermarkToXslt(
+            ref string xsltContent,
+            mau_hoa_don mauHoaDon,
+            string watermarkSrc,
+            string paramOpacity)
+        {
+            xsltContent = xsltContent.Replace("viewstyle", ViewStyleInnerTableV1);
+            xsltContent = xsltContent.Replace(
+                "paramTableBG",
+                BuildTableBackgroundStyle(watermarkSrc, paramOpacity));
+            xsltContent = xsltContent.Replace("paramWaterMarkTable;", watermarkSrc);
+
+            const string innerTableCss =
+                "<style>table.inner-watermark-table td,table.inner-watermark-table th,table[style*=\"background-image\"] td,table[style*=\"background-image\"] th{background-color:transparent !important;}</style>";
+            if (xsltContent.Contains("</head>") && !xsltContent.Contains("inner-watermark-table"))
+            {
+                xsltContent = xsltContent.Replace("</head>", innerTableCss + "</head>");
+            }
         }
     }
 }

@@ -44,6 +44,10 @@ import Text from "../../component-ui/text";
 import TextInput from "../../component-ui/text-input";
 import { useCommonContext } from "../../contexts/common";
 import { NotifyHelper } from "../../helpers/toast";
+import {
+  isNguoiMuaCccd,
+  validateAndNormalizeNguoiMuaBuyer,
+} from "../../helpers/nguoiMuaMstHelper";
 import { useAuth } from "../../hooks/useAuth";
 import { useLoaiHoaDonCT } from "../../hooks/useLoaiHoaDonCT";
 import { useHoaDonDangKyPhatHanhLoader } from "../../hooks/useHoaDonDangKyPhatHanhLoader";
@@ -53,7 +57,10 @@ import { eLyDoDieuChinh } from "../../models/commons/eLyDoDieuChinh";
 import { eSize } from "../../models/commons/eSize";
 import { IIHoaDonAddOrEditModel } from "../../models/requests/hoa-don/IHoaDonAddOrEditModel";
 import { IHoaDon } from "../../models/responses/hoa-don/IHoaDon";
-import { IsHoaDonHangHoaValid } from "../../models/responses/hoa-don/IHoaDonHangHoa";
+import {
+  IHoaDonHangHoa,
+  IsHoaDonHangHoaValid,
+} from "../../models/responses/hoa-don/IHoaDonHangHoa";
 import { IsHoaDonLoaiPhiValid } from "../../models/responses/hoa-don/IHoaDonLoaiPhi";
 import { IHoaDonVM } from "../../models/responses/hoa-don/IHoaDonVM";
 import { IHoaDonPhatHanhPushNotifyModel } from "../../models/responses/hub/IHoaDonPhatHanhPushNotifyModel";
@@ -87,6 +94,7 @@ const HoaDonForm = () => {
   );
   const confirm = useConfirm();
   const [hoaDonGocId, setHoaDonGocId] = useState(0);
+  const [hangHoasGoc, setHangHoasGoc] = useState<IHoaDonHangHoa[]>([]);
   const [tongTienChu, setTongTienChu] = useState("");
 
   const isAllowPhatHanh = useMemo(() => {
@@ -270,6 +278,16 @@ const HoaDonForm = () => {
 
       if (hoaDonId > 0) {
         setHinhThucHoaDonId(hoaDonViewModel.hoa_don_hinh_thuc_id);
+        if (
+          hoaDonViewModel.hoa_don_hinh_thuc_id === 3 &&
+          hoaDonViewModel.hoa_don_id_goc > 0
+        ) {
+          hoaDonApi.getViewModel(hoaDonViewModel.hoa_don_id_goc).then((gocRes) => {
+            if (gocRes.is_success) {
+              setHangHoasGoc(gocRes.data.hang_hoas ?? []);
+            }
+          });
+        }
         setThongTinHoaDonGoc({
           hoa_don_dang_ky_phat_hanh_ky_hieu_goc:
             hoaDonViewModel.hoa_don_dang_ky_phat_hanh_ky_hieu_goc,
@@ -287,6 +305,8 @@ const HoaDonForm = () => {
       setLoaiTien(hoaDonViewModel.loai_tien);
       reset({
         ...hoaDonViewModel,
+        nguoi_mua_mst: hoaDonViewModel.nguoi_mua_mst?.toString() ?? "",
+        nguoi_mua_cccd: hoaDonViewModel.nguoi_mua_cccd?.toString() ?? "",
         NgayDenNgayDi: hoaDonViewModel?.thong_tin_khac?.NgayDenNgayDi,
         TenTau: hoaDonViewModel?.thong_tin_khac?.TenTau,
         SoThamChieu: hoaDonViewModel?.thong_tin_khac?.SoThamChieu,
@@ -335,6 +355,8 @@ const HoaDonForm = () => {
     },
   });
 
+  const nguoiMuaMstValue = watch("nguoi_mua_mst");
+
   const copyHoaDonAsync = async (id: number) => {
     const res = await hoaDonApi.getViewModel(id);
     if (res.is_success) {
@@ -351,6 +373,8 @@ const HoaDonForm = () => {
           phat_hanh_uuid: "",
           user_id_phathanh: 0,
           invoice_id: undefined,
+          nguoi_mua_mst: res.data.nguoi_mua_mst?.toString() ?? "",
+          nguoi_mua_cccd: res.data.nguoi_mua_cccd?.toString() ?? "",
           hang_hoas: res.data.hang_hoas.map((x: any) => {
             return {
               ...x,
@@ -378,6 +402,15 @@ const HoaDonForm = () => {
       setIsLoadHoaDonDone(true);
 
       if (hoaDonId === 0) {
+        const isCreatingDieuChinh =
+          hoaDonGocId > 0 && hinhThucHoaDonId === 3;
+        const gocHangHoas = res.data.hang_hoas.map((x: any) => ({
+          ...x,
+          id: 0,
+        }));
+        if (isCreatingDieuChinh) {
+          setHangHoasGoc(gocHangHoas);
+        }
         setHoaDonViewModel({
           ...res.data,
           id: 0,
@@ -390,12 +423,21 @@ const HoaDonForm = () => {
           invoice_id: undefined,
           xuat_kho_dia_chi: res?.data?.xuat_kho_dia_chi?.split("|")[1] ?? "",
           ngay_hoa_don: moment(new Date()).format("YYYY-MM-DD"),
-          hang_hoas: res.data.hang_hoas.map((x: any) => {
-            return {
-              ...x,
-              id: 0,
-            };
-          }),
+          hang_hoas: isCreatingDieuChinh
+            ? [
+                {
+                  hang_hoa_tinh_chat_id: 1,
+                  ma_hang: "",
+                  ten_hang: "",
+                  dvt: "",
+                  so_luong: 0,
+                  don_gia: 0,
+                  thanh_tien: 0,
+                  ty_le_chiet_khau: 0,
+                  thue_vat: "10%",
+                },
+              ]
+            : gocHangHoas,
           loai_phis: res.data.loai_phis.map((x: any) => ({
             ...x,
             id: 0,
@@ -763,7 +805,8 @@ const HoaDonForm = () => {
 
       hoa_don_ly_do_dieu_chinh_id: formData.hoa_don_ly_do_dieu_chinh_id,
       nguoi_mua_email: data?.nguoi_mua_email?.trim() ?? "",
-      nguoi_mua_mst: data?.nguoi_mua_mst?.trim() ?? "",
+      nguoi_mua_mst: data?.nguoi_mua_mst?.toString().trim() ?? "",
+      nguoi_mua_cccd: data?.nguoi_mua_cccd?.toString().trim() ?? "",
       nguoi_mua_ten: data?.nguoi_mua_ten?.trim() ?? "",
 
       // tong_tien_chu: isDieuChinhThue
@@ -887,21 +930,40 @@ const HoaDonForm = () => {
 
     const payload = getAddOrEditFormModel(data);
 
-    if (payload.nguoi_mua_mst !== undefined && payload.nguoi_mua_mst !== "") {
-      if (!payload.nguoi_mua_ten_donvi) {
-        NotifyHelper.Error("Vui lòng điền Đơn vị mua hàng");
-        setError("nguoi_mua_ten_donvi", {});
-        isValid = false;
-      }
+    const nguoiMuaValidation = validateAndNormalizeNguoiMuaBuyer({
+      nguoi_mua_mst: payload.nguoi_mua_mst,
+      nguoi_mua_cccd: data.nguoi_mua_cccd,
+      nguoi_mua_ten: payload.nguoi_mua_ten,
+      nguoi_mua_ten_donvi: payload.nguoi_mua_ten_donvi,
+      nguoi_mua_dia_chi: payload.nguoi_mua_dia_chi,
+    });
 
-      //check độ dài mst người mua không được lớn hơn 14
-      if (payload.nguoi_mua_mst?.trim()?.length > 14) {
-        NotifyHelper.Error(
-          "Mã số thuế người mua hàng không được vượt quá 14 ký tự",
-        );
-        setError("nguoi_mua_mst", {});
-        isValid = false;
+    if (!nguoiMuaValidation.isValid) {
+      NotifyHelper.Error(nguoiMuaValidation.message ?? "Thông tin người mua không hợp lệ");
+      if (nguoiMuaValidation.field) {
+        setError(nguoiMuaValidation.field as any, {
+          type: "manual",
+          message: nguoiMuaValidation.message,
+        });
+        setFocus(nguoiMuaValidation.field as any);
       }
+      isValid = false;
+    } else if (nguoiMuaValidation.normalized) {
+      payload.nguoi_mua_mst = nguoiMuaValidation.normalized.nguoi_mua_mst ?? "";
+      clearErrors("nguoi_mua_mst");
+      clearErrors("nguoi_mua_ten_donvi");
+      clearErrors("nguoi_mua_dia_chi");
+    }
+
+    if (payload.nguoi_mua_dia_chi && payload.nguoi_mua_dia_chi.length > 400) {
+      NotifyHelper.Error(
+        "Địa chỉ người mua hàng không được vượt quá 400 ký tự",
+      );
+      setError("nguoi_mua_dia_chi", {
+        type: "manual",
+        message: "Địa chỉ người mua hàng không được vượt quá 400 ký tự",
+      });
+      isValid = false;
     }
 
     if (payload.nguoi_mua_email) {
@@ -941,19 +1003,16 @@ const HoaDonForm = () => {
       }
     }
 
-    if (data?.nguoi_mua_cccd) {
-      // nếu quá 12 ký tự thì báo lỗi
-      if (data.nguoi_mua_cccd?.length !== 12) {
-        NotifyHelper.Error(
-          "Căn cước công dân người mua hàng phải đúng 12 ký tự",
-        );
-        setError("nguoi_mua_cccd" as any, {
-          type: "manual",
-          message: "Căn cước công dân người mua hàng phải đúng 12 ký tự",
-        });
-        setFocus("nguoi_mua_cccd" as any);
-        isValid = false;
-      }
+    if (data?.nguoi_mua_cccd && !isNguoiMuaCccd(data.nguoi_mua_cccd)) {
+      NotifyHelper.Error(
+        "Căn cước công dân người mua hàng phải đúng 12 chữ số",
+      );
+      setError("nguoi_mua_cccd" as any, {
+        type: "manual",
+        message: "Căn cước công dân người mua hàng phải đúng 12 chữ số",
+      });
+      setFocus("nguoi_mua_cccd" as any);
+      isValid = false;
     }
 
     if (payload?.nguoi_mua_stk) {
@@ -1005,21 +1064,6 @@ const HoaDonForm = () => {
       }
     });
 
-    if (payload.nguoi_mua_mst !== undefined && payload.nguoi_mua_mst !== "") {
-      if (!payload.nguoi_mua_dia_chi) {
-        NotifyHelper.Error("Vui lòng điền Địa chỉ người mua hàng");
-        setError("nguoi_mua_dia_chi", {});
-        isValid = false;
-      } else {
-        if (payload.nguoi_mua_dia_chi.length > 400) {
-          NotifyHelper.Error(
-            "Địa chỉ người mua hàng không được vượt quá 500 ký tự",
-          );
-          setError("nguoi_mua_dia_chi", {});
-          isValid = false;
-        }
-      }
-    }
     if (!isValid) return;
 
     payload.ngay_hoa_don = moment(formData.ngay_hoa_don ?? new Date()).format(
@@ -1516,7 +1560,7 @@ const HoaDonForm = () => {
                       // required
                       validateMessage="Vui lòng điền Mã số thuế"
                       errors={errors}
-                      value={getValues("nguoi_mua_mst")}
+                      value={nguoiMuaMstValue ?? ""}
                       onValueChanged={(data) => {
                         setValue("nguoi_mua_mst", data.text);
                         trigger("nguoi_mua_mst");
@@ -1567,7 +1611,7 @@ const HoaDonForm = () => {
                     />
                     <Box sx={{ ml: [0, 0, 2] }}>
                       <ButtonGipInfo
-                        mst={getValues("nguoi_mua_mst")}
+                        mst={nguoiMuaMstValue ?? ""}
                         onApply={(data) => {
                           setValue("nguoi_mua_ten_donvi", data?.ten_dv ?? "");
                           setValue("nguoi_mua_dia_chi", data?.dia_chi ?? "");
@@ -1591,10 +1635,22 @@ const HoaDonForm = () => {
                     validateMessage="Vui lòng điền Mã số thuế"
                     errors={errors}
                     onChange={(e) => {
-                      if (e.target.value.length > 14) {
+                      const value = e.target.value;
+                      if (value.length > 14) {
                         setError("nguoi_mua_mst", {
                           type: "manual",
-                          message: "Mã số thuế không được vượt quá 14 ký tự",
+                          message:
+                            "Mã số thuế người mua không được vượt quá 14 ký tự",
+                        });
+                      } else if (
+                        value &&
+                        !isNguoiMuaCccd(value) &&
+                        /[^\d-]/.test(value)
+                      ) {
+                        setError("nguoi_mua_mst", {
+                          type: "manual",
+                          message:
+                            "Mã số thuế chỉ được chứa số và dấu gạch ngang (-)",
                         });
                       } else {
                         clearErrors("nguoi_mua_mst");
@@ -2132,10 +2188,10 @@ const HoaDonForm = () => {
                     formData.hoa_don_ly_do_dieu_chinh_id === 20 ? 1 : undefined
                   }
                   tienTe={loaiTien}
-                  // onValueChanged={setHangHoas}
                   isHoaDonBanHang={isHoaDonBanHang}
-                  // isSoAm={formData.hoa_don_ly_do_dieu_chinh_id === 2}
                   isSoAm={false}
+                  isDieuChinh={hinhThucHoaDonId === 3}
+                  hangHoasGoc={hangHoasGoc}
                   onValueChanged={(hangHoas) => {
                     setHangHoas(hangHoas);
                     if (hangHoas.find((x) => !IsHoaDonHangHoaValid(x))) {

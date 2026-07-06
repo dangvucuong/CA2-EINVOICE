@@ -18,6 +18,7 @@ import {
   ShieldIcon,
   ShieldSlashIcon,
   ShieldXIcon,
+  SyncIcon,
   TrashIcon,
 } from "@primer/octicons-react";
 
@@ -1229,6 +1230,58 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
                                   <>
                                     <ActionList.Divider />
 
+                                    {tab === "cho-phat-hanh" && (
+                                      <ActionList.Item
+                                        onSelect={async () => {
+                                          if (
+                                            !(await confirm({
+                                              title: "Cập nhật kết quả CQT",
+                                              content:
+                                                "Bạn có chắc chắn muốn cập nhật kết quả từ CQT cho hóa đơn này?",
+                                              confirmButtonContent: "Cập nhật",
+                                              cancelButtonContent: "Đóng",
+                                              confirmButtonType: "primary",
+                                            }))
+                                          ) {
+                                            return;
+                                          }
+
+                                          setIsSaving(true);
+                                          try {
+                                            const res =
+                                              await hoaDonApi.capNhatKetQuaCQT(
+                                                row.id
+                                              );
+
+                                            if (res.is_success) {
+                                              NotifyHelper.Success(
+                                                res.message ??
+                                                  "Cập nhật kết quả CQT thành công"
+                                              );
+                                              dispatch(
+                                                hoaDonAction.loadStart({
+                                                  ...applyListFilter(filter),
+                                                  tab,
+                                                })
+                                              );
+                                            } else {
+                                              NotifyHelper.Error(
+                                                res.message ??
+                                                  "Cập nhật kết quả CQT thất bại"
+                                              );
+                                            }
+                                          } finally {
+                                            setIsSaving(false);
+                                          }
+                                        }}
+                                      >
+                                        <ActionList.LeadingVisual>
+                                          <SyncIcon />
+                                        </ActionList.LeadingVisual>
+                                        Cập nhật kết quả CQT
+                                      </ActionList.Item>
+                                    )}
+
                                     {tab === "chua-gui-cqt" && (
                                       <>
                                         <ActionList.Divider />
@@ -1299,8 +1352,62 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
                                       </ActionList.LeadingVisual>
                                       Hủy nội bộ
                                     </ActionList.Item>
-                                  </>
-                                )}
+                                </>
+                              )}
+                              {tab === "da-huy" && (
+                                <>
+                                  <ActionList.Divider />
+                                  <ActionList.Item
+                                    onSelect={async () => {
+                                      if (
+                                        !(await confirm({
+                                          title: "Khôi phục trạng thái",
+                                          content:
+                                            "Bạn có chắc chắn muốn khôi phục trạng thái hóa đơn này?",
+                                          confirmButtonContent: "Khôi phục",
+                                          cancelButtonContent: "Đóng",
+                                          confirmButtonType: "primary",
+                                        }))
+                                      ) {
+                                        return;
+                                      }
+
+                                      setIsSaving(true);
+                                      try {
+                                        const res =
+                                          await hoaDonApi.khoiPhucTrangThai(
+                                            row.id
+                                          );
+
+                                        if (res.is_success) {
+                                          NotifyHelper.Success(
+                                            res.message ??
+                                              "Khôi phục trạng thái thành công"
+                                          );
+                                          dispatch(
+                                            hoaDonAction.loadStart({
+                                              ...applyListFilter(filter),
+                                              tab,
+                                            })
+                                          );
+                                        } else {
+                                          NotifyHelper.Error(
+                                            res.message ??
+                                              "Khôi phục trạng thái thất bại"
+                                          );
+                                        }
+                                      } finally {
+                                        setIsSaving(false);
+                                      }
+                                    }}
+                                  >
+                                    <ActionList.LeadingVisual>
+                                      <HistoryIcon />
+                                    </ActionList.LeadingVisual>
+                                    Khôi phục trạng thái
+                                  </ActionList.Item>
+                                </>
+                              )}
                             </ActionList>
                           </ActionMenu.Overlay>
                         </ActionMenu>

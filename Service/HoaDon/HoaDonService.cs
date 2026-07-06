@@ -22,10 +22,12 @@ using Model.Static;
 using Model.Table;
 using Service.Base;
 using Service.Caching;
+using Service.Helper;
 using Service.Hub;
 using StackExchange.Redis;
 using WebApp;
 using System.Xml.Linq;
+using WSInterTRCA2;
 
 namespace Service.HoaDon
 {
@@ -75,9 +77,21 @@ namespace Service.HoaDon
             model.CheckAndSetThongTinKhacJson();
             model.ma_so_hoa_don = null;
             model.ma_so_hoa_don_mtt = null;
+
+            var nguoiMuaError = NguoiMuaValidationHelper.ValidateAndNormalize(model);
+            if (nguoiMuaError != null)
+                return new ErrorResult<int>(nguoiMuaError);
+
             var user = this.GetCurrentUser();
             var insert = model.id <= 0;
-            CalculateThanhTienHoaDon(model);
+            List<hoa_don_hang_hoa> hangHoaGocs = null;
+            if (model.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DIEU_CHINH
+                && model.hoa_don_id_goc > 0
+                && model.hoa_don_ly_do_dieu_chinh_id != 20)
+            {
+                hangHoaGocs = (await _repositoryWrapper.HoaDon.HoaDonHangHoa.SelectByHoaDonIdAsync(model.hoa_don_id_goc)).ToList();
+            }
+            CalculateThanhTienHoaDon(model, hangHoaGocs);
             var tienbangchu = string.Empty;
             if (model.loai_tien == null) model.loai_tien = "VND";
 
@@ -2988,7 +3002,45 @@ namespace Service.HoaDon
             return list;
         }
 
-        private void CalculateThanhTienHoaDon(HoaDonAddOrEditModel model)
+        private decimal CalcThanhTienDieuChinhLine(
+            hoa_don_hang_hoa line,
+            List<hoa_don_hang_hoa> allLines,
+            List<hoa_don_hang_hoa> gocLines)
+        {
+            var goc = gocLines.FirstOrDefault(x =>
+                x.ma_hang.ConvertToString() == line.ma_hang.ConvertToString()
+                && (x.hang_hoa_tinh_chat_id == 1 || x.hang_hoa_tinh_chat_id == 5));
+            if (goc == null)
+            {
+                return line.so_luong * line.don_gia;
+            }
+
+            var slInput = line.so_luong;
+            var dgInput = line.don_gia;
+            var soLuongGoc = goc.so_luong;
+            var donGiaGoc = goc.don_gia;
+            decimal thanhTienBase = 0;
+
+            if (slInput != 0 && dgInput == 0)
+            {
+                thanhTienBase = slInput * donGiaGoc;
+            }
+            else if (slInput == 0 && dgInput != 0)
+            {
+                var tongSlDieuChinh = allLines
+                    .Where(x => x.ma_hang.ConvertToString() == line.ma_hang.ConvertToString())
+                    .Sum(x => x.so_luong);
+                thanhTienBase = (soLuongGoc + tongSlDieuChinh) * dgInput;
+            }
+            else if (slInput != 0 && dgInput != 0)
+            {
+                thanhTienBase = slInput * donGiaGoc;
+            }
+
+            return thanhTienBase;
+        }
+
+        private void CalculateThanhTienHoaDon(HoaDonAddOrEditModel model, List<hoa_don_hang_hoa> hangHoaGocs = null)
         {
 
             var thuesuatck = "";
@@ -3025,7 +3077,21 @@ namespace Service.HoaDon
                     // ✅ Chỉ tính hàng hóa (tính chất = 1 và = 5)
                     if (hang_hoa.hang_hoa_tinh_chat_id == 1 || hang_hoa.hang_hoa_tinh_chat_id == 5)
                     {
-                        if (hang_hoa.so_luong > 0 || hang_hoa.don_gia > 0)
+                        var isDieuChinhHangHoa = model.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DIEU_CHINH
+                            && hangHoaGocs != null && hangHoaGocs.Count > 0;
+
+                        if (isDieuChinhHangHoa)
+                        {
+                            var i_thanh_tien_goc = CalcThanhTienDieuChinhLine(hang_hoa, model.hoang_hoas, hangHoaGocs);
+                            var ty_le_chiet_khau = hang_hoa.ty_le_chiet_khau;
+                            var i_tien_chiet_khau = (ty_le_chiet_khau / 100) * i_thanh_tien_goc;
+                            var i_thanh_tien = i_thanh_tien_goc - i_tien_chiet_khau;
+                            tong_tien_goc += i_thanh_tien_goc;
+                            tong_tien_chiet_khau += i_tien_chiet_khau;
+                            tong_thanh_tien += i_thanh_tien;
+                            hang_hoa.thanh_tien = i_thanh_tien;
+                        }
+                        else if (hang_hoa.so_luong != 0 || hang_hoa.don_gia != 0)
                         {
                             var i_tong_tien_goc = hang_hoa.so_luong * hang_hoa.don_gia;
                             // if (model.loai_tien.ConvertToString() == "VND")
@@ -3750,6 +3816,342 @@ namespace Service.HoaDon
             {
                 return new ErrorResult<object>(ex.Message);
             }
+        }
+
+        public async Task<FunctionResult<object>> CapNhatKetQuaCQTAsync(int id)
+        {
+            try
+            {
+                var hoaDon = await SelectByIdAsync(id);
+                if (hoaDon == null)
+                {
+                    return new ErrorResult<object>("Không tìm thấy hóa đơn");
+                }
+
+                var hinhThucCode = hoaDon.hoa_don_hinh_thuc_code.ConvertToString().ToUpper();
+                var logs = (await _hoaDonLogService.SelectByHoaDonAsync(id)).ToList();
+
+                if (hinhThucCode == "C")
+                {
+                    var log202 = logs.FirstOrDefault(x => x.mltdiep == "202");
+                    if (log202 != null)
+                    {
+                        var xml = await ReadXmlFromLogPathAsync(log202.file_thong_diep_url);
+                        if (string.IsNullOrWhiteSpace(xml))
+                        {
+                            return new ErrorResult<object>("Không đọc được nội dung XML thông điệp 202");
+                        }
+
+                        var maCqt = ExtractMccqtFromXml(xml);
+                        if (string.IsNullOrWhiteSpace(maCqt))
+                        {
+                            return new ErrorResult<object>("Không tìm thấy mã CQT trong thông điệp 202");
+                        }
+
+                        hoaDon.phat_hanh_ma_ketqua_cqt = maCqt;
+                        hoaDon.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.DA_PHAT_HANH;
+                        hoaDon.ket_qua_phat_hanh = "";
+                        await UpdateAsync(hoaDon);
+                        return new SuccessResult<object>("Cập nhật kết quả CQT thành công");
+                    }
+
+                    var xmlTvan = await LayKetQuaThongDiepTuTvanAsync(hoaDon);
+                    if (string.IsNullOrWhiteSpace(xmlTvan))
+                    {
+                        return new ErrorResult<object>("Không lấy được kết quả thông điệp từ TVAN");
+                    }
+
+                    var mltdiep = ExtractXmlTagValue(xmlTvan, "MLTDiep");
+                    if (mltdiep != "202")
+                    {
+                        return new ErrorResult<object>($"TVAN chưa trả về thông điệp 202 (MLTDiep={mltdiep})");
+                    }
+
+                    var maCqtTvan = ExtractMccqtFromXml(xmlTvan);
+                    if (string.IsNullOrWhiteSpace(maCqtTvan))
+                    {
+                        return new ErrorResult<object>("Không tìm thấy mã CQT trong thông điệp TVAN");
+                    }
+
+                    hoaDon.phat_hanh_ma_ketqua_cqt = maCqtTvan;
+                    hoaDon.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.DA_PHAT_HANH;
+                    hoaDon.ket_qua_phat_hanh = "";
+                    await UpdateAsync(hoaDon);
+                    await _hoaDonLogService.SaveFromPhatHanhAsync(hoaDon.id, hoaDon.ket_qua_phat_hanh, xmlTvan, true);
+                    return new SuccessResult<object>("Cập nhật kết quả CQT thành công");
+                }
+
+                if (hinhThucCode == "M" || hinhThucCode == "K")
+                {
+                    string xml;
+                    var saveLog = false;
+
+                    var log204 = logs.FirstOrDefault(x => x.mltdiep == "204");
+                    if (log204 != null)
+                    {
+                        xml = await ReadXmlFromLogPathAsync(log204.file_thong_diep_url);
+                        if (string.IsNullOrWhiteSpace(xml))
+                        {
+                            return new ErrorResult<object>("Không đọc được nội dung XML thông điệp 204");
+                        }
+                    }
+                    else
+                    {
+                        xml = await LayKetQuaThongDiepTuTvanAsync(hoaDon);
+                        if (string.IsNullOrWhiteSpace(xml))
+                        {
+                            return new ErrorResult<object>("Không lấy được kết quả thông điệp từ TVAN");
+                        }
+
+                        saveLog = true;
+                    }
+
+                    var ltBao = ExtractXmlTagValue(xml, "LTBao");
+                    if (ltBao == "2")
+                    {
+                        hoaDon.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.DA_PHAT_HANH;
+                        hoaDon.ket_qua_phat_hanh = "";
+                    }
+                    else
+                    {
+                        var mtLoi = ExtractMtLoiFromXml(xml);
+                        hoaDon.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.KHONG_HOP_LE;
+                        hoaDon.ket_qua_phat_hanh = mtLoi;
+                    }
+
+                    await UpdateAsync(hoaDon);
+                    if (saveLog)
+                    {
+                        await _hoaDonLogService.SaveFromPhatHanhAsync(
+                            hoaDon.id,
+                            hoaDon.ket_qua_phat_hanh,
+                            xml,
+                            ltBao == "2"
+                        );
+                    }
+
+                    return new SuccessResult<object>("Cập nhật kết quả CQT thành công");
+                }
+
+                return new ErrorResult<object>($"Loại hóa đơn '{hinhThucCode}' không hỗ trợ cập nhật kết quả CQT");
+            }
+            catch (Exception ex)
+            {
+                return new ErrorResult<object>(ex.Message);
+            }
+        }
+
+        public async Task<FunctionResult<object>> KhoiPhucTrangThaiAsync(int id)
+        {
+            try
+            {
+                var hoaDon = await SelectByIdAsync(id);
+                if (hoaDon == null)
+                {
+                    return new ErrorResult<object>("Không tìm thấy hóa đơn");
+                }
+
+                if (hoaDon.hoa_don_trang_thai_id != (int)e_hoa_don_trang_thai.DA_HUY)
+                {
+                    return new ErrorResult<object>("Chỉ khôi phục được hóa đơn đã hủy");
+                }
+
+                var logs = (await _hoaDonLogService.SelectByHoaDonAsync(id)).ToList();
+                var hasLog7 = logs.Any(x => x.hoa_don_log_type_id == (int)e_hoa_don_log_type.GUI_THONG_DIEP);
+                var hasLog8 = logs.Any(x => x.hoa_don_log_type_id == (int)e_hoa_don_log_type.CO_QUAN_THUE_CHAP_NHAN);
+                var hasLog3 = logs.Any(x => x.hoa_don_log_type_id == (int)e_hoa_don_log_type.KY_SO_SUCCESS);
+                var hasLog202 = logs.Any(x => x.mltdiep == "202");
+                var hasLog204 = logs.Any(x => x.mltdiep == "204");
+
+                hoaDon.hoa_don_hinh_thuc_id = (int)e_hoa_don_hinh_thuc.HOA_DON_GOC;
+
+                if (hasLog7 && hasLog8 && hasLog202)
+                {
+                    hoaDon.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.DA_PHAT_HANH;
+                }
+                else if (hasLog7 && hasLog8 && hasLog204)
+                {
+                    var log204 = logs.FirstOrDefault(x => x.mltdiep == "204");
+                    var xml = await ReadXmlFromLogPathAsync(log204?.file_thong_diep_url);
+                    if (xml.Contains("<LTBao>2</LTBao>"))
+                    {
+                        hoaDon.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.DA_PHAT_HANH;
+                    }
+                    else
+                    {
+                        hoaDon.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.KHONG_HOP_LE;
+                    }
+                }
+                else if (hasLog7 && !hasLog8)
+                {
+                    hoaDon.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.DA_GUI_LEN_CQT_CHUA_PHAN_HOI_KIEM_TRA_DU_LIEU;
+                }
+                else if (!hasLog7 && hasLog3)
+                {
+                    hoaDon.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.CHUA_GUI_CQT;
+                }
+                else if (!hasLog3)
+                {
+                    hoaDon.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.NHAP;
+                }
+                else
+                {
+                    return new ErrorResult<object>("Không xác định được trạng thái khôi phục từ lịch sử hóa đơn");
+                }
+
+                await UpdateAsync(hoaDon);
+                return new SuccessResult<object>("Khôi phục trạng thái hóa đơn thành công");
+            }
+            catch (Exception ex)
+            {
+                return new ErrorResult<object>(ex.Message);
+            }
+        }
+
+        private async Task<string> ReadXmlFromLogPathAsync(string filePath)
+        {
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                return string.Empty;
+            }
+
+            if (File.Exists(filePath))
+            {
+                return await File.ReadAllTextAsync(filePath);
+            }
+
+            return await ReadXmlContentFromUrlAsync($"https://ca2einv.nacencomm.vn/{filePath}");
+        }
+
+        private async Task<string> LayKetQuaThongDiepTuTvanAsync(hoa_don hoaDon)
+        {
+            var khoaPhienPrefix =
+                $"{hoaDon.donvi_ma_dv}_{hoaDon.hoa_don_dang_ky_phat_hanh_mau_so}{hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu}_{hoaDon.ma_so_hoa_don}_000_";
+            var mstTcgp = $"{AppSettings.FixedValue.MNGui}-001";
+
+            using var client = Helper.WSInterTRCA2Helper.GetClient();
+            await client.OpenAsync();
+            try
+            {
+                var authHeader = Helper.WSInterTRCA2Helper.GetAuthHeader();
+                if (hoaDon.created_user_id == 28057)
+                {
+                    authHeader.Username = "ntvan";
+                    authHeader.Password = "123456";
+                }
+
+                var response = await client.LayketquathongdiepTQ_Khoaphien_prefixAsync(
+                    authHeader,
+                    khoaPhienPrefix,
+                    mstTcgp
+                );
+
+                return ExtractXmlFromTvanKhoaphienPrefixResult(
+                    response?.LayketquathongdiepTQ_Khoaphien_prefixResult
+                );
+            }
+            finally
+            {
+                await client.CloseAsync();
+            }
+        }
+
+        private static string ExtractXmlFromTvanKhoaphienPrefixResult(
+            WSInterTRCA2.LayketquathongdiepTQ_Khoaphien_prefixResponseLayketquathongdiepTQ_Khoaphien_prefixResult result)
+        {
+            if (result?.Any == null || result.Any.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            var combined = string.Concat(result.Any.Select(x => x.OuterXml));
+            if (combined.Contains("<MLTDiep>") || combined.Contains("<TDiep"))
+            {
+                return combined;
+            }
+
+            var ds = new DataSet();
+            using (var reader = new StringReader($"<root>{combined}</root>"))
+            {
+                ds.ReadXml(reader);
+            }
+
+            foreach (DataTable table in ds.Tables)
+            {
+                foreach (DataRow row in table.Rows)
+                {
+                    foreach (DataColumn col in table.Columns)
+                    {
+                        var value = row[col]?.ToString() ?? "";
+                        if (string.IsNullOrWhiteSpace(value))
+                        {
+                            continue;
+                        }
+
+                        if (value.Contains("<MLTDiep>") || value.Contains("<TDiep"))
+                        {
+                            return value;
+                        }
+
+                        if (value.Length > 100 && TryDecodeBase64Xml(value, out var decoded))
+                        {
+                            return decoded;
+                        }
+                    }
+                }
+            }
+
+            return combined;
+        }
+
+        private static bool TryDecodeBase64Xml(string value, out string xml)
+        {
+            xml = string.Empty;
+            try
+            {
+                var bytes = Convert.FromBase64String(value.Trim());
+                var decoded = Encoding.UTF8.GetString(bytes);
+                if (decoded.Contains("<MLTDiep>") || decoded.Contains("<TDiep"))
+                {
+                    xml = decoded;
+                    return true;
+                }
+            }
+            catch
+            {
+            }
+
+            return false;
+        }
+
+        private static string ExtractXmlTagValue(string xml, string tagName)
+        {
+            var match = Regex.Match(xml, $@"<{tagName}>(.*?)</{tagName}>", RegexOptions.Singleline);
+            return match.Success ? match.Groups[1].Value.Trim() : "";
+        }
+
+        private static string ExtractMccqtFromXml(string xml)
+        {
+            var ketQua = xml.ConvertToObject<Model.Respone.Xml.KetQuaThongDiepRespone>();
+            var maCqt = ketQua?.DLieu?.HDon?.MCCQT?.Text.ConvertToString() ?? "";
+            if (!string.IsNullOrWhiteSpace(maCqt))
+            {
+                return maCqt;
+            }
+
+            return ExtractXmlTagValue(xml, "MCCQT");
+        }
+
+        private static string ExtractMtLoiFromXml(string xml)
+        {
+            var ketQua = xml.ConvertToObject<Model.Respone.Xml.KetQuaThongDiepRespone>();
+            var mtLoi = ketQua?.DLieu?.TBao?.DLTBao?.LHDKMa?.DSHDon?.HDon?.DSLDo?.LDo?.MTLoi ?? "";
+            if (!string.IsNullOrWhiteSpace(mtLoi))
+            {
+                return mtLoi;
+            }
+
+            return ExtractXmlTagValue(xml, "MTLoi");
         }
 
         private async Task RegisterPhatHanhUuidCacheAsync(hoa_don hoaDon)

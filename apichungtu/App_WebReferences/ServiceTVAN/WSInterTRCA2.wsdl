@@ -1,0 +1,1109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:tns="http://tempuri.org/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <s:schema elementFormDefault="qualified" targetNamespace="http://tempuri.org/">
+      <s:element name="VerifySignature">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="xml" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="base64" type="s:int" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="VerifySignatureResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="VerifySignatureResult" type="s:boolean" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LayKhoaphien_MTDiep">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="MTDiep" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LayKhoaphien_MTDiepResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="LayKhoaphien_MTDiepResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LayKQThongdiep_TCT_Update">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="xmlthue" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="base64" type="s:int" />
+            <s:element minOccurs="0" maxOccurs="1" name="idMessage" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LayKQThongdiep_TCT_UpdateResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="LayKQThongdiep_TCT_UpdateResult" type="s:int" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="AuthHeader" type="tns:AuthHeader" />
+      <s:complexType name="AuthHeader">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="Username" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Password" type="s:string" />
+        </s:sequence>
+        <s:anyAttribute />
+      </s:complexType>
+      <s:element name="LayKQThongdiep_TCT_Test">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="xmlthue" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="base64" type="s:int" />
+            <s:element minOccurs="0" maxOccurs="1" name="idMessage" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LayKQThongdiep_TCT_TestResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="LayKQThongdiep_TCT_TestResult" type="s:int" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LayKQThongdiep_TCT_Test_new">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="xmlthue" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="base64" type="s:int" />
+            <s:element minOccurs="0" maxOccurs="1" name="idMessage" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LayKQThongdiep_TCT_Test_newResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="LayKQThongdiep_TCT_Test_newResult" type="s:int" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="Guithongdiep">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="Noidungthongdiep" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="base64" type="s:int" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GuithongdiepResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GuithongdiepResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LayKQThongdiep">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="Khoaphien" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="MST" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LayKQThongdiepResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="LayKQThongdiepResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LayLogtruyennhan_TCGP">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="MST" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="tungay" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="denngay" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LayLogtruyennhan_TCGPResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="LayLogtruyennhan_TCGPResult">
+              <s:complexType>
+                <s:sequence>
+                  <s:any minOccurs="0" maxOccurs="unbounded" namespace="http://www.w3.org/2001/XMLSchema" processContents="lax" />
+                  <s:any minOccurs="1" namespace="urn:schemas-microsoft-com:xml-diffgram-v1" processContents="lax" />
+                </s:sequence>
+              </s:complexType>
+            </s:element>
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LayLogtruyennhan_TVan">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="tungay" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="denngay" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="tieuchi" type="s:int" />
+            <s:element minOccurs="0" maxOccurs="1" name="MST" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LayLogtruyennhan_TVanResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="LayLogtruyennhan_TVanResult">
+              <s:complexType>
+                <s:sequence>
+                  <s:any minOccurs="0" maxOccurs="unbounded" namespace="http://www.w3.org/2001/XMLSchema" processContents="lax" />
+                  <s:any minOccurs="1" namespace="urn:schemas-microsoft-com:xml-diffgram-v1" processContents="lax" />
+                </s:sequence>
+              </s:complexType>
+            </s:element>
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="Laynoidungthongdiep">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="base64xml" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LaynoidungthongdiepResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="LaynoidungthongdiepResult" type="tns:Thongdiep" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="Thongdiep">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="PBan" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="MNGui" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="MNNhan" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="MLTDiep" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="MTDiep" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="MTDTChieu" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="MST" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="SLuong" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="DLieu" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Id_DLieu" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="CKSNNT" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="CheckDL" type="s:int" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="Laynoidungthongdiep_chuoixml">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="chuoixml" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="Laynoidungthongdiep_chuoixmlResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="Laynoidungthongdiep_chuoixmlResult" type="tns:Thongdiep" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LayKQPhanhoicuathue_Thongbao">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="chuoixml" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="base64" type="s:int" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LayKQPhanhoicuathue_ThongbaoResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="LayKQPhanhoicuathue_ThongbaoResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="TaoQRCodeHD">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="MSTNguoiban" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="KHMSHDon" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="KHHDon" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="SHDon" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="NLap" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="Tongtienthanhtoan" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="TaoQRCodeHDResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="TaoQRCodeHDResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="Taothongdiepphanhoikythuat_TCT">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="ThongdiepTCT" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="TTTNhanDL" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="base64" type="s:int" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="Taothongdiepphanhoikythuat_TCTResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="Taothongdiepphanhoikythuat_TCTResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="Layphanhoi206_khoaphien">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="Khoaphien" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="Layphanhoi206_khoaphienResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="Layphanhoi206_khoaphienResult">
+              <s:complexType>
+                <s:sequence>
+                  <s:any minOccurs="0" maxOccurs="unbounded" namespace="http://www.w3.org/2001/XMLSchema" processContents="lax" />
+                  <s:any minOccurs="1" namespace="urn:schemas-microsoft-com:xml-diffgram-v1" processContents="lax" />
+                </s:sequence>
+              </s:complexType>
+            </s:element>
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LayketquathongdiepTQ_khoaphien">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="Khoaphien" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="MSTTCGP" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LayketquathongdiepTQ_khoaphienResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="LayketquathongdiepTQ_khoaphienResult">
+              <s:complexType>
+                <s:sequence>
+                  <s:any minOccurs="0" maxOccurs="unbounded" namespace="http://www.w3.org/2001/XMLSchema" processContents="lax" />
+                  <s:any minOccurs="1" namespace="urn:schemas-microsoft-com:xml-diffgram-v1" processContents="lax" />
+                </s:sequence>
+              </s:complexType>
+            </s:element>
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LayketquathongdiepTQ_Khoaphien_prefix">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="Khoaphien_prefix" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="MSTTCGP" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LayketquathongdiepTQ_Khoaphien_prefixResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="LayketquathongdiepTQ_Khoaphien_prefixResult">
+              <s:complexType>
+                <s:sequence>
+                  <s:any minOccurs="0" maxOccurs="unbounded" namespace="http://www.w3.org/2001/XMLSchema" processContents="lax" />
+                  <s:any minOccurs="1" namespace="urn:schemas-microsoft-com:xml-diffgram-v1" processContents="lax" />
+                </s:sequence>
+              </s:complexType>
+            </s:element>
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LayKQThongdiep_TCT_Update_2024">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="xmlthue" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="base64" type="s:int" />
+            <s:element minOccurs="0" maxOccurs="1" name="idMessage" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LayKQThongdiep_TCT_Update_2024Response">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="LayKQThongdiep_TCT_Update_2024Result" type="s:int" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="Guithongdiep_MTDiep">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="Noidungthongdiep" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="base64" type="s:int" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="Guithongdiep_MTDiepResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="Guithongdiep_MTDiepResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="Guithongdiep2024">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="Noidungthongdiep" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="base64" type="s:int" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="Guithongdiep2024Response">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="Guithongdiep2024Result" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LayKQTruyennhantokhaichungtu">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="MaDV" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="dskhoaphien" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="keyxt" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="LayKQTruyennhantokhaichungtuResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="LayKQTruyennhantokhaichungtuResult">
+              <s:complexType>
+                <s:sequence>
+                  <s:any minOccurs="0" maxOccurs="unbounded" namespace="http://www.w3.org/2001/XMLSchema" processContents="lax" />
+                  <s:any minOccurs="1" namespace="urn:schemas-microsoft-com:xml-diffgram-v1" processContents="lax" />
+                </s:sequence>
+              </s:complexType>
+            </s:element>
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetxmlThongdiep">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="mst" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="MTDiep" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetxmlThongdiepResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetxmlThongdiepResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+    </s:schema>
+  </wsdl:types>
+  <wsdl:message name="VerifySignatureSoapIn">
+    <wsdl:part name="parameters" element="tns:VerifySignature" />
+  </wsdl:message>
+  <wsdl:message name="VerifySignatureSoapOut">
+    <wsdl:part name="parameters" element="tns:VerifySignatureResponse" />
+  </wsdl:message>
+  <wsdl:message name="LayKhoaphien_MTDiepSoapIn">
+    <wsdl:part name="parameters" element="tns:LayKhoaphien_MTDiep" />
+  </wsdl:message>
+  <wsdl:message name="LayKhoaphien_MTDiepSoapOut">
+    <wsdl:part name="parameters" element="tns:LayKhoaphien_MTDiepResponse" />
+  </wsdl:message>
+  <wsdl:message name="LayKQThongdiep_TCT_UpdateSoapIn">
+    <wsdl:part name="parameters" element="tns:LayKQThongdiep_TCT_Update" />
+  </wsdl:message>
+  <wsdl:message name="LayKQThongdiep_TCT_UpdateSoapOut">
+    <wsdl:part name="parameters" element="tns:LayKQThongdiep_TCT_UpdateResponse" />
+  </wsdl:message>
+  <wsdl:message name="LayKQThongdiep_TCT_UpdateAuthHeader">
+    <wsdl:part name="AuthHeader" element="tns:AuthHeader" />
+  </wsdl:message>
+  <wsdl:message name="LayKQThongdiep_TCT_TestSoapIn">
+    <wsdl:part name="parameters" element="tns:LayKQThongdiep_TCT_Test" />
+  </wsdl:message>
+  <wsdl:message name="LayKQThongdiep_TCT_TestSoapOut">
+    <wsdl:part name="parameters" element="tns:LayKQThongdiep_TCT_TestResponse" />
+  </wsdl:message>
+  <wsdl:message name="LayKQThongdiep_TCT_TestAuthHeader">
+    <wsdl:part name="AuthHeader" element="tns:AuthHeader" />
+  </wsdl:message>
+  <wsdl:message name="LayKQThongdiep_TCT_Test_newSoapIn">
+    <wsdl:part name="parameters" element="tns:LayKQThongdiep_TCT_Test_new" />
+  </wsdl:message>
+  <wsdl:message name="LayKQThongdiep_TCT_Test_newSoapOut">
+    <wsdl:part name="parameters" element="tns:LayKQThongdiep_TCT_Test_newResponse" />
+  </wsdl:message>
+  <wsdl:message name="LayKQThongdiep_TCT_Test_newAuthHeader">
+    <wsdl:part name="AuthHeader" element="tns:AuthHeader" />
+  </wsdl:message>
+  <wsdl:message name="GuithongdiepSoapIn">
+    <wsdl:part name="parameters" element="tns:Guithongdiep" />
+  </wsdl:message>
+  <wsdl:message name="GuithongdiepSoapOut">
+    <wsdl:part name="parameters" element="tns:GuithongdiepResponse" />
+  </wsdl:message>
+  <wsdl:message name="GuithongdiepAuthHeader">
+    <wsdl:part name="AuthHeader" element="tns:AuthHeader" />
+  </wsdl:message>
+  <wsdl:message name="LayKQThongdiepSoapIn">
+    <wsdl:part name="parameters" element="tns:LayKQThongdiep" />
+  </wsdl:message>
+  <wsdl:message name="LayKQThongdiepSoapOut">
+    <wsdl:part name="parameters" element="tns:LayKQThongdiepResponse" />
+  </wsdl:message>
+  <wsdl:message name="LayKQThongdiepAuthHeader">
+    <wsdl:part name="AuthHeader" element="tns:AuthHeader" />
+  </wsdl:message>
+  <wsdl:message name="LayLogtruyennhan_TCGPSoapIn">
+    <wsdl:part name="parameters" element="tns:LayLogtruyennhan_TCGP" />
+  </wsdl:message>
+  <wsdl:message name="LayLogtruyennhan_TCGPSoapOut">
+    <wsdl:part name="parameters" element="tns:LayLogtruyennhan_TCGPResponse" />
+  </wsdl:message>
+  <wsdl:message name="LayLogtruyennhan_TCGPAuthHeader">
+    <wsdl:part name="AuthHeader" element="tns:AuthHeader" />
+  </wsdl:message>
+  <wsdl:message name="LayLogtruyennhan_TVanSoapIn">
+    <wsdl:part name="parameters" element="tns:LayLogtruyennhan_TVan" />
+  </wsdl:message>
+  <wsdl:message name="LayLogtruyennhan_TVanSoapOut">
+    <wsdl:part name="parameters" element="tns:LayLogtruyennhan_TVanResponse" />
+  </wsdl:message>
+  <wsdl:message name="LayLogtruyennhan_TVanAuthHeader">
+    <wsdl:part name="AuthHeader" element="tns:AuthHeader" />
+  </wsdl:message>
+  <wsdl:message name="LaynoidungthongdiepSoapIn">
+    <wsdl:part name="parameters" element="tns:Laynoidungthongdiep" />
+  </wsdl:message>
+  <wsdl:message name="LaynoidungthongdiepSoapOut">
+    <wsdl:part name="parameters" element="tns:LaynoidungthongdiepResponse" />
+  </wsdl:message>
+  <wsdl:message name="Laynoidungthongdiep_chuoixmlSoapIn">
+    <wsdl:part name="parameters" element="tns:Laynoidungthongdiep_chuoixml" />
+  </wsdl:message>
+  <wsdl:message name="Laynoidungthongdiep_chuoixmlSoapOut">
+    <wsdl:part name="parameters" element="tns:Laynoidungthongdiep_chuoixmlResponse" />
+  </wsdl:message>
+  <wsdl:message name="LayKQPhanhoicuathue_ThongbaoSoapIn">
+    <wsdl:part name="parameters" element="tns:LayKQPhanhoicuathue_Thongbao" />
+  </wsdl:message>
+  <wsdl:message name="LayKQPhanhoicuathue_ThongbaoSoapOut">
+    <wsdl:part name="parameters" element="tns:LayKQPhanhoicuathue_ThongbaoResponse" />
+  </wsdl:message>
+  <wsdl:message name="TaoQRCodeHDSoapIn">
+    <wsdl:part name="parameters" element="tns:TaoQRCodeHD" />
+  </wsdl:message>
+  <wsdl:message name="TaoQRCodeHDSoapOut">
+    <wsdl:part name="parameters" element="tns:TaoQRCodeHDResponse" />
+  </wsdl:message>
+  <wsdl:message name="Taothongdiepphanhoikythuat_TCTSoapIn">
+    <wsdl:part name="parameters" element="tns:Taothongdiepphanhoikythuat_TCT" />
+  </wsdl:message>
+  <wsdl:message name="Taothongdiepphanhoikythuat_TCTSoapOut">
+    <wsdl:part name="parameters" element="tns:Taothongdiepphanhoikythuat_TCTResponse" />
+  </wsdl:message>
+  <wsdl:message name="Layphanhoi206_khoaphienSoapIn">
+    <wsdl:part name="parameters" element="tns:Layphanhoi206_khoaphien" />
+  </wsdl:message>
+  <wsdl:message name="Layphanhoi206_khoaphienSoapOut">
+    <wsdl:part name="parameters" element="tns:Layphanhoi206_khoaphienResponse" />
+  </wsdl:message>
+  <wsdl:message name="Layphanhoi206_khoaphienAuthHeader">
+    <wsdl:part name="AuthHeader" element="tns:AuthHeader" />
+  </wsdl:message>
+  <wsdl:message name="LayketquathongdiepTQ_khoaphienSoapIn">
+    <wsdl:part name="parameters" element="tns:LayketquathongdiepTQ_khoaphien" />
+  </wsdl:message>
+  <wsdl:message name="LayketquathongdiepTQ_khoaphienSoapOut">
+    <wsdl:part name="parameters" element="tns:LayketquathongdiepTQ_khoaphienResponse" />
+  </wsdl:message>
+  <wsdl:message name="LayketquathongdiepTQ_khoaphienAuthHeader">
+    <wsdl:part name="AuthHeader" element="tns:AuthHeader" />
+  </wsdl:message>
+  <wsdl:message name="LayketquathongdiepTQ_Khoaphien_prefixSoapIn">
+    <wsdl:part name="parameters" element="tns:LayketquathongdiepTQ_Khoaphien_prefix" />
+  </wsdl:message>
+  <wsdl:message name="LayketquathongdiepTQ_Khoaphien_prefixSoapOut">
+    <wsdl:part name="parameters" element="tns:LayketquathongdiepTQ_Khoaphien_prefixResponse" />
+  </wsdl:message>
+  <wsdl:message name="LayketquathongdiepTQ_Khoaphien_prefixAuthHeader">
+    <wsdl:part name="AuthHeader" element="tns:AuthHeader" />
+  </wsdl:message>
+  <wsdl:message name="LayKQThongdiep_TCT_Update_2024SoapIn">
+    <wsdl:part name="parameters" element="tns:LayKQThongdiep_TCT_Update_2024" />
+  </wsdl:message>
+  <wsdl:message name="LayKQThongdiep_TCT_Update_2024SoapOut">
+    <wsdl:part name="parameters" element="tns:LayKQThongdiep_TCT_Update_2024Response" />
+  </wsdl:message>
+  <wsdl:message name="LayKQThongdiep_TCT_Update_2024AuthHeader">
+    <wsdl:part name="AuthHeader" element="tns:AuthHeader" />
+  </wsdl:message>
+  <wsdl:message name="Guithongdiep_MTDiepSoapIn">
+    <wsdl:part name="parameters" element="tns:Guithongdiep_MTDiep" />
+  </wsdl:message>
+  <wsdl:message name="Guithongdiep_MTDiepSoapOut">
+    <wsdl:part name="parameters" element="tns:Guithongdiep_MTDiepResponse" />
+  </wsdl:message>
+  <wsdl:message name="Guithongdiep_MTDiepAuthHeader">
+    <wsdl:part name="AuthHeader" element="tns:AuthHeader" />
+  </wsdl:message>
+  <wsdl:message name="Guithongdiep2024SoapIn">
+    <wsdl:part name="parameters" element="tns:Guithongdiep2024" />
+  </wsdl:message>
+  <wsdl:message name="Guithongdiep2024SoapOut">
+    <wsdl:part name="parameters" element="tns:Guithongdiep2024Response" />
+  </wsdl:message>
+  <wsdl:message name="Guithongdiep2024AuthHeader">
+    <wsdl:part name="AuthHeader" element="tns:AuthHeader" />
+  </wsdl:message>
+  <wsdl:message name="LayKQTruyennhantokhaichungtuSoapIn">
+    <wsdl:part name="parameters" element="tns:LayKQTruyennhantokhaichungtu" />
+  </wsdl:message>
+  <wsdl:message name="LayKQTruyennhantokhaichungtuSoapOut">
+    <wsdl:part name="parameters" element="tns:LayKQTruyennhantokhaichungtuResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetxmlThongdiepSoapIn">
+    <wsdl:part name="parameters" element="tns:GetxmlThongdiep" />
+  </wsdl:message>
+  <wsdl:message name="GetxmlThongdiepSoapOut">
+    <wsdl:part name="parameters" element="tns:GetxmlThongdiepResponse" />
+  </wsdl:message>
+  <wsdl:portType name="WSInterTRCA2Soap">
+    <wsdl:operation name="VerifySignature">
+      <wsdl:input message="tns:VerifySignatureSoapIn" />
+      <wsdl:output message="tns:VerifySignatureSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="LayKhoaphien_MTDiep">
+      <wsdl:input message="tns:LayKhoaphien_MTDiepSoapIn" />
+      <wsdl:output message="tns:LayKhoaphien_MTDiepSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="LayKQThongdiep_TCT_Update">
+      <wsdl:input message="tns:LayKQThongdiep_TCT_UpdateSoapIn" />
+      <wsdl:output message="tns:LayKQThongdiep_TCT_UpdateSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="LayKQThongdiep_TCT_Test">
+      <wsdl:input message="tns:LayKQThongdiep_TCT_TestSoapIn" />
+      <wsdl:output message="tns:LayKQThongdiep_TCT_TestSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="LayKQThongdiep_TCT_Test_new">
+      <wsdl:input message="tns:LayKQThongdiep_TCT_Test_newSoapIn" />
+      <wsdl:output message="tns:LayKQThongdiep_TCT_Test_newSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="Guithongdiep">
+      <wsdl:input message="tns:GuithongdiepSoapIn" />
+      <wsdl:output message="tns:GuithongdiepSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="LayKQThongdiep">
+      <wsdl:input message="tns:LayKQThongdiepSoapIn" />
+      <wsdl:output message="tns:LayKQThongdiepSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="LayLogtruyennhan_TCGP">
+      <wsdl:input message="tns:LayLogtruyennhan_TCGPSoapIn" />
+      <wsdl:output message="tns:LayLogtruyennhan_TCGPSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="LayLogtruyennhan_TVan">
+      <wsdl:input message="tns:LayLogtruyennhan_TVanSoapIn" />
+      <wsdl:output message="tns:LayLogtruyennhan_TVanSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="Laynoidungthongdiep">
+      <wsdl:input message="tns:LaynoidungthongdiepSoapIn" />
+      <wsdl:output message="tns:LaynoidungthongdiepSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="Laynoidungthongdiep_chuoixml">
+      <wsdl:input message="tns:Laynoidungthongdiep_chuoixmlSoapIn" />
+      <wsdl:output message="tns:Laynoidungthongdiep_chuoixmlSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="LayKQPhanhoicuathue_Thongbao">
+      <wsdl:input message="tns:LayKQPhanhoicuathue_ThongbaoSoapIn" />
+      <wsdl:output message="tns:LayKQPhanhoicuathue_ThongbaoSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="TaoQRCodeHD">
+      <wsdl:input message="tns:TaoQRCodeHDSoapIn" />
+      <wsdl:output message="tns:TaoQRCodeHDSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="Taothongdiepphanhoikythuat_TCT">
+      <wsdl:input message="tns:Taothongdiepphanhoikythuat_TCTSoapIn" />
+      <wsdl:output message="tns:Taothongdiepphanhoikythuat_TCTSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="Layphanhoi206_khoaphien">
+      <wsdl:input message="tns:Layphanhoi206_khoaphienSoapIn" />
+      <wsdl:output message="tns:Layphanhoi206_khoaphienSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="LayketquathongdiepTQ_khoaphien">
+      <wsdl:input message="tns:LayketquathongdiepTQ_khoaphienSoapIn" />
+      <wsdl:output message="tns:LayketquathongdiepTQ_khoaphienSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="LayketquathongdiepTQ_Khoaphien_prefix">
+      <wsdl:input message="tns:LayketquathongdiepTQ_Khoaphien_prefixSoapIn" />
+      <wsdl:output message="tns:LayketquathongdiepTQ_Khoaphien_prefixSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="LayKQThongdiep_TCT_Update_2024">
+      <wsdl:input message="tns:LayKQThongdiep_TCT_Update_2024SoapIn" />
+      <wsdl:output message="tns:LayKQThongdiep_TCT_Update_2024SoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="Guithongdiep_MTDiep">
+      <wsdl:input message="tns:Guithongdiep_MTDiepSoapIn" />
+      <wsdl:output message="tns:Guithongdiep_MTDiepSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="Guithongdiep2024">
+      <wsdl:input message="tns:Guithongdiep2024SoapIn" />
+      <wsdl:output message="tns:Guithongdiep2024SoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="LayKQTruyennhantokhaichungtu">
+      <wsdl:input message="tns:LayKQTruyennhantokhaichungtuSoapIn" />
+      <wsdl:output message="tns:LayKQTruyennhantokhaichungtuSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetxmlThongdiep">
+      <wsdl:input message="tns:GetxmlThongdiepSoapIn" />
+      <wsdl:output message="tns:GetxmlThongdiepSoapOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="WSInterTRCA2Soap" type="tns:WSInterTRCA2Soap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="VerifySignature">
+      <soap:operation soapAction="http://tempuri.org/VerifySignature" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayKhoaphien_MTDiep">
+      <soap:operation soapAction="http://tempuri.org/LayKhoaphien_MTDiep" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayKQThongdiep_TCT_Update">
+      <soap:operation soapAction="http://tempuri.org/LayKQThongdiep_TCT_Update" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+        <soap:header message="tns:LayKQThongdiep_TCT_UpdateAuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayKQThongdiep_TCT_Test">
+      <soap:operation soapAction="http://tempuri.org/LayKQThongdiep_TCT_Test" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+        <soap:header message="tns:LayKQThongdiep_TCT_TestAuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayKQThongdiep_TCT_Test_new">
+      <soap:operation soapAction="http://tempuri.org/LayKQThongdiep_TCT_Test_new" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+        <soap:header message="tns:LayKQThongdiep_TCT_Test_newAuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Guithongdiep">
+      <soap:operation soapAction="http://tempuri.org/Guithongdiep" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+        <soap:header message="tns:GuithongdiepAuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayKQThongdiep">
+      <soap:operation soapAction="http://tempuri.org/LayKQThongdiep" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+        <soap:header message="tns:LayKQThongdiepAuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayLogtruyennhan_TCGP">
+      <soap:operation soapAction="http://tempuri.org/LayLogtruyennhan_TCGP" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+        <soap:header message="tns:LayLogtruyennhan_TCGPAuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayLogtruyennhan_TVan">
+      <soap:operation soapAction="http://tempuri.org/LayLogtruyennhan_TVan" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+        <soap:header message="tns:LayLogtruyennhan_TVanAuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Laynoidungthongdiep">
+      <soap:operation soapAction="http://tempuri.org/Laynoidungthongdiep" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Laynoidungthongdiep_chuoixml">
+      <soap:operation soapAction="http://tempuri.org/Laynoidungthongdiep_chuoixml" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayKQPhanhoicuathue_Thongbao">
+      <soap:operation soapAction="http://tempuri.org/LayKQPhanhoicuathue_Thongbao" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="TaoQRCodeHD">
+      <soap:operation soapAction="http://tempuri.org/TaoQRCodeHD" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Taothongdiepphanhoikythuat_TCT">
+      <soap:operation soapAction="http://tempuri.org/Taothongdiepphanhoikythuat_TCT" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Layphanhoi206_khoaphien">
+      <soap:operation soapAction="http://tempuri.org/Layphanhoi206_khoaphien" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+        <soap:header message="tns:Layphanhoi206_khoaphienAuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayketquathongdiepTQ_khoaphien">
+      <soap:operation soapAction="http://tempuri.org/LayketquathongdiepTQ_khoaphien" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+        <soap:header message="tns:LayketquathongdiepTQ_khoaphienAuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayketquathongdiepTQ_Khoaphien_prefix">
+      <soap:operation soapAction="http://tempuri.org/LayketquathongdiepTQ_Khoaphien_prefix" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+        <soap:header message="tns:LayketquathongdiepTQ_Khoaphien_prefixAuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayKQThongdiep_TCT_Update_2024">
+      <soap:operation soapAction="http://tempuri.org/LayKQThongdiep_TCT_Update_2024" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+        <soap:header message="tns:LayKQThongdiep_TCT_Update_2024AuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Guithongdiep_MTDiep">
+      <soap:operation soapAction="http://tempuri.org/Guithongdiep_MTDiep" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+        <soap:header message="tns:Guithongdiep_MTDiepAuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Guithongdiep2024">
+      <soap:operation soapAction="http://tempuri.org/Guithongdiep2024" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+        <soap:header message="tns:Guithongdiep2024AuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayKQTruyennhantokhaichungtu">
+      <soap:operation soapAction="http://tempuri.org/LayKQTruyennhantokhaichungtu" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetxmlThongdiep">
+      <soap:operation soapAction="http://tempuri.org/GetxmlThongdiep" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="WSInterTRCA2Soap12" type="tns:WSInterTRCA2Soap">
+    <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="VerifySignature">
+      <soap12:operation soapAction="http://tempuri.org/VerifySignature" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayKhoaphien_MTDiep">
+      <soap12:operation soapAction="http://tempuri.org/LayKhoaphien_MTDiep" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayKQThongdiep_TCT_Update">
+      <soap12:operation soapAction="http://tempuri.org/LayKQThongdiep_TCT_Update" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+        <soap12:header message="tns:LayKQThongdiep_TCT_UpdateAuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayKQThongdiep_TCT_Test">
+      <soap12:operation soapAction="http://tempuri.org/LayKQThongdiep_TCT_Test" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+        <soap12:header message="tns:LayKQThongdiep_TCT_TestAuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayKQThongdiep_TCT_Test_new">
+      <soap12:operation soapAction="http://tempuri.org/LayKQThongdiep_TCT_Test_new" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+        <soap12:header message="tns:LayKQThongdiep_TCT_Test_newAuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Guithongdiep">
+      <soap12:operation soapAction="http://tempuri.org/Guithongdiep" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+        <soap12:header message="tns:GuithongdiepAuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayKQThongdiep">
+      <soap12:operation soapAction="http://tempuri.org/LayKQThongdiep" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+        <soap12:header message="tns:LayKQThongdiepAuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayLogtruyennhan_TCGP">
+      <soap12:operation soapAction="http://tempuri.org/LayLogtruyennhan_TCGP" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+        <soap12:header message="tns:LayLogtruyennhan_TCGPAuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayLogtruyennhan_TVan">
+      <soap12:operation soapAction="http://tempuri.org/LayLogtruyennhan_TVan" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+        <soap12:header message="tns:LayLogtruyennhan_TVanAuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Laynoidungthongdiep">
+      <soap12:operation soapAction="http://tempuri.org/Laynoidungthongdiep" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Laynoidungthongdiep_chuoixml">
+      <soap12:operation soapAction="http://tempuri.org/Laynoidungthongdiep_chuoixml" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayKQPhanhoicuathue_Thongbao">
+      <soap12:operation soapAction="http://tempuri.org/LayKQPhanhoicuathue_Thongbao" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="TaoQRCodeHD">
+      <soap12:operation soapAction="http://tempuri.org/TaoQRCodeHD" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Taothongdiepphanhoikythuat_TCT">
+      <soap12:operation soapAction="http://tempuri.org/Taothongdiepphanhoikythuat_TCT" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Layphanhoi206_khoaphien">
+      <soap12:operation soapAction="http://tempuri.org/Layphanhoi206_khoaphien" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+        <soap12:header message="tns:Layphanhoi206_khoaphienAuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayketquathongdiepTQ_khoaphien">
+      <soap12:operation soapAction="http://tempuri.org/LayketquathongdiepTQ_khoaphien" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+        <soap12:header message="tns:LayketquathongdiepTQ_khoaphienAuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayketquathongdiepTQ_Khoaphien_prefix">
+      <soap12:operation soapAction="http://tempuri.org/LayketquathongdiepTQ_Khoaphien_prefix" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+        <soap12:header message="tns:LayketquathongdiepTQ_Khoaphien_prefixAuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayKQThongdiep_TCT_Update_2024">
+      <soap12:operation soapAction="http://tempuri.org/LayKQThongdiep_TCT_Update_2024" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+        <soap12:header message="tns:LayKQThongdiep_TCT_Update_2024AuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Guithongdiep_MTDiep">
+      <soap12:operation soapAction="http://tempuri.org/Guithongdiep_MTDiep" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+        <soap12:header message="tns:Guithongdiep_MTDiepAuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Guithongdiep2024">
+      <soap12:operation soapAction="http://tempuri.org/Guithongdiep2024" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+        <soap12:header message="tns:Guithongdiep2024AuthHeader" part="AuthHeader" use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="LayKQTruyennhantokhaichungtu">
+      <soap12:operation soapAction="http://tempuri.org/LayKQTruyennhantokhaichungtu" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetxmlThongdiep">
+      <soap12:operation soapAction="http://tempuri.org/GetxmlThongdiep" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="WSInterTRCA2">
+    <wsdl:port name="WSInterTRCA2Soap" binding="tns:WSInterTRCA2Soap">
+      <soap:address location="http://10.10.20.14/WSInterTRCA2.asmx" />
+    </wsdl:port>
+    <wsdl:port name="WSInterTRCA2Soap12" binding="tns:WSInterTRCA2Soap12">
+      <soap12:address location="http://10.10.20.14/WSInterTRCA2.asmx" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

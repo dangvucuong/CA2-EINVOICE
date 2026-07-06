@@ -21,6 +21,7 @@ export interface IHoaDon {
   nguoi_ban_email: string;
   nguoi_ban_website: string;
   nguoi_mua_mst: string;
+  nguoi_mua_cccd?: string;
   nguoi_mua_ten_donvi: string;
   nguoi_mua_ten: string;
   nguoi_mua_dia_chi: string;

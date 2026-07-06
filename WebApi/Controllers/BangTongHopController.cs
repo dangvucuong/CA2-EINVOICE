@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Common;
 using Contract.Service;
@@ -70,6 +71,22 @@ namespace WebApi.Controllers
         {
             var result = await _bangTongHopService.PhatHanhAsync(request.id, request.signed_text);
             return result.is_success ? this.OK() : this.BadRequest();
+        }
+        [HttpGet("used-hoa-don-ids")]
+        [MustAuthorized("[GET]api/bang-tong-hop")]
+        public async Task<ContentResult> SelectUsedHoaDonIdsAsync()
+        {
+            var userInfo = this.GetUserInfo();
+            var ids = await _serviceWrapper.BangTongHopDuLieu.BangTongHopHoaDon.SelectUsedHoaDonIdsByDonViAsync(userInfo.donvi_ma_dv);
+            return this.OK(ids);
+        }
+        [HttpGet("hoa-don-tong-hop")]
+        [MustAuthorized("[GET]api/bang-tong-hop")]
+        public async Task<ContentResult> SelectHoaDonForTongHopAsync([FromQuery] DateTime? tu_ngay, [FromQuery] DateTime? den_ngay)
+        {
+            var userInfo = this.GetUserInfo();
+            var list = await _serviceWrapper.BangTongHopDuLieu.BangTongHopHoaDon.SelectHoaDonForTongHopAsync(userInfo.donvi_ma_dv, tu_ngay, den_ngay);
+            return this.OK(list);
         }
         [HttpPost]
         [MustAuthorized]

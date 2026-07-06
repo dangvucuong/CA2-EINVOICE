@@ -29,6 +29,7 @@ import styles from "./MauHoaDonPage.module.css";
 import MauHoaDonSelectTemplate from "./MauHoaDonSelectTemplate";
 import axios from "axios";
 import { appInfo } from "../../AppInfo";
+import { applyMauHoaDonWatermarkToHtml } from "../../helpers/mauHoaDonWatermarkHelper";
 const fixedAdvancedSettings = [
   { id: "ten_cong_ty", text: "Tên công ty", type: "nguoi_ban" },
   { id: "dia_chi", text: "Địa chỉ", type: "nguoi_ban" },
@@ -133,30 +134,13 @@ const MauHoDonPage = () => {
 
   const getPreviewHtml = () => {
     let html = previewData;
-    if (basicSetings.isShowWatterMarkInnerTable) {
-      html = html
-        .replace(
-          "{paramLogo}",
-          basicSetings.logoFile?.url?.replace("\\", "/") ?? ""
-        )
-        .replace(
-          "paramWaterMarkTable;",
-          basicSetings.waterMarkFile?.url?.replace("\\", "/") ?? ""
-        );
-    } else {
-      html = html
-        .replace(
-          "{paramLogo}",
-          basicSetings.logoFile?.url?.replace("\\", "/") ?? ""
-        )
-        .replace(
-          "{paramWaterMark}",
-          basicSetings.waterMarkFile?.url?.replace("\\", "/") ?? ""
-        );
-    }
+    html = applyMauHoaDonWatermarkToHtml(html, {
+      watermarkUrl: basicSetings.waterMarkFile?.url,
+      opacity: basicSetings.opacity,
+      isShowWatterMarkInnerTable: basicSetings.isShowWatterMarkInnerTable,
+      logoUrl: basicSetings.logoFile?.url,
+    });
     if (basicSetings.vienFile) {
-      //
-      // html = html.replace("paramVien", `https://hoadon2024_test.nacencomm.vn/template/watermark/nen.png`.replace('\\', "/") ?? "")
       html = html.replace(
         "{paramVien}",
         basicSetings.vienFile?.url?.replace("\\", "/") ?? ""
@@ -165,10 +149,6 @@ const MauHoDonPage = () => {
     if (basicSetings.logoPosition === "right") {
       html = html.replace("paramOpacityHeaderFlexDirection;", "row-reverse");
     }
-    html = html.replace("paramOpacity;", `${1 - basicSetings.opacity / 100}`);
-    // const lol= html.includes("paramOpacity;");
-    html = html.replace("paramOpacity;", `${1 - basicSetings.opacity / 100}`);
-    html = html.replace("paramOpacity;", `${1 - basicSetings.opacity / 100}`);
     advancedSettings.forEach((ad) => {
       const keyCss = `${ad.elementId}_css;`;
       const keyCssDisplay = `${ad.elementId}_css_display;`;
@@ -320,6 +300,8 @@ const MauHoDonPage = () => {
       ngay_qd: "2020-01-01",
       so_qd: "",
       watermark_path: basicSetings.waterMarkFile?.url ?? "",
+      is_show_wattermark_inner_table: basicSetings.isShowWatterMarkInnerTable,
+      watermark_opacity: basicSetings.opacity,
       is_active: true,
       xslt_path: mauHoaDonEditing?.xslt_path ?? "",
     });

@@ -52,6 +52,13 @@ import HoaDonImportButton from "./ChungTuImportButton";
 import ChungTuFilter from "./ChungTuFilter";
 import { useAuth } from "../../hooks/useAuth";
 import { formatXml, parseSoapResponse } from "../../helpers/common";
+import {
+  checkChungTuThayTheDieuChinh,
+  hasToKhaiChungTuChapNhan,
+  layDanhSachToKhaiChungTu,
+  validateDieuChinhChungTu,
+  validateThayTheChungTu,
+} from "../../helpers/toKhaiChungTuHelper";
 import { axiosClient } from "../../api/axiosClient";
 import Modal from "../../component-ui/modal";
 import XemChungTu from "./XemChungTu";
@@ -186,6 +193,7 @@ const QuanlychungtuPage = () => {
     if (parseRes.status === "success") {
       const newData = parseRes.data?.map((item: any, index: number) => ({
         ...item,
+        PhanbietCTValue: item?.PhanbietCT,
         TinhtrangCTText: GetTinhtrangCT(item?.TinhtrangCT),
         PhanbietCT:
           tab === "da-gui-cqt"
@@ -285,6 +293,57 @@ const QuanlychungtuPage = () => {
     },
     []
   );
+
+  const ensureToKhaiChungTuChapNhan = async (): Promise<boolean> => {
+    const parseRes = await layDanhSachToKhaiChungTu(user?.donvi?.ma_dv);
+    if (parseRes.status !== "success") {
+      NotifyHelper.Error(parseRes.message ?? "Không thể kiểm tra tờ khai chứng từ");
+      return false;
+    }
+    if (!hasToKhaiChungTuChapNhan(parseRes.data)) {
+      NotifyHelper.Error(
+        "Chỉ được tạo chứng từ sau khi đã có tờ khai được Cơ quan thuế chấp nhận",
+      );
+      return false;
+    }
+    return true;
+  };
+
+  const handleMoFormThemMoi = async () => {
+    const canCreate = await ensureToKhaiChungTuChapNhan();
+    if (canCreate) {
+      history.push("../../chung-tu/form/0");
+    }
+  };
+
+  const handleLapChungTuThayTheDieuChinh = async (
+    row: any,
+    loaiChungTu: number,
+  ) => {
+    const validateMessage =
+      loaiChungTu === 2
+        ? validateDieuChinhChungTu(row)
+        : validateThayTheChungTu(row);
+    if (validateMessage) {
+      NotifyHelper.Error(validateMessage);
+      return;
+    }
+
+    const parseRes = await checkChungTuThayTheDieuChinh(user?.donvi?.ma_dv, {
+      mau_so: row?.MSChungtu,
+      ky_hieu: row?.KHChungtu,
+      so_chung_tu_goc: row?.Sochungtu,
+      loai_chung_tu: loaiChungTu,
+    });
+
+    if (parseRes.status === "success") {
+      history.push(
+        `../../chung-tu/form/0?tinhchatct=${loaiChungTu}&mact_goc=${parseRes.data}`,
+      );
+    } else {
+      NotifyHelper.Error(parseRes.message);
+    }
+  };
 
   const handleSendEmail = async () => {
     await confirm({
@@ -627,15 +686,15 @@ const QuanlychungtuPage = () => {
                 }}
               /> */}
               <Box sx={{ display: "flex", gap: 1 }}>
-                <Link to={"../../chung-tu/form/0"}>
-                  <Button
-                    text="Thêm mới"
-                    leadingVisual={PlusIcon}
-                    variant="primary"
-                    size="medium"
-                  />
-                </Link>
+                <Button
+                  text="Thêm mới"
+                  leadingVisual={PlusIcon}
+                  variant="primary"
+                  size="medium"
+                  onClick={handleMoFormThemMoi}
+                />
                 <HoaDonImportButton
+                  onBeforeOpen={ensureToKhaiChungTuChapNhan}
                   onSuccess={() => {
                     LayDanhSachChungTu({
                       ///0 theo ngày, 1 theo số chứng từ, 2 theo mã tra cứu
@@ -1024,11 +1083,8 @@ const QuanlychungtuPage = () => {
                                   <ActionList.Divider />
                                   <ActionList.Group title="Điều chỉnh/ thay thế">
                                     <ActionList.Item
-                                      // variant="danger"
                                       onSelect={() => {
-                                        history.push(
-                                          `../../chung-tu/form/0?tinhchatct=2&mact_goc=${row.MaCT}`
-                                        );
+                                        handleLapChungTuThayTheDieuChinh(row, 2);
                                       }}
                                     >
                                       <ActionList.LeadingVisual>
@@ -1038,15 +1094,13 @@ const QuanlychungtuPage = () => {
                                     </ActionList.Item>
                                     <ActionList.Item
                                       onSelect={() => {
-                                        history.push(
-                                          `../../chung-tu/form/0?tinhchatct=1&mact_goc=${row.MaCT}`
-                                        );
+                                        handleLapChungTuThayTheDieuChinh(row, 1);
                                       }}
                                     >
                                       <ActionList.LeadingVisual>
                                         <GitCompareIcon />
                                       </ActionList.LeadingVisual>
-                                      Lập hóa đơn thay thế
+                                      Lập chứng từ thay thế
                                     </ActionList.Item>
                                     <ActionList.Item
                                       variant="danger"

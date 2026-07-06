@@ -13,12 +13,14 @@ import { useForm } from "react-hook-form";
 import Text from "../../component-ui/text";
 import { useState } from "react";
 import SelectBoxLoaiChungTuPhatHanh from "../../component-data/selectbox-loai-chung-tu-phat-hanh";
-import SelectBoxMauSoChungTuPhatHanh from "../../component-data/selectbox-mau-so-chung-tu-phat-hanh";
 import SelectBoxKyHieuChungTuPhatHanh from "../../component-data/selectbox-ky-hieu-chung-tu-phat-hanh";
 import TextInput from "../../component-ui/text-input";
 import Button from "../../component-ui/button";
-import { axiosClient } from "../../api/axiosClient";
-import { parseSoapResponse } from "../../helpers/common";
+import { checkChungTuThayTheDieuChinh } from "../../helpers/toKhaiChungTuHelper";
+import {
+  getChungTuMadonvi,
+  MAU_SO_CHUNG_TU_TNCN,
+} from "../../helpers/chungTuConstants";
 import { NotifyHelper } from "../../helpers/toast";
 import { useAuth } from "../../hooks/useAuth";
 import SelectBoxKyHieuChungTuQuanLy from "../../component-data/selectbox-ky-hieu-chung-tu-quan-ly";
@@ -35,8 +37,8 @@ const ChungTuThayThePage = () => {
   } = useForm<any>({});
   const [dataForm, setDataForm] = useState<any>({
     loai_chung_tu: 1,
-    mau_so: "03/TNCN",
-    loai_chung_tu_dien_tu: "Chứng từ khấu trừ thuế thu nhập cá nhân theo ND70",
+    mau_so: MAU_SO_CHUNG_TU_TNCN,
+    loai_chung_tu_dien_tu: MAU_SO_CHUNG_TU_TNCN,
     ky_hieu: "",
     ky_hieu_thay_the: "",
   });
@@ -44,18 +46,10 @@ const ChungTuThayThePage = () => {
   const onSubmit = async (data: any) => {
     let isValid = true;
 
-    if (
-      !dataForm?.loai_chung_tu_dien_tu ||
+    if (!dataForm?.loai_chung_tu_dien_tu ||
       dataForm?.loai_chung_tu_dien_tu === ""
     ) {
       setError("loai_chung_tu_dien_tu", {
-        type: "manual",
-      });
-      isValid = false;
-    }
-
-    if (!dataForm?.mau_so || dataForm?.mau_so === "") {
-      setError("mau_so", {
         type: "manual",
       });
       isValid = false;
@@ -79,7 +73,7 @@ const ChungTuThayThePage = () => {
     console.log("data");
 
     await checkChungTu({
-      mau_so: dataForm?.mau_so,
+      mau_so: MAU_SO_CHUNG_TU_TNCN,
       ky_hieu: dataForm?.ky_hieu,
       so_chung_tu_goc: data?.so_chung_tu_goc,
       loai_chung_tu: dataForm?.loai_chung_tu,
@@ -87,35 +81,23 @@ const ChungTuThayThePage = () => {
   };
 
   const checkChungTu = async (payload: any) => {
-    const soap = `<?xml version="1.0" encoding="utf-8"?>
-<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
-  <soap12:Body>
-    <CheckChungTuThayTheDieuChinh xmlns="http://tempuri.org/">
-      <madonvi>${user?.donvi?.ma_dv}</madonvi>
-      <mau_so>${payload?.mau_so}</mau_so>
-      <kyhieu>${payload?.ky_hieu}</kyhieu>
-      <sochungtu>${payload?.so_chung_tu_goc}</sochungtu>
-      <TinhchatCT>${payload?.loai_chung_tu}</TinhchatCT>
-    </CheckChungTuThayTheDieuChinh>
-  </soap12:Body>
-</soap12:Envelope>`;
-
-    const res: string = await axiosClient.post(
-      process.env.REACT_APP_API_CHUNG_TU as string,
-      soap,
-      {
-        headers: {
-          "Content-Type": "text/xml; charset=utf-8",
-        },
-      },
-    );
-
-    const parseRes = parseSoapResponse(res);
+    const parseRes = await checkChungTuThayTheDieuChinh(getChungTuMadonvi(user), {
+      mau_so: payload?.mau_so,
+      ky_hieu: payload?.ky_hieu,
+      so_chung_tu_goc: payload?.so_chung_tu_goc,
+      loai_chung_tu: payload?.loai_chung_tu,
+    });
 
     if (parseRes.status === "success") {
-      history.push(
-        `../../chung-tu/form/0?tinhchatct=${payload?.loai_chung_tu}&mact_goc=${parseRes.data}`,
-      );
+      const params = new URLSearchParams({
+        tinhchatct: String(payload?.loai_chung_tu),
+        mact_goc: String(parseRes.data),
+      });
+      if (dataForm?.ky_hieu_thay_the) {
+        params.set("ky_hieu_thay_the", dataForm.ky_hieu_thay_the);
+      }
+      params.set("mau_so", MAU_SO_CHUNG_TU_TNCN);
+      history.push(`../../chung-tu/form/0?${params.toString()}`);
     } else {
       NotifyHelper.Error(parseRes.message);
     }
@@ -144,10 +126,10 @@ const ChungTuThayThePage = () => {
                     checked={dataForm.loai_chung_tu === 1}
                     onChange={(e) => {
                       if (e.target.checked) {
-                        setDataForm({
-                          ...dataForm,
+                        setDataForm((prev: any) => ({
+                          ...prev,
                           loai_chung_tu: 1,
-                        });
+                        }));
                       }
                     }}
                   />
@@ -159,10 +141,10 @@ const ChungTuThayThePage = () => {
                     checked={dataForm.loai_chung_tu === 2}
                     onChange={(e) => {
                       if (e.target.checked) {
-                        setDataForm({
-                          ...dataForm,
+                        setDataForm((prev: any) => ({
+                          ...prev,
                           loai_chung_tu: 2,
-                        });
+                        }));
                       }
                     }}
                   />
@@ -184,11 +166,13 @@ const ChungTuThayThePage = () => {
                 <SelectBoxLoaiChungTuPhatHanh
                   value={dataForm?.loai_chung_tu_dien_tu}
                   onValueChanged={(value) => {
-                    setDataForm({
-                      ...dataForm,
+                    setDataForm((prev: any) => ({
+                      ...prev,
                       loai_chung_tu_dien_tu: value,
-                    });
-
+                      mau_so: MAU_SO_CHUNG_TU_TNCN,
+                      ky_hieu: "",
+                      ky_hieu_thay_the: "",
+                    }));
                     clearErrors("loai_chung_tu_dien_tu");
                   }}
                 />
@@ -206,20 +190,20 @@ const ChungTuThayThePage = () => {
                 <FormControl.Label>
                   <Text text="Ký hiệu mẫu số chứng từ gốc" />
                 </FormControl.Label>
-                <SelectBoxMauSoChungTuPhatHanh
-                  value={dataForm?.mau_so}
-                  onValueChanged={(value: string) => {
-                    setDataForm({ ...dataForm, mau_so: value });
-                    clearErrors("mau_so");
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    height: 32,
+                    px: 2,
+                    border: "1px solid",
+                    borderColor: "border.default",
+                    borderRadius: 2,
+                    minWidth: 120,
                   }}
-                  loai_chung_tu={dataForm.loai_chung_tu_dien_tu}
-                />
-
-                {errors && errors["mau_so"] && (
-                  <FormControl.Validation id={"mau_so"} variant="error">
-                    Vui lòng chọn mẫu số chứng từ gốc
-                  </FormControl.Validation>
-                )}
+                >
+                  <Text text={MAU_SO_CHUNG_TU_TNCN} />
+                </Box>
               </FormControl>
 
               <FormControl>
@@ -229,10 +213,10 @@ const ChungTuThayThePage = () => {
                 <SelectBoxKyHieuChungTuQuanLy
                   value={dataForm.ky_hieu}
                   onValueChanged={(value: string) => {
-                    setDataForm({ ...dataForm, ky_hieu: value });
+                    setDataForm((prev: any) => ({ ...prev, ky_hieu: value }));
                     clearErrors("ky_hieu");
                   }}
-                  mau_so={dataForm.mau_so}
+                  mau_so={MAU_SO_CHUNG_TU_TNCN}
                 />
                 {errors && errors["ky_hieu"] && (
                   <FormControl.Validation id={"ky_hieu"} variant="error">
@@ -248,10 +232,13 @@ const ChungTuThayThePage = () => {
                 <SelectBoxKyHieuChungTuPhatHanh
                   value={dataForm.ky_hieu_thay_the}
                   onValueChanged={(value: string) => {
-                    setDataForm({ ...dataForm, ky_hieu_thay_the: value });
+                    setDataForm((prev: any) => ({
+                      ...prev,
+                      ky_hieu_thay_the: value,
+                    }));
                     clearErrors("ky_hieu_thay_the");
                   }}
-                  mau_so={dataForm.mau_so}
+                  mau_so={MAU_SO_CHUNG_TU_TNCN}
                 />
                 {errors && errors["ky_hieu_thay_the"] && (
                   <FormControl.Validation

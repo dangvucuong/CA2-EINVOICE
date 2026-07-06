@@ -2,9 +2,6 @@ import { TriangleDownIcon } from "@primer/octicons-react";
 
 import { Button, SelectPanel } from "@primer/react";
 import { memo, useEffect, useState } from "react";
-import { useAuth } from "../../hooks/useAuth";
-import { parseSoapResponse } from "../../helpers/common";
-import { axiosClient } from "../../api/axiosClient";
 
 interface ISelectBoxMauSoChungTuPhatHanhProps {
   onValueChanged: (value: string) => void;
@@ -28,18 +25,28 @@ const data = [
 ];
 
 const SelectBoxMauSoChungTuPhatHanh = (
-  props: ISelectBoxMauSoChungTuPhatHanhProps
+  props: ISelectBoxMauSoChungTuPhatHanhProps,
 ) => {
   const { loai_chung_tu, maxWidth, value, onValueChanged = () => {} } = props;
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<any>();
 
   useEffect(() => {
-    if (loai_chung_tu) {
-      const option = data.find((item) => item.value === loai_chung_tu);
-      setSelected(option);
+    const code = loai_chung_tu || value;
+    if (!code) {
+      setSelected(undefined);
+      return;
     }
-  }, [loai_chung_tu]);
+
+    const option = data.find((item) => item.value === code);
+    if (option) {
+      setSelected(option);
+      if (!value) {
+        onValueChanged(option.value);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loai_chung_tu, value]);
 
   return (
     <>
@@ -71,12 +78,12 @@ const SelectBoxMauSoChungTuPhatHanh = (
         placeholderText="Search"
         open={open}
         onOpenChange={setOpen}
-        items={selected ? [selected] : []}
+        items={data}
         selected={selected}
-        onSelectedChange={(data: any) => {
-          if (data) {
-            onValueChanged(data?.value);
-            setSelected(data);
+        onSelectedChange={(item: any) => {
+          if (item) {
+            onValueChanged(item?.value);
+            setSelected(item);
           }
         }}
         onFilterChange={() => {}}

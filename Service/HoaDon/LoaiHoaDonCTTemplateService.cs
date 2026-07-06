@@ -1,4 +1,5 @@
 using System.Xml.Xsl;
+using System.Text.RegularExpressions;
 using Common;
 using Contracts.Service.HoaDon;
 using Model.Request.HoaDon;
@@ -62,8 +63,16 @@ namespace Service.HoaDon
             }
 
             var bgb64 = "";
+            var showInnerTable = mauHoaDon.is_show_wattermark_inner_table == true;
             var bgstyle = "width:900px;margin:auto; border:2px solid black; padding-top:20px;z-index:1;position: relative;";
-            bgstyle = bgstyle + "background-image: url('{paramWaterMark}'); background-size:80%; background-position: center;background-color: hsla(0,0%,100%,paramOpacity;);background-blend-mode: overlay;background-repeat:no-repeat";
+            if (showInnerTable)
+            {
+                bgstyle += "background-image: url(''); background-size:80%; background-position: center;background-color: hsla(0,0%,100%,paramOpacity;);background-blend-mode: overlay;background-repeat:no-repeat";
+            }
+            else
+            {
+                bgstyle += "background-image: url('{paramWaterMark}'); background-size:80%; background-position: center;background-color: hsla(0,0%,100%,paramOpacity;);background-blend-mode: overlay;background-repeat:no-repeat";
+            }
             var noidungdisabled = "&#160;";
             var styledisabled = "position:absolute;z-index:0;width:300px;height:140px;border:5px solid red;background:transparent;display:none;top:45%;left:40%;color:red;font-size:70pt;text-align:center;padding-top:10px;";
             var stylemau = "position:absolute;z-index:0;width:300px;height:140px;border:5px solid red;background:transparent;display:block;top:45%;left:40%;color:red;font-size:70pt;text-align:center;padding-top:10px;";
@@ -88,6 +97,51 @@ namespace Service.HoaDon
            .Replace("paramdisable", styledisabled)
            .Replace("contentDisable", noidungdisabled)
            .Replace("paramlien", "0").Replace("paramdisplay", "display:none");
+
+            var watermarkUrl = mauHoaDon.watermark_path?.ConvertToString().Replace('\\', '/') ?? "";
+            var paramOpacity = (1 - ((mauHoaDon.watermark_opacity ?? 50) * 1.0 / 100))
+                .ConvertToDouble(2)
+                .ToString()
+                .Replace(",", ".");
+
+            if (showInnerTable)
+            {
+                html = html.Replace("{paramWaterMark}", "");
+                if (!string.IsNullOrEmpty(watermarkUrl))
+                {
+                    html = html.Replace("paramWaterMarkTable;", watermarkUrl);
+                    html = html.Replace(
+                        "paramTableBG",
+                        $"background-image:url('{watermarkUrl}');background-size:cover;background-position:center;background-repeat:no-repeat;background-color:hsla(0,0%,100%,{paramOpacity});background-blend-mode:overlay;");
+                }
+            }
+            else if (!string.IsNullOrEmpty(watermarkUrl))
+            {
+                html = html.Replace("{paramWaterMark}", watermarkUrl);
+                html = html.Replace("paramWaterMarkTable;", "");
+                html = html.Replace("paramTableBG", "");
+            }
+
+            html = html.Replace("paramOpacity;", paramOpacity);
+            html = html.Replace("paramOpacity;", paramOpacity);
+
+            if (showInnerTable && !string.IsNullOrEmpty(watermarkUrl))
+            {
+                const string innerTableCss =
+                    "<style>table.inner-watermark-table td,table.inner-watermark-table th,table[style*=\"background-image\"] td,table[style*=\"background-image\"] th{background-color:transparent !important;}</style>";
+                if (!html.Contains("inner-watermark-table") && html.Contains("</head>"))
+                {
+                    html = html.Replace("</head>", innerTableCss + "</head>");
+                }
+
+                html = Regex.Replace(
+                    html,
+                    @"<div style=""background:url\('([^']*)'\);background-color:\s*hsla\(0,0%,100%,([^)]+)\);background-blend-mode:\s*overlay;"">\s*<table style=""",
+                    m =>
+                        $"<div><table class=\"inner-watermark-table\" style=\"background-image:url('{m.Groups[1].Value}');background-size:cover;background-position:center;background-repeat:no-repeat;background-color:hsla(0,0%,100%,{m.Groups[2].Value});background-blend-mode:overlay;",
+                    RegexOptions.IgnoreCase);
+            }
+
             return html;
         }
 

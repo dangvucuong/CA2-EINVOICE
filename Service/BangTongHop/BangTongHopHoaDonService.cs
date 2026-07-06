@@ -25,5 +25,15 @@ namespace Service.BangTongHop
         {
             return _repositoryWrapper.BangTongHopDuLieu.BangTongHopHoaDon.SelectByBangTongHopAsync(bangTongHopId);
         }
+
+        public Task<IEnumerable<int>> SelectUsedHoaDonIdsByDonViAsync(string donvi_ma_dv)
+        {
+            return _repositoryWrapper.BangTongHopDuLieu.BangTongHopHoaDon.SelectUsedHoaDonIdsByDonViAsync(donvi_ma_dv);
+        }
+
+        public Task<IEnumerable<hoa_don>> SelectHoaDonForTongHopAsync(string donvi_ma_dv, DateTime? tu_ngay, DateTime? den_ngay)
+        {
+            return _repositoryWrapper.BangTongHopDuLieu.BangTongHopHoaDon.SelectHoaDonForTongHopAsync(donvi_ma_dv, tu_ngay, den_ngay);
+        }
     }
 }

@@ -656,6 +656,20 @@ namespace WebApi.Controllers
             return Ok(result);
         }
 
+        [HttpPost("cap-nhat-ket-qua-cqt/{id}")]
+        public async Task<IActionResult> CapNhatKetQuaCQTAsync(int id)
+        {
+            var result = await _hoaDonService.CapNhatKetQuaCQTAsync(id);
+            return Ok(result);
+        }
+
+        [HttpPost("khoi-phuc-trang-thai/{id}")]
+        public async Task<IActionResult> KhoiPhucTrangThaiAsync(int id)
+        {
+            var result = await _hoaDonService.KhoiPhucTrangThaiAsync(id);
+            return Ok(result);
+        }
+
 
     }
 }

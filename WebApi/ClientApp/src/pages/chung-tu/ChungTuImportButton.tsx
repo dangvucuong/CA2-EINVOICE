@@ -4,6 +4,7 @@ import { memo, useState } from "react";
 import ChungTuImportModal from "./ChungTuImportModal";
 interface IChungTuImportButtonProps {
   onSuccess: () => void;
+  onBeforeOpen?: () => Promise<boolean>;
 }
 const ChungTuImportButton = (props: IChungTuImportButtonProps) => {
   const [isShowImportModal, setIsShowImportModal] = useState(false);
@@ -15,7 +16,11 @@ const ChungTuImportButton = (props: IChungTuImportButtonProps) => {
         leadingVisual={UploadIcon}
         size="medium"
         sx={{ ml: 1 }}
-        onClick={() => {
+        onClick={async () => {
+          if (props.onBeforeOpen) {
+            const canOpen = await props.onBeforeOpen();
+            if (!canOpen) return;
+          }
           setIsShowImportModal(true);
         }}
       />

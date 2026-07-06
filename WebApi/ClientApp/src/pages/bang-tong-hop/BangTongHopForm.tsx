@@ -3,7 +3,6 @@ import moment from "moment";
 import { useEffect, useState } from "react";
 import { Link, useHistory, useParams } from "react-router-dom";
 import { bangTongHopApi } from "../../api/bang-tong-hop/bangTongHopApi";
-import { hoaDonApi } from "../../api/hoa-don/hoaDonApi";
 import BangTongHopLoaiHangHoaSelection from "../../component-ui/bang-tong-hop-loai-hang-hoa";
 import Button from "../../component-ui/button";
 import { DataTable } from "../../component-ui/data-table";
@@ -14,7 +13,6 @@ import TextInput from "../../component-ui/text-input";
 import ThangSelection from "../../component-ui/thang-selection";
 import TuNgayDenNgayInput from "../../component-ui/tu-ngay-den-ngay-input/TuNgayDenNgayInput";
 import { NotifyHelper } from "../../helpers/toast";
-import { eHoaDonTrangThai } from "../../models/commons/eHoaDonTrangThai";
 import { IBangTongHopAddOrEditRequest } from "../../models/responses/bang-tong-hop/IBangTongHopAddOrEditRequest";
 import { IHoaDon } from "../../models/responses/hoa-don/IHoaDon";
 
@@ -123,19 +121,12 @@ const BangTongHopForm = () => {
     }
     const handleGetHoaDonAsync = async () => {
         setIsLoading(true)
-        const res = await hoaDonApi.selectByDonViPaging({
-            hoa_don_dang_ky_phat_hanh_ky_hieu: "",
-            hoa_don_dang_ky_phat_hanh_mau_so: "",
-            hoa_don_trang_thai_ids: [eHoaDonTrangThai.DA_PHAT_HANH],
-            loai_hoa_don_ct_id: 0,
-            tu_ngay: tuNgay,
-            den_ngay: denNgay,
-            page_index: 0,
-            page_size: 2000
-        })
+        const res = await bangTongHopApi.selectHoaDonForTongHop(tuNgay, denNgay)
         if (res.is_success) {
-            setHoaDons(res.data.data)
+            setHoaDons(res.data ?? [])
             setHoaDonSelectedIds([])
+        } else {
+            NotifyHelper.Error(res.message ?? "Không thể tổng hợp hóa đơn")
         }
         setIsLoading(false)
     }

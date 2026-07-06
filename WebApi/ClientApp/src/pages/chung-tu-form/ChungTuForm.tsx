@@ -105,17 +105,25 @@ const ChungTuForm = () => {
   };
 
   useEffect(() => {
-    // search?tinhchatct=2&mact_goc=27"
     const searchParams = new URLSearchParams(location.search);
 
     const tinhchatct = searchParams.get("tinhchatct");
     const mact_goc = searchParams.get("mact_goc");
+    const kyHieuThayThe = searchParams.get("ky_hieu_thay_the");
+    const mauSo = searchParams.get("mau_so");
 
     setHinhThucChungTu(tinhchatct ? parseInt(tinhchatct) : 0);
 
-    // Nếu có mact_goc và machungtu = 0 thì lấy thông tin chứng từ gốc
+    if (kyHieuThayThe || mauSo) {
+      setFormData((prev: any) => ({
+        ...prev,
+        ...(mauSo ? { loai_chung_tu: mauSo, mau_so_chung_tu: mauSo } : {}),
+        ...(kyHieuThayThe ? { ky_hieu_chung_tu: kyHieuThayThe } : {}),
+      }));
+    }
+
     if (mact_goc && parseInt(mact_goc) > 0 && machungtu >= 0) {
-      handleGetDetailAsync(mact_goc?.toString(), true);
+      handleGetDetailAsync(mact_goc?.toString(), true, kyHieuThayThe, mauSo);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location]);
@@ -150,6 +158,8 @@ const ChungTuForm = () => {
   const handleGetDetailAsync = async (
     machungtu: string,
     isChungTuGoc?: boolean,
+    kyHieuThayThe?: string | null,
+    mauSo?: string | null,
   ) => {
     const soap = `<?xml version="1.0" encoding="utf-8"?>
   <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
@@ -200,14 +210,18 @@ const ChungTuForm = () => {
         khoan_dong_tu_thien: ttchungtu?.TThien,
       });
 
-      setFormData({
-        ...formData,
-        loai_chung_tu: ttchungtu?.MSChungtu ?? "",
-        mau_so_chung_tu: ttchungtu?.MSChungtu ?? "",
-        ky_hieu_chung_tu: ttchungtu?.KHChungtu ?? "",
+      setFormData((prev: any) => ({
+        ...prev,
+        loai_chung_tu: mauSo || ttchungtu?.MSChungtu || prev.loai_chung_tu,
+        mau_so_chung_tu: mauSo || ttchungtu?.MSChungtu || prev.mau_so_chung_tu,
+        ky_hieu_chung_tu: isChungTuGoc
+          ? kyHieuThayThe || prev.ky_hieu_chung_tu || ""
+          : ttchungtu?.KHChungtu ?? prev.ky_hieu_chung_tu,
         ca_nhan_cu_tru: ttchungtu?.CanhanCT === 1,
-        ngay_chung_tu: ttchungtu?.NgaylapCT,
-      });
+        ngay_chung_tu: isChungTuGoc
+          ? moment(new Date()).format("YYYY-MM-DD")
+          : ttchungtu?.NgaylapCT,
+      }));
 
       if (isChungTuGoc) {
         setThongTinChungTuGoc({
@@ -764,10 +778,12 @@ const ChungTuForm = () => {
                       value={formData?.loai_chung_tu}
                       onValueChanged={(value) => {
                         clearErrors("loai_chung_tu");
-                        setFormData({
-                          ...formData,
+                        setFormData((prev: any) => ({
+                          ...prev,
                           loai_chung_tu: value,
-                        });
+                          mau_so_chung_tu: value,
+                          ky_hieu_chung_tu: "",
+                        }));
                       }}
                       isFormLap={true}
                     />
@@ -781,14 +797,16 @@ const ChungTuForm = () => {
                     <FormControl>
                       <FormControl.Label>Mẫu số</FormControl.Label>
                       <SelectBoxMauSoChungTuPhatHanh
-                        loai_chung_tu={formData?.loai_chung_tu ?? ""}
+                        loai_chung_tu={formData?.mau_so_chung_tu ?? ""}
                         value={formData?.mau_so_chung_tu ?? ""}
                         onValueChanged={(value) => {
                           clearErrors("mau_so_chung_tu");
-                          setFormData({
-                            ...formData,
+                          setFormData((prev: any) => ({
+                            ...prev,
                             mau_so_chung_tu: value,
-                          });
+                            loai_chung_tu: value,
+                            ky_hieu_chung_tu: "",
+                          }));
                         }}
                       />
                       {errors && errors["mau_so_chung_tu"] && (
@@ -805,15 +823,14 @@ const ChungTuForm = () => {
                         value={formData?.ky_hieu_chung_tu ?? ""}
                         onValueChanged={(value) => {
                           clearErrors("ky_hieu_chung_tu");
-                          setFormData({
-                            ...formData,
+                          setFormData((prev: any) => ({
+                            ...prev,
                             ky_hieu_chung_tu: value,
-                          });
+                          }));
                         }}
                         mau_so={formData?.mau_so_chung_tu}
                       />
-                      {errors &&
-                        errors["hoa_don_dang_ky_phat_hanh_ky_hieu"] && (
+                      {errors && errors["ky_hieu_chung_tu"] && (
                           <FormControl.Validation variant="error">
                             Vui lòng chọn ký hiệu
                           </FormControl.Validation>

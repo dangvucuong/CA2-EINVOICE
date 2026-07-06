@@ -1,17 +1,21 @@
 import { TriangleDownIcon } from "@primer/octicons-react";
 
 import { Button, SelectPanel } from "@primer/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { axiosClient } from "../../api/axiosClient";
 import { parseSoapResponse } from "../../helpers/common";
+import {
+  getChungTuMadonvi,
+  resolveChungTuMauSo,
+} from "../../helpers/chungTuConstants";
 
 interface ISelectBoxKyHieuChungTuQuanLyProps {
   onValueChanged: (value: string) => void;
   value: string;
   maxWidth?: any;
   isShowClearBtn?: boolean;
-  mau_so: string;
+  mau_so?: string;
 }
 
 const SelectBoxKyHieuChungTuQuanLy = (
@@ -23,61 +27,106 @@ const SelectBoxKyHieuChungTuQuanLy = (
   const { user } = useAuth();
   const [options, setOptions] = useState<any[]>([]);
   const [selected, setSelected] = useState<any>();
+  const [isLoading, setIsLoading] = useState(false);
+  const onValueChangedRef = useRef(onValueChanged);
+  onValueChangedRef.current = onValueChanged;
+
+  const madonvi = getChungTuMadonvi(user);
+  const resolvedMauSo = resolveChungTuMauSo(mau_so);
 
   useEffect(() => {
-    if (mau_so) {
-      LayDanhSachKyHieu();
+    if (!madonvi) {
+      setOptions([]);
+      setSelected(undefined);
+      return;
     }
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mau_so]);
+    let cancelled = false;
+    const requestMauSo = resolvedMauSo;
+    const requestMadonvi = madonvi;
 
-  const LayDanhSachKyHieu = async () => {
-    const soap = `<?xml version="1.0" encoding="utf-8"?>
+    const loadKyHieu = async () => {
+      setIsLoading(true);
+      const soap = `<?xml version="1.0" encoding="utf-8"?>
     <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
       <soap12:Body>
         <LayDanhSachKyHieu  xmlns="http://tempuri.org/">
-          <mauso>${mau_so}</mauso>
-          <madonvi>${user?.donvi?.ma_dv}</madonvi>
+          <mauso>${requestMauSo}</mauso>
+          <madonvi>${requestMadonvi}</madonvi>
         </LayDanhSachKyHieu>
       </soap12:Body>
     </soap12:Envelope>`;
 
-    const res: string = await axiosClient.post(
-      process.env.REACT_APP_API_CHUNG_TU as string,
-      soap,
-      {
-        headers: {
-          "Content-Type": "text/xml; charset=utf-8",
-        },
-      },
-    );
+      try {
+        const res: string = await axiosClient.post(
+          process.env.REACT_APP_API_CHUNG_TU as string,
+          soap,
+          {
+            headers: {
+              "Content-Type": "text/xml; charset=utf-8",
+            },
+          },
+        );
 
-    const parseRes = parseSoapResponse(res);
+        if (cancelled) return;
 
-    if (parseRes.status === "success") {
-      const opts = (parseRes?.data ?? []).map((item: any, index: number) => ({
-        id: index,
-        text: item.ky_hieu,
-        value: item.ky_hieu,
-      }));
-      setOptions(opts);
+        const parseRes = parseSoapResponse(res);
 
-      if (value) {
-        const selectedOption = opts.find((item: any) => item.value === value);
+        if (parseRes.status === "success") {
+          const seen = new Set<string>();
+          const opts = (parseRes?.data ?? [])
+            .map((item: any, index: number) => ({
+              id: index,
+              text: item.ky_hieu,
+              value: item.ky_hieu,
+            }))
+            .filter((item: any) => {
+              if (!item.value || seen.has(item.value)) return false;
+              seen.add(item.value);
+              return true;
+            });
 
-        setSelected(selectedOption);
-      } else {
-        if (opts.length === 1) {
-          onValueChanged(opts[0].value);
-          setSelected(opts[0]);
+          setOptions(opts);
+
+          const selectedOption = value
+            ? opts.find((item: any) => item.value === value)
+            : opts.length === 1
+              ? opts[0]
+              : undefined;
+
+          if (selectedOption) {
+            setSelected(selectedOption);
+            if (!value) {
+              onValueChangedRef.current(selectedOption.value);
+            }
+          } else {
+            setSelected(undefined);
+          }
         } else {
-          setSelected(null);
+          setOptions([]);
+          setSelected(undefined);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
         }
       }
-    } else {
+    };
+
+    loadKyHieu();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [resolvedMauSo, madonvi]);
+
+  useEffect(() => {
+    if (!value || !options.length) return;
+    const match = options.find((item) => item.value === value);
+    if (match) {
+      setSelected(match);
     }
-  };
+  }, [value, options]);
 
   return (
     <>
@@ -102,7 +151,7 @@ const SelectBoxKyHieuChungTuQuanLy = (
                 textOverflow: "ellipsis",
               }}
             >
-              {children || "Ký hiệu"}
+              {children || (isLoading ? "Đang tải..." : "Ký hiệu")}
             </p>
           </Button>
         )}
@@ -111,10 +160,10 @@ const SelectBoxKyHieuChungTuQuanLy = (
         onOpenChange={setOpen}
         items={options}
         selected={selected}
-        onSelectedChange={(data: any) => {
-          if (data) {
-            onValueChanged(data?.value);
-            setSelected(data);
+        onSelectedChange={(item: any) => {
+          if (item) {
+            onValueChanged(item?.value);
+            setSelected(item);
           }
         }}
         onFilterChange={() => {}}

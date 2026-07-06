@@ -56,4 +56,8 @@ export const hoaDonApi = {
     apiClient.post(
         `hoa-don/gui-lai-cqt/${id}`
     ),
+    capNhatKetQuaCQT: (id: number) =>
+        apiClient.post(`hoa-don/cap-nhat-ket-qua-cqt/${id}`),
+    khoiPhucTrangThai: (id: number) =>
+        apiClient.post(`hoa-don/khoi-phuc-trang-thai/${id}`),
 }

@@ -5,6 +5,7 @@ import { memo, useEffect, useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { axiosClient } from "../../api/axiosClient";
 import { parseSoapResponse } from "../../helpers/common";
+import { getChungTuMadonvi } from "../../helpers/chungTuConstants";
 
 interface ISelectBoxLoaiChungTuProps {
   onValueChanged: (value: string) => void;
@@ -16,57 +17,93 @@ interface ISelectBoxLoaiChungTuProps {
 }
 
 const SelectBoxLoaiChungTuPhatHanh = (props: ISelectBoxLoaiChungTuProps) => {
-  const { loadData = () => {}, isFormLap = false } = props;
+  const { loadData = () => {}, isFormLap = false, value } = props;
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
   const [options, setOptions] = useState<any[]>([]);
   const [selected, setSelected] = useState<any>();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const madonvi = getChungTuMadonvi(user);
 
   useEffect(() => {
-    LayDanhSachLoaiCT();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!madonvi) return;
 
-  const LayDanhSachLoaiCT = async () => {
-    const soap = `<?xml version="1.0" encoding="utf-8"?>
+    let cancelled = false;
+
+    const loadLoaiChungTu = async () => {
+      setIsLoading(true);
+      const soap = `<?xml version="1.0" encoding="utf-8"?>
 <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
   <soap12:Body>
     <LayLoaiChungTu xmlns="http://tempuri.org/">
-      <maDonVi>${user?.donvi?.ma_dv}</maDonVi>
+      <maDonVi>${madonvi}</maDonVi>
     </LayLoaiChungTu>
   </soap12:Body>
 </soap12:Envelope>`;
 
-    const res: string = await axiosClient.post(
-      process.env.REACT_APP_API_CHUNG_TU as string,
-      soap,
-      {
-        headers: {
-          "Content-Type": "text/xml; charset=utf-8",
-        },
-      },
-    );
+      try {
+        const res: string = await axiosClient.post(
+          process.env.REACT_APP_API_CHUNG_TU as string,
+          soap,
+          {
+            headers: {
+              "Content-Type": "text/xml; charset=utf-8",
+            },
+          },
+        );
 
-    const parseRes = parseSoapResponse(res);
-    let newRes: any = parseRes?.data;
+        if (cancelled) return;
 
-    if (isFormLap) {
-      newRes = newRes?.filter((item: any) => item.MSChungtu === "03/TNCN");
+        const parseRes = parseSoapResponse(res);
+        let newRes: any = parseRes?.data;
+
+        if (isFormLap) {
+          newRes = newRes?.filter((item: any) => item.MSChungtu === "03/TNCN");
+        }
+
+        if (parseRes.status === "success") {
+          const opts = newRes?.map((item: any, index: number) => ({
+            id: index,
+            text: item.Tenchungtu,
+            value: item.MSChungtu,
+          }));
+
+          setOptions(opts);
+
+          const initial = value
+            ? opts.find((item: any) => item.value === value) ?? opts[0]
+            : opts[0];
+
+          if (initial) {
+            setSelected(initial);
+            if (!value) {
+              props.onValueChanged(initial.value);
+            }
+          }
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadLoaiChungTu();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [madonvi, isFormLap]);
+
+  useEffect(() => {
+    if (!value || !options.length) return;
+    const match = options.find((item) => item.value === value);
+    if (match) {
+      setSelected(match);
     }
-
-    if (parseRes.status === "success") {
-      const opts = newRes?.map((item: any, index: number) => ({
-        id: index,
-        text: item.Tenchungtu,
-        value: item.MSChungtu,
-      }));
-
-      setOptions(opts);
-      setSelected(opts[0]);
-      props.onValueChanged(opts[0]?.value);
-    } else {
-    }
-  };
+  }, [value, options]);
 
   return (
     <>
@@ -91,7 +128,7 @@ const SelectBoxLoaiChungTuPhatHanh = (props: ISelectBoxLoaiChungTuProps) => {
                 textOverflow: "ellipsis",
               }}
             >
-              {children || "Chọn loại chứng từ"}
+              {children || (isLoading ? "Đang tải..." : "Chọn loại chứng từ")}
             </p>
           </Button>
         )}
@@ -100,10 +137,10 @@ const SelectBoxLoaiChungTuPhatHanh = (props: ISelectBoxLoaiChungTuProps) => {
         onOpenChange={setOpen}
         items={options}
         selected={selected}
-        onSelectedChange={(data: any) => {
-          if (data) {
-            props.onValueChanged(data?.value);
-            setSelected(data);
+        onSelectedChange={(item: any) => {
+          if (item) {
+            props.onValueChanged(item?.value);
+            setSelected(item);
             loadData();
           }
         }}
