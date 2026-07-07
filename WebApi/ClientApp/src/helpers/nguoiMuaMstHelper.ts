@@ -72,14 +72,6 @@ export function validateAndNormalizeNguoiMuaBuyer(
       };
     }
 
-    if (cccd && cccd !== mst) {
-      return {
-        isValid: false,
-        message: "Số Căn cước công dân không khớp với Mã số thuế người mua",
-        field: "nguoi_mua_cccd",
-      };
-    }
-
     if (!tenDonVi) {
       return {
         isValid: false,

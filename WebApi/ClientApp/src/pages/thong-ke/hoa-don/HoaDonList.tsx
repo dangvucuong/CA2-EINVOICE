@@ -252,6 +252,8 @@ useEffect(()=>{
                     Email: x.nguoi_mua_email,
                     "Trước thuế": x.tong_tien_truong_thue,
                     Thuế: x.tong_tien_thue,
+                    "Tiền phí": x.tong_tien_phi,
+                    "Tiền giảm": x.giam_thue_thanh_tien,
                     "Tổng tiền": x.tong_tien_thanh_toan,
                     "Hình thức hóa đơn":
                       hoaDonHinhThucs.find(
@@ -266,8 +268,6 @@ useEffect(()=>{
                     "Mã CQT cấp": x.phat_hanh_ma_ketqua_cqt,
                     "Mã ĐVNS": x.ma_dv_ngan_sach,
                     "Người mua CCCD": x.nguoi_mua_cccd,
-                    "Tiền phí": x.tong_tien_phi,
-                    "Tiền giảm": x.giam_thue_thanh_tien,
                     "Loại tiền": x.loai_tien,
                     "Tỷ giá": x.ty_gia,
                     Link: x.link,
@@ -433,6 +433,20 @@ useEffect(()=>{
             // sortBy: "alphanumeric"
           },
           {
+            header: "Tiền phí",
+            field: "tong_tien_phi",
+            rowHeader: false,
+            width: "100px",
+            // sortBy: "alphanumeric"
+          },
+          {
+            header: "Tiền giảm",
+            field: "giam_thue_thanh_tien",
+            rowHeader: false,
+            width: "100px",
+            // sortBy: "alphanumeric"
+          },
+          {
             header: "Tổng tiền",
             field: "tong_tien_thanh_toan",
             rowHeader: false,
@@ -495,22 +509,6 @@ useEffect(()=>{
             width: "150px",
             // sortBy: "alphanumeric"
           },
-          {
-            header: "Tiền phí",
-            field: "tong_tien_phi",
-            rowHeader: false,
-            width: "100px",
-            // sortBy: "alphanumeric"
-          },
-
-          {
-            header: "Tiền giảm",
-            field: "giam_thue_thanh_tien",
-            rowHeader: false,
-            width: "100px",
-            // sortBy: "alphanumeric"
-          },
-
           {
             header: "Mã CQT",
             field: "phat_hanh_ma_ketqua_cqt",

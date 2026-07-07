@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Model.Enum;
 using Model.Request.HoaDon;
 using Model.Request.ThongKe;
+using Model.Respone.HoaDon;
 using Model.Table;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
@@ -78,7 +79,14 @@ namespace WebApi.Controllers
             var donVi = await _serviceWrapper.Category.DonVi.SelectByMaDonViAsync(userInfo.donvi_ma_dv);
             pagingRequest.hoa_don_trang_thai_ids = new List<int>() { (int)e_hoa_don_trang_thai.DA_PHAT_HANH };
             var list = await _serviceWrapper.HoaDon.HoaDonHangHoa.SelectByDonViThongKePageAsync(userInfo.donvi_ma_dv, pagingRequest);
-            var hangHoas = list.data;
+            var hangHoas = list.data.ToList();
+            var hoaDonList = await _serviceWrapper.HoaDon.HoaDon.SelectByDonViThongKePageAsync(userInfo.donvi_ma_dv, pagingRequest);
+            var giamThueTyLeByHoaDonId = hoaDonList.data
+                .GroupBy(x => x.id)
+                .ToDictionary(g => g.Key, g => g.First().giam_thue_ty_le);
+            var loaiTienByHoaDonId = hoaDonList.data
+                .GroupBy(x => x.id)
+                .ToDictionary(g => g.Key, g => g.First().loai_tien.ConvertToString());
 
             var hinhThucHoaDons = new Dictionary<int, string>();
             hinhThucHoaDons.Add(0, "Hóa đơn gốc");
@@ -313,14 +321,40 @@ namespace WebApi.Controllers
                             //var truoc_thue = hangHoasHoaDon.Select(x => x.thanh_tien).Sum();                           
                             if (hangHoasHoaDon[0].hoa_don_hinh_thuc_id != 6)
                             {
-                                truoc_thue = hangHoasHoaDon.Where(x => x.hang_hoa_tinh_chat_id == 1 || x.hang_hoa_tinh_chat_id == 5).Select(x => x.thanh_tien).Sum();
-                                var tong_chiet_khau_hh = hangHoasHoaDon.Where(x => x.hang_hoa_tinh_chat_id == 3).Select(x => x.thanh_tien).Sum();
-                                tong_chiet_khau += tong_chiet_khau_hh;
-                                tien_thue = Math.Round(truoc_thue * phan_tram / 100, 0);
-                                sau_thue = truoc_thue - tong_chiet_khau_hh + tien_thue;
-                                tong_truoc_thue += truoc_thue;
-                                tong_thue += tien_thue;
-                                tong_sau_thue += sau_thue;
+                               if (hangHoasHoaDon[0].hoa_don_dang_ky_phat_hanh_mau_so == "2")
+                                {
+                                    // Hóa đơn bán hàng: tính lại thành tiền và trừ giảm thuế theo nghị quyết
+                                    var allHangHoasHoaDon = hangHoas.Where(x => x.hoa_don_id == hoaDonId).ToList();
+                                    var giamThueTyLe = giamThueTyLeByHoaDonId.GetValueOrDefault(hoaDonId, 0);
+                                    var loaiTien = loaiTienByHoaDonId.GetValueOrDefault(hoaDonId, "VND");
+                                    var tienBangKeMauSo2 = TinhTienBangKeMauSo2(
+                                        hangHoasHoaDon,
+                                        allHangHoasHoaDon,
+                                        giamThueTyLe,
+                                        loaiTien);
+
+                                    truoc_thue = tienBangKeMauSo2.thanhTienSauGiamThue;
+                                    tien_thue = 0;
+                                    var tong_chiet_khau_hh = tienBangKeMauSo2.tongChietKhau;
+                                    tong_chiet_khau += tong_chiet_khau_hh;
+                                    sau_thue = tienBangKeMauSo2.thanhTienSauGiamThue;
+                                    tong_truoc_thue += truoc_thue;
+                                    tong_thue = 0;
+                                    tong_sau_thue += sau_thue;
+                                }
+                                else
+                                {
+                                    //các loại hdon có thuế 
+                                    truoc_thue = hangHoasHoaDon.Where(x => x.hang_hoa_tinh_chat_id == 1 || x.hang_hoa_tinh_chat_id == 5).Select(x => x.thanh_tien).Sum();
+                                    var tong_chiet_khau_hh = hangHoasHoaDon.Where(x => x.hang_hoa_tinh_chat_id == 3).Select(x => x.thanh_tien).Sum();
+                                    tong_chiet_khau += tong_chiet_khau_hh;
+                                    tien_thue = Math.Round(truoc_thue * phan_tram / 100, 0);
+                                    sau_thue = truoc_thue - tong_chiet_khau_hh + tien_thue;
+                                    tong_truoc_thue += truoc_thue;
+                                    tong_thue += tien_thue;
+                                    tong_sau_thue += sau_thue;
+                                }
+                                
                             }
                             else
                             {
@@ -846,6 +880,102 @@ namespace WebApi.Controllers
                 };
                 return result;
             }
+        }
+
+        private static decimal TinhThanhTienHangHoaBangKe(hoa_don_hang_hoa hangHoa)
+        {
+            if (hangHoa.hang_hoa_tinh_chat_id == 1 || hangHoa.hang_hoa_tinh_chat_id == 5)
+            {
+                if (hangHoa.so_luong > 0 || hangHoa.don_gia > 0)
+                {
+                    var tongTienGoc = hangHoa.so_luong * hangHoa.don_gia;
+                    var tienChietKhau = (hangHoa.ty_le_chiet_khau / 100) * tongTienGoc;
+                    return tongTienGoc - tienChietKhau;
+                }
+
+                return hangHoa.thanh_tien;
+            }
+
+            if (hangHoa.hang_hoa_tinh_chat_id == 3)
+            {
+                if (hangHoa.so_luong > 0 || hangHoa.don_gia > 0)
+                    return hangHoa.so_luong * hangHoa.don_gia;
+
+                return hangHoa.thanh_tien;
+            }
+
+            return 0;
+        }
+
+        private static (decimal thanhTienSauGiamThue, decimal tongChietKhau) TinhTienBangKeMauSo2(
+            List<hoa_don_hang_hoa_vm> hangHoasThueNhom,
+            List<hoa_don_hang_hoa_vm> allHangHoasHoaDon,
+            int giamThueTyLe,
+            string loaiTien)
+        {
+            var isVnd = string.IsNullOrWhiteSpace(loaiTien) || loaiTien == "VND" || loaiTien == "VNĐ";
+
+            var tongThanhTienHoaDon = allHangHoasHoaDon
+                .Where(x => x.hang_hoa_tinh_chat_id == 1 || x.hang_hoa_tinh_chat_id == 5)
+                .Sum(TinhThanhTienHangHoaBangKe);
+
+            var tongTienMatHangChietKhau = allHangHoasHoaDon
+                .Where(x => x.hang_hoa_tinh_chat_id == 3)
+                .Sum(TinhThanhTienHangHoaBangKe);
+
+            decimal giamThueThanhTien = 0;
+            if (giamThueTyLe > 0)
+            {
+                giamThueThanhTien = ((double)tongThanhTienHoaDon *
+                                     (giamThueTyLe / 100.0) *
+                                     0.2).ConvertToDecimal();
+            }
+
+            if (isVnd)
+            {
+                giamThueThanhTien = Math.Round(giamThueThanhTien, 0, MidpointRounding.AwayFromZero);
+                tongThanhTienHoaDon = Math.Round(tongThanhTienHoaDon, 0, MidpointRounding.AwayFromZero);
+                tongTienMatHangChietKhau = Math.Round(tongTienMatHangChietKhau, 0, MidpointRounding.AwayFromZero);
+            }
+
+            var thanhTienHangHoaNhom = hangHoasThueNhom
+                .Where(x => x.hang_hoa_tinh_chat_id == 1 || x.hang_hoa_tinh_chat_id == 5)
+                .Sum(TinhThanhTienHangHoaBangKe);
+
+            var chietKhauNhom = hangHoasThueNhom
+                .Where(x => x.hang_hoa_tinh_chat_id == 3)
+                .Sum(TinhThanhTienHangHoaBangKe);
+
+            if (isVnd)
+            {
+                thanhTienHangHoaNhom = Math.Round(thanhTienHangHoaNhom, 0, MidpointRounding.AwayFromZero);
+                chietKhauNhom = Math.Round(chietKhauNhom, 0, MidpointRounding.AwayFromZero);
+            }
+
+            decimal giamThueNhom = 0;
+            if (giamThueThanhTien > 0 && tongThanhTienHoaDon > 0)
+            {
+                giamThueNhom = giamThueThanhTien * thanhTienHangHoaNhom / tongThanhTienHoaDon;
+                if (isVnd)
+                    giamThueNhom = Math.Round(giamThueNhom, 0, MidpointRounding.AwayFromZero);
+            }
+
+            decimal thanhTienSauGiamThue;
+            if (tongTienMatHangChietKhau > 0)
+            {
+                // Chiết khấu là mặt hàng độc lập, trừ vào cộng tiền hàng
+                thanhTienSauGiamThue = thanhTienHangHoaNhom - chietKhauNhom - giamThueNhom;
+            }
+            else
+            {
+                // Chiết khấu đã trừ theo từng mặt hàng
+                thanhTienSauGiamThue = thanhTienHangHoaNhom - giamThueNhom;
+            }
+
+            if (isVnd)
+                thanhTienSauGiamThue = Math.Round(thanhTienSauGiamThue, 0, MidpointRounding.AwayFromZero);
+
+            return (thanhTienSauGiamThue, chietKhauNhom);
         }
     }
 }

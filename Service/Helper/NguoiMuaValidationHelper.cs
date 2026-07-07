@@ -26,9 +26,6 @@ namespace Service.Helper
                 if (digits.Length != 10 && digits.Length != 12 && digits.Length != 13)
                     return $"Mã số thuế người mua không hợp lệ: phải có 10, 12 hoặc 13 chữ số (đang nhập {digits.Length} số)";
 
-                if (!string.IsNullOrEmpty(cccd) && cccd != mst)
-                    return "Số Căn cước công dân không khớp với Mã số thuế người mua";
-
                 if (string.IsNullOrWhiteSpace(model.nguoi_mua_ten_donvi))
                     return "Vui lòng nhập Đơn vị mua hàng khi có Mã số thuế";
 
