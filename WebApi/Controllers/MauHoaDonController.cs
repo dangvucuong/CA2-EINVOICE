@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Model.Request.HoaDon;
 using Model.Respone.MauHoaDon;
 using Model.Table;
+using Service.Helper;
 using Service.HoaDon;
 using WebApi.Filters;
 
@@ -130,25 +131,10 @@ namespace WebApi.Controllers
             var paramOpacity = (1 - (mauHoaDon.watermark_opacity * 1.0 / 100).ConvertToDouble(2)).ToString().Replace(",", ".");
             html = html.Replace("paramOpacity;", paramOpacity);
             html = html.Replace("paramOpacity;", paramOpacity);
-            var advancedSettings = mauHoaDon.advanced_settings_json.ConvertToString().TryDeserializeObject<CssEditorElementData[]>();
             html = html.Replace("12pt", "12px");
             html = html.Replace("<table style=\"width:100%;line-height:25px;font-size:12pt\">", "<table style=\"width:100%;line-height:20px;font-size:12px\">");
             html = html.Replace("line-height:25px", "line-height:20px");
-            foreach (var ad in advancedSettings)
-            {
-                var keyCss = $"{ad.elementId}_css;";
-                var keyCssDisplay = $"{ad.elementId}_css_display;";
-                var css = new List<string>()
-                {
-                    $"font-weight:{(ad.cssValue?.isBold==true ? "bold" : "normal")}",
-                    $"font-style:{(ad.cssValue?.isItalic==true ? "italic" : "normal")}",
-                    $"font-size:{ad.cssValue?.fontSize}px",
-                    $"color:{ad.cssValue?.color}",
-                    $"text-align:{ad.cssValue?.align}"
-                }.Join(";");
-                html = html.Replace(keyCss, css);
-                html = html.Replace(keyCssDisplay, ad.isDisplay ? "" : "display:none");
-            }
+            html = MauHoaDonAdvancedSettingsHelper.ApplyToContent(html, mauHoaDon);
             //
             var xmlBytes = await _pdfService.ConvertFromHtmlAsync(html);
             var fileContentResult = new FileContentResult(xmlBytes, "application/pdf")
