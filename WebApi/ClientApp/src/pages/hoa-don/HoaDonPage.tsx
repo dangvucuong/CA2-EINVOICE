@@ -70,6 +70,7 @@ import { useHoaDonListLoadWatcher } from "../../hooks/useHoaDonListLoadWatcher";
 import {
   buildHoaDonListFilterForTab,
   canLoadHoaDonList,
+  HOADON_LIST_SEARCH_PLACEHOLDER,
 } from "../../utils/hoaDonListFilter";
 
 const hoaDonAction = rootAction.hoaDon.hoaDonAction;
@@ -850,6 +851,7 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
               }
               searchConfig={{
                 enable: (hoaDonSelectedIds?.length ?? 0) <= 0,
+                placeholder: HOADON_LIST_SEARCH_PLACEHOLDER,
                 onValueChanged: (key: string) => {
                   dispatch(
                     hoaDonAction.changeFilter({

@@ -114,12 +114,18 @@ namespace WebApi.Controllers
             }
 
 
+            var validationError = await _hoaDonDangKyPhatHanh.ValidateSoKhoangPhatHanhAsync(obj);
+            if (validationError != null)
+            {
+                return this.BadRequest(validationError);
+            }
+
             var isUpdated = await _hoaDonDangKyPhatHanh.UpdateAsync(obj);
             if (isUpdated)
             {
                 await this.SaveLogAsync($"Cập nhật đăng ký phát hành hóa ({model.id}) đơn ký hiệu {model.ky_hieu} từ {model.so_bat_dau} đến {model.so_ket_thuc}", model);
             }
-            return isUpdated ? this.OK(obj) : this.BadRequest();
+            return isUpdated ? this.OK(obj) : this.BadRequest("Cập nhật đăng ký phát hành không thành công");
         }
         /// <summary>
         /// Xóa đăng ký phát hành

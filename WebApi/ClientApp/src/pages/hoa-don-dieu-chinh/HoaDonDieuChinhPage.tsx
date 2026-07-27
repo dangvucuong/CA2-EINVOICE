@@ -31,7 +31,7 @@ import ConfirmModal from "../../component-ui/confirm-modal";
 import { eReducerStatusBase } from "../../state/reducer-models/eReducerStatusBase";
 import { useHoaDonDangKyPhatHanhLoader } from "../../hooks/useHoaDonDangKyPhatHanhLoader";
 import { usePagedHoaDonLoader } from "../../hooks/usePagedHoaDonLoader";
-import { getDefaultDateRange } from "../../utils/hoaDonListFilter";
+import { getDefaultDateRange, HOADON_LIST_SEARCH_PLACEHOLDER } from "../../utils/hoaDonListFilter";
 
 const HoaDonDieuChinhPage = () => {
   const history = useHistory();
@@ -152,6 +152,7 @@ const HoaDonDieuChinhPage = () => {
           }
           searchConfig={{
             enable: true,
+            placeholder: HOADON_LIST_SEARCH_PLACEHOLDER,
             onValueChanged: (key: string) => {
               setFilter({
                 ...filter,

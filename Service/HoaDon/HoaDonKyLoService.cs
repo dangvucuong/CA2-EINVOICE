@@ -18,6 +18,7 @@ using Model.Respone.Xml;
 using Model.Static;
 using Model.Table;
 using Service.Base;
+using Service.HoaDon.XuLyThongDiep;
 using Service.Hub;
 
 namespace Service.HoaDon
@@ -895,7 +896,7 @@ namespace Service.HoaDon
                 }
             }
 
-            if (thongDiepRespone.TTChung.MLTDiep == "-1")
+            if (ThongDiepHoaDonHelper.IsLoiThongDiep(thongDiepRespone, xmlKetQua))
             {
                 foreach (var hoaDon in hoaDons)
                 {
@@ -903,7 +904,7 @@ namespace Service.HoaDon
                     hoaDon.ket_qua_phat_hanh = $"";
                 }
             }
-            if (thongDiepRespone.TTChung.MLTDiep == "999")
+            else if (ThongDiepHoaDonHelper.GetMLTDiep(thongDiepRespone, xmlKetQua) == "999")
             {
                 foreach (var hoaDon in hoaDons)
                 {
@@ -943,33 +944,7 @@ namespace Service.HoaDon
 
                 if (hoaDon.hoa_don_trang_thai_id == (int)e_hoa_don_trang_thai.DA_PHAT_HANH)
                 {
-                    //nếu là hóa đơn điều chỉnh/ thay thế thì cập nhật hóa đơn gốc
-                    if (hoaDon.IsHoaDonDieuChinhThayThe())
-                    {
-                        var hoaDonGoc = await _repositoryWrapper.HoaDon.HoaDon.SelectHoaDonGocAsync(hoaDon.donvi_ma_dv, hoaDon.hoa_don_dang_ky_phat_hanh_mau_so_goc,
-                        hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu_goc, hoaDon.ma_so_hoa_don_goc.ConvertToInt()
-                        );
-                        if (hoaDonGoc != null)
-                        {
-                            var hoa_don_ids_thaythe_dieuchinh = hoaDonGoc.hoa_don_ids_thaythe_dieuchinh.ConvertToString().Split(",")
-                            .Where(x => x != string.Empty).ToList();
-                            if (!hoa_don_ids_thaythe_dieuchinh.Contains(hoaDon.id.ToString()))
-                            {
-                                hoa_don_ids_thaythe_dieuchinh.Add(hoaDon.id.ToString());
-                            }
-                            hoaDonGoc.hoa_don_ids_thaythe_dieuchinh = hoa_don_ids_thaythe_dieuchinh.Join(",");
-                            if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DIEU_CHINH)
-                            {
-                                hoaDonGoc.hoa_don_hinh_thuc_id = (int)e_hoa_don_hinh_thuc.HOA_DON_BI_DIEU_CHINH;
-                            }
-                            if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_THAY_THE)
-                            {
-                                hoaDonGoc.hoa_don_hinh_thuc_id = (int)e_hoa_don_hinh_thuc.HOA_DON_BI_THAY_THE;
-                            }
-                            hoaDonGoc.SetUpdateInfo(hoaDon.user_id_phathanh);
-                            await this.UpdateAsync(hoaDonGoc);
-                        }
-                    }
+                    await _hoaDonService.CapNhatHoaDonGocSauPhatHanhThanhCongAsync(hoaDon.id, hoaDon.user_id_phathanh);
                     await _serviceWrapper.HoaDon.HoaDonSendEmail.SendEmailHoaDonAsync(new List<int>() { hoaDon.id });
                 }
 

@@ -13,6 +13,7 @@ import { eSortMode } from '../../models/commons/eSortMode';
 import { IHoaDon } from '../../models/responses/hoa-don/IHoaDon';
 import { hoaDonAction } from '../../state/actions/hoa-don/hoaDonAction';
 import { eReducerStatusBase } from '../../state/reducer-models/eReducerStatusBase';
+import { HOADON_LIST_SEARCH_PLACEHOLDER } from '../../utils/hoaDonListFilter';
 import Button from '../../component-ui/button';
 import { useHistory } from 'react-router-dom';
 import { rootAction } from '../../state/actions/rootAction';
@@ -64,6 +65,7 @@ const DanhSachHoaDonGanNhat = () => {
                 }
                 searchConfig={{
                     enable: (hoaDonSelectedIds?.length ?? 0) <= 0,
+                    placeholder: HOADON_LIST_SEARCH_PLACEHOLDER,
                     onValueChanged: (key: string) => {
                         dispatch(hoaDonAction.changeFilter({
                             ...filter,

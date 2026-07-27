@@ -3,6 +3,9 @@ import { eHoaDonTrangThai } from "../models/commons/eHoaDonTrangThai";
 import { eSortMode } from "../models/commons/eSortMode";
 import { IHoaDonSelectPagingRequest } from "../models/requests/hoa-don/IHoaDonSelectPagingRequest";
 
+export const HOADON_LIST_SEARCH_PLACEHOLDER =
+    "Tìm theo số HĐ, mã tra cứu, MST, tên người mua...";
+
 export const getDefaultDateRange = () => ({
     tu_ngay: moment().startOf("month").format("YYYY-MM-DD"),
     den_ngay: moment().format("YYYY-MM-DD"),

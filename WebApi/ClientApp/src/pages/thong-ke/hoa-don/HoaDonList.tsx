@@ -23,6 +23,7 @@ import {
   getPagingSummary,
 } from "../../../models/responses/IBasePagingRespone";
 import { IHoaDon } from "../../../models/responses/hoa-don/IHoaDon";
+import { HOADON_LIST_SEARCH_PLACEHOLDER } from "../../../utils/hoaDonListFilter";
 import { HoaDonTimelineModal } from "../../hoa-don/HoaDonTimelineModal";
 import {
   thongKeHDDHuyTemplate,
@@ -312,6 +313,7 @@ useEffect(()=>{
         }
         searchConfig={{
           enable: true,
+          placeholder: HOADON_LIST_SEARCH_PLACEHOLDER,
           onValueChanged: (key: string) => {
             setFilter({
               ...filter,

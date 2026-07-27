@@ -23,6 +23,7 @@ using Model.Table;
 using Service.Base;
 using Service.Caching;
 using Service.Helper;
+using Service.HoaDon.XuLyThongDiep;
 using Service.Hub;
 using StackExchange.Redis;
 using WebApp;
@@ -816,7 +817,7 @@ namespace Service.HoaDon
                     string tenThue = g.Key;
                     double phanTram = tenThue.Replace("KHAC:", "").Replace("%", "").Trim().ConvertToDouble(2);
 
-                    var thanh_tien = g.Where(x => x.hang_hoa_tinh_chat_id == 1).Sum(x => x.thanh_tien);
+                    var thanh_tien = g.Where(x => x.hang_hoa_tinh_chat_id == 1 || x.hang_hoa_tinh_chat_id == 5).Sum(x => x.thanh_tien);
                     var thanh_tien_ck = g.Where(x => x.hang_hoa_tinh_chat_id == 3).Sum(x => x.thanh_tien);
                     if (model.loai_tien != null && model.loai_tien.ToUpper() == "VND")
                     {
@@ -1126,8 +1127,18 @@ namespace Service.HoaDon
                 {
                     thue_suats = thue_suats
                 };
-                thongTinThanhToan.tong_tien_chua_thue = obj.tong_tien_truong_thue.ConvertToStringAndRemoveZeroPart();
-                thongTinThanhToan.tong_tien_thue = obj.tong_tien_thue.ConvertToStringAndRemoveZeroPart();
+                if (thueSuatTuDb.Any())
+                {
+                    thongTinThanhToan.tong_tien_chua_thue = thueSuatTuDb.Sum(x => x.ThTien)
+                        .ConvertToStringAndRemoveZeroPart();
+                    thongTinThanhToan.tong_tien_thue = thueSuatTuDb.Sum(x => x.TThue)
+                        .ConvertToStringAndRemoveZeroPart();
+                }
+                else
+                {
+                    thongTinThanhToan.tong_tien_chua_thue = obj.tong_tien_truong_thue.ConvertToStringAndRemoveZeroPart();
+                    thongTinThanhToan.tong_tien_thue = obj.tong_tien_thue.ConvertToStringAndRemoveZeroPart();
+                }
             }
 
             var model = new Model.Request.Xml.HoaDon()
@@ -2404,7 +2415,7 @@ namespace Service.HoaDon
 
                 if (service != null)
                 {
-                    if (ketQuaThongDiepRespone.TTChung.MLTDiep != "999")
+                    if (ThongDiepHoaDonHelper.ShouldRunFullXuLy(ketQuaThongDiepRespone, thongDiep))
                     {
                         var result = await service.XuLyThongDiepAsync(hoaDon, ketQuaThongDiepRespone, thongDiep);
                         await _serviceWrapper.HoaDon.PushMessageToVender.CheckAndPushMessageAsync(hoaDon);
@@ -2420,45 +2431,7 @@ namespace Service.HoaDon
 
                         if (result.data.hoa_don_trang_thai_id == (int)e_hoa_don_trang_thai.DA_PHAT_HANH)
                         {
-                            //nếu là hóa đơn điều chỉnh/ thay thế thì cập nhật hóa đơn gốc
-                            if (hoaDon.IsHoaDonDieuChinhThayThe())
-                            {
-                                var hoaDonGoc = await _repositoryWrapper.HoaDon.HoaDon.SelectHoaDonGocAsync(
-                                    hoaDon.donvi_ma_dv, hoaDon.hoa_don_dang_ky_phat_hanh_mau_so_goc,
-                                    hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu_goc,
-                                    hoaDon.ma_so_hoa_don_goc.ConvertToInt()
-                                );
-                                if (hoaDonGoc != null)
-                                {
-                                    var hoa_don_ids_thaythe_dieuchinh = hoaDonGoc.hoa_don_ids_thaythe_dieuchinh
-                                        .ConvertToString().Split(",")
-                                        .Where(x => x != string.Empty).ToList();
-                                    if (!hoa_don_ids_thaythe_dieuchinh.Contains(hoaDon.id.ToString()))
-                                    {
-                                        hoa_don_ids_thaythe_dieuchinh.Add(hoaDon.id.ToString());
-                                    }
-
-                                    hoaDonGoc.hoa_don_ids_thaythe_dieuchinh = hoa_don_ids_thaythe_dieuchinh.Join(",");
-                                    if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DIEU_CHINH)
-                                    {
-                                        hoaDonGoc.hoa_don_hinh_thuc_id = (int)e_hoa_don_hinh_thuc.HOA_DON_BI_DIEU_CHINH;
-                                    }
-
-                                    if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_THAY_THE)
-                                    {
-                                        hoaDonGoc.hoa_don_hinh_thuc_id = (int)e_hoa_don_hinh_thuc.HOA_DON_BI_THAY_THE;
-                                    }
-
-                                    hoaDonGoc.SetUpdateInfo(hoaDon.user_id_phathanh);
-                                    await this.UpdateAsync(hoaDonGoc);
-                                }
-                            }
-
-
-                           
-                          
-
-                           
+                            await CapNhatHoaDonGocSauPhatHanhThanhCongAsync(result.data.id, hoaDon.user_id_phathanh);
 
                             await _serviceWrapper.HoaDon.HoaDonSendEmail.SendEmailHoaDonAsync(new List<int>()
                                 { result.data.id }, true);
@@ -3034,7 +3007,7 @@ namespace Service.HoaDon
             }
             else if (slInput != 0 && dgInput != 0)
             {
-                thanhTienBase = slInput * donGiaGoc;
+                thanhTienBase = slInput * dgInput;
             }
 
             return thanhTienBase;
@@ -3153,7 +3126,25 @@ namespace Service.HoaDon
                     }
                 }
 
-                // ✅ Tính thuế suất (đã trừ chiết khấu)
+                // Làm tròn từng mặt hàng trước khi tính tổng/thuế (đồng bộ với XML)
+                if (model.loai_tien.ConvertToString() == "VND" || model.loai_tien.ConvertToString() == "")
+                {
+                    foreach (var hang_hoa in model.hoang_hoas)
+                    {
+                        hang_hoa.thanh_tien = Math.Round(hang_hoa.thanh_tien, 0, MidpointRounding.AwayFromZero);
+                    }
+                }
+
+                tong_thanh_tien = model.hoang_hoas
+                    .Where(x => x.hang_hoa_tinh_chat_id == 1 || x.hang_hoa_tinh_chat_id == 5)
+                    .Sum(x => x.thanh_tien);
+                tong_tien_mat_hang_chieu_khau = model.hoang_hoas
+                    .Where(x => x.hang_hoa_tinh_chat_id == 3)
+                    .Sum(x => x.thanh_tien);
+                tong_tien_chiet_khau = tong_tien_mat_hang_chieu_khau;
+
+                // Tính thuế suất từ thành tiền đã làm tròn
+                tong_vat = 0;
                 var thue_suats = model.hoang_hoas
                     .Select(x => x.thue_vat.ConvertToString())
                     .Distinct()
@@ -3170,21 +3161,18 @@ namespace Service.HoaDon
                         .Trim()
                         .ConvertToDouble(2);
 
-                    // Thành tiền hàng hóa (tính chất = 1)
                     var thanh_tien_hang_hoa = model.hoang_hoas
                      .Where(x => (x.hang_hoa_tinh_chat_id == 1 || x.hang_hoa_tinh_chat_id == 5) &&
                                  x.thue_vat.ConvertToString() == thue_suat.ten_thue_suat)
                      .Select(x => x.thanh_tien)
                      .Sum();
 
-                    // Thành tiền chiết khấu (tính chất = 3)
                     var thanh_tien_chiet_khau = model.hoang_hoas
                         .Where(x => x.hang_hoa_tinh_chat_id == 3 &&
                                     x.thue_vat.ConvertToString() == thue_suat.ten_thue_suat)
                         .Select(x => x.thanh_tien)
                         .Sum();
 
-                    // Thành tiền dùng để tính thuế = hàng hóa - chiết khấu
                     var thanh_tien_tinh_thue = thanh_tien_hang_hoa - thanh_tien_chiet_khau;
                     if (model.loai_tien == "VND")
                     {
@@ -3194,21 +3182,11 @@ namespace Service.HoaDon
                     {
                         phanTramThue = 0;
                     }
-                    // Tính thuế
                     var tien_thue = model.loai_tien == "VND"
                         ? ((double)thanh_tien_tinh_thue * phanTramThue / 100).ConvertToDouble(0).ConvertToDecimal()
                         : ((double)thanh_tien_tinh_thue * phanTramThue / 100).ConvertToDouble().ConvertToDecimal();
 
                     tong_vat += tien_thue;
-                }
-
-                // Làm tròn từng mặt hàng
-                foreach (var hang_hoa in model.hoang_hoas)
-                {
-                    if (model.loai_tien.ConvertToString() == "VND")
-                    {
-                        hang_hoa.thanh_tien = Math.Round(hang_hoa.thanh_tien, 2, MidpointRounding.AwayFromZero);
-                    }
                 }
             }
 
@@ -3941,6 +3919,71 @@ namespace Service.HoaDon
             }
         }
 
+        public async Task CapNhatHoaDonGocSauPhatHanhThanhCongAsync(int hoaDonId, int userIdPhatHanh = 0)
+        {
+            var hoaDon = await SelectByIdAsync(hoaDonId);
+            if (hoaDon == null || !hoaDon.IsHoaDonDieuChinhHoacThayTheDangPhatHanh())
+            {
+                return;
+            }
+
+            var soHoaDonGoc = hoaDon.ma_so_hoa_don_goc.ConvertToInt();
+            if (soHoaDonGoc <= 0)
+            {
+                return;
+            }
+
+            var hoaDonGoc = await _repositoryWrapper.HoaDon.HoaDon.SelectHoaDonGocAsync(
+                hoaDon.donvi_ma_dv,
+                hoaDon.hoa_don_dang_ky_phat_hanh_mau_so_goc,
+                hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu_goc,
+                soHoaDonGoc);
+
+            if (hoaDonGoc == null || hoaDonGoc.id == hoaDon.id)
+            {
+                return;
+            }
+
+            if (hoaDonGoc.ma_so_hoa_don != soHoaDonGoc)
+            {
+                return;
+            }
+
+            if (hoaDonGoc.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DIEU_CHINH
+                || hoaDonGoc.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_THAY_THE)
+            {
+                return;
+            }
+
+            var hoa_don_ids_thaythe_dieuchinh = hoaDonGoc.hoa_don_ids_thaythe_dieuchinh
+                .ConvertToString()
+                .Split(",", StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .Where(x => x != "")
+                .ToList();
+
+            var hoaDonIdStr = hoaDon.id.ToString();
+            if (!hoa_don_ids_thaythe_dieuchinh.Contains(hoaDonIdStr))
+            {
+                hoa_don_ids_thaythe_dieuchinh.Add(hoaDonIdStr);
+            }
+
+            hoaDonGoc.hoa_don_ids_thaythe_dieuchinh = string.Join(",", hoa_don_ids_thaythe_dieuchinh);
+
+            if (hoaDon.IsHoaDonDieuChinhDangPhatHanh())
+            {
+                hoaDonGoc.hoa_don_hinh_thuc_id = (int)e_hoa_don_hinh_thuc.HOA_DON_BI_DIEU_CHINH;
+            }
+            else if (hoaDon.IsHoaDonThayTheDangPhatHanh())
+            {
+                hoaDonGoc.hoa_don_hinh_thuc_id = (int)e_hoa_don_hinh_thuc.HOA_DON_BI_THAY_THE;
+            }
+
+            var userId = userIdPhatHanh > 0 ? userIdPhatHanh : hoaDon.user_id_phathanh;
+            hoaDonGoc.SetUpdateInfo(userId);
+            await UpdateAsync(hoaDonGoc);
+        }
+
         public async Task<FunctionResult<object>> KhoiPhucTrangThaiAsync(int id)
         {
             try
@@ -3962,10 +4005,15 @@ namespace Service.HoaDon
                 var hasLog3 = logs.Any(x => x.hoa_don_log_type_id == (int)e_hoa_don_log_type.KY_SO_SUCCESS);
                 var hasLog202 = logs.Any(x => x.mltdiep == "202");
                 var hasLog204 = logs.Any(x => x.mltdiep == "204");
+                var hasLogLoiThongDiep = logs.Any(x => x.mltdiep?.Trim() == "-1");
 
                 hoaDon.hoa_don_hinh_thuc_id = (int)e_hoa_don_hinh_thuc.HOA_DON_GOC;
 
-                if (hasLog7 && hasLog8 && hasLog202)
+                if (hasLogLoiThongDiep)
+                {
+                    hoaDon.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.LOI_THONG_DIEP;
+                }
+                else if (hasLog7 && hasLog8 && hasLog202)
                 {
                     hoaDon.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.DA_PHAT_HANH;
                 }

@@ -28,33 +28,11 @@ namespace Service.HoaDon
         }
         public override async Task<bool> UpdateAsync(hoa_don_dang_ky_phat_hanh obj)
         {
-
-            var CKM = this.GetHoaDonType(obj.ky_hieu);
-            if (CKM == "M")
+            var validationError = await ValidateSoKhoangPhatHanhAsync(obj);
+            if (validationError != null)
             {
-                var soHoaDonMax = (await _repositoryWrapper.HoaDon.HoaDon.GetMaxMaSoHoaDonMTT(obj.donvi_ma_dv, obj.mau_so, DateTime.Now.Year)).ConvertToInt();
-                if (Convert.ToInt16(obj.so_bat_dau) > Convert.ToInt16(obj.so_ket_thuc))
-                {
-                    return false;
-                }
-                if (Convert.ToInt16(obj.so_ket_thuc) < soHoaDonMax)
-                {
-                    return false;
-                }
+                return false;
             }
-            else
-            {
-                var soHoaDonMax = (await _repositoryWrapper.HoaDon.HoaDon.GetMaxMaSoHoaDon(obj.donvi_ma_dv, obj.mau_so, obj.ky_hieu)).ConvertToInt();
-                if (Convert.ToInt16(obj.so_bat_dau) > Convert.ToInt16(obj.so_ket_thuc))
-                {
-                    return false;
-                }
-                if (Convert.ToInt16(obj.so_ket_thuc) < soHoaDonMax)
-                {
-                    return false;
-                }
-            }
-
 
             var isUpdated = await _hoaDonDangKyPhatHanhRepository.UpdateAsync(obj);
             if (isUpdated)
@@ -113,6 +91,38 @@ namespace Service.HoaDon
             var hoaDon = await _repositoryWrapper.HoaDon.HoaDon.SelectAnyHoaDonAsync(donvi_ma_dv, mau_so, ky_hieu);
             return hoaDon != null;
             // throw new NotImplementedException();
+        }
+
+        public async Task<string?> ValidateSoKhoangPhatHanhAsync(hoa_don_dang_ky_phat_hanh obj)
+        {
+            var soBatDau = obj.so_bat_dau.ConvertToInt();
+            var soKetThuc = obj.so_ket_thuc.ConvertToInt();
+
+            if (soBatDau > soKetThuc)
+            {
+                return "Số kết thúc không được nhỏ hơn số bắt đầu";
+            }
+
+            var soHoaDonMax = await GetSoHoaDonDaPhatHanhMaxAsync(obj);
+            if (soKetThuc < soHoaDonMax)
+            {
+                return soHoaDonMax > 0
+                    ? $"Số kết thúc ({soKetThuc}) không được nhỏ hơn số hóa đơn đã phát hành ({soHoaDonMax})"
+                    : "Số kết thúc không hợp lệ";
+            }
+
+            return null;
+        }
+
+        private async Task<int> GetSoHoaDonDaPhatHanhMaxAsync(hoa_don_dang_ky_phat_hanh obj)
+        {
+            var CKM = this.GetHoaDonType(obj.ky_hieu);
+            if (CKM == "M")
+            {
+                return (await _repositoryWrapper.HoaDon.HoaDon.GetMaxMaSoHoaDonMTT(obj.donvi_ma_dv, obj.mau_so, DateTime.Now.Year)).ConvertToInt();
+            }
+
+            return (await _repositoryWrapper.HoaDon.HoaDon.GetMaxMaSoHoaDon(obj.donvi_ma_dv, obj.mau_so, obj.ky_hieu)).ConvertToInt();
         }
 
         public async Task<bool> CheckIfSoHoaDonValid(string donvi_ma_dv, string mau_so, string ky_hieu, int so_bat_dau)

@@ -8,6 +8,7 @@ namespace Contracts.Service.HoaDon
         Task<IEnumerable<hoa_don_dang_ky_phat_hanh>> SelectByDonViAsync(string donvi_ma_dv);
         Task<bool> CheckIfPhatHanhDaSuDung(string donvi_ma_dv, string mau_so, string ky_hieu);
         Task<bool> CheckIfSoHoaDonValid(string donvi_ma_dv, string mau_so, string ky_hieu, int so_bat_dau);
+        Task<string?> ValidateSoKhoangPhatHanhAsync(hoa_don_dang_ky_phat_hanh obj);
 
     }
 }

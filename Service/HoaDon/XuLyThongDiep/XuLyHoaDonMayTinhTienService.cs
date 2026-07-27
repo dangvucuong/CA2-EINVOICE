@@ -66,12 +66,13 @@ namespace Service.HoaDon.XuLyThongDiep
                     hoaDon.ket_qua_phat_hanh = $"{MTLoi}";
                 }
             }
-            if (thongDiepRespone.TTChung.MLTDiep == "-1")
+            var mltdiep = ThongDiepHoaDonHelper.GetMLTDiep(thongDiepRespone, xmlKetQua);
+            if (ThongDiepHoaDonHelper.IsLoiThongDiep(thongDiepRespone, xmlKetQua))
             {
                 hoaDon.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.LOI_THONG_DIEP;
                 hoaDon.ket_qua_phat_hanh = $"";
             }
-            if (thongDiepRespone.TTChung.MLTDiep == "999")
+            else if (mltdiep == "999")
             {
                 hoaDon.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.DA_GUI_LEN_CQT_CHUA_PHAN_HOI_KIEM_TRA_DU_LIEU;
                 hoaDon.ket_qua_phat_hanh = $"";

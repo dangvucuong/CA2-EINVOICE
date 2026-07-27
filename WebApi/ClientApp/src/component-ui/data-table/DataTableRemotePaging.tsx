@@ -25,6 +25,7 @@ interface ISelectionProps {
 interface ISearchConfig {
   enable: boolean;
   search_key?: string;
+  placeholder?: string;
   onValueChanged: (key: string) => void;
 }
 interface ISortConfig {
@@ -226,7 +227,7 @@ const DataTableRemotePaging = (props: IDataTableRemotePagingProps) => {
           {searchConfig && searchConfig.enable && (
             <TextInput
               leadingVisual={SearchIcon}
-              placeholder="Tìm kiếm"
+              placeholder={searchConfig.placeholder ?? "Tìm kiếm"}
               value={search_key}
               onChange={(e) => {
                 setSearch_key(e.target.value);

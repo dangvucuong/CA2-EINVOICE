@@ -14,6 +14,7 @@ import moment from "moment";
 import { useEffect } from "react";
 import HoaDonSort from "../../pages/hoa-don/HoaDonSort";
 import HoaDonHinhThuc from "../hoa-don-hinh-thuc";
+import { HOADON_LIST_SEARCH_PLACEHOLDER } from "../../utils/hoaDonListFilter";
 interface IHoaDonSelectProps {
   height?: number;
   isSingleMode?: boolean;
@@ -151,6 +152,7 @@ const HoaDonSelect = (props: IHoaDonSelectProps) => {
           searchConfig={{
             enable: (hoaDonSelectedIds?.length ?? 0) <= 0,
             search_key: filter.search_key ?? "",
+            placeholder: HOADON_LIST_SEARCH_PLACEHOLDER,
             onValueChanged: (key: string) => {
               dispatch(
                 mainAction.changeFilter({
