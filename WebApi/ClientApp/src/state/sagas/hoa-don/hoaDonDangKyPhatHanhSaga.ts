@@ -31,7 +31,13 @@ function* saveWorker(action: IHoaDonDangKyPhatHanhSaveStart): any {
     if (res.is_success) {
         yield put(mainAction.saveSuccess(res.data))
     } else {
-        yield put(mainAction.saveError(res.message ?? ""))
+        yield put(
+            mainAction.saveError(
+                res.message?.trim()
+                    ? res.message
+                    : "Cập nhật đăng ký phát hành không thành công"
+            )
+        )
     }
 }
 function* deleteWorker(action: IHoaDonDangKyPhatHanhDeleteStart): any {

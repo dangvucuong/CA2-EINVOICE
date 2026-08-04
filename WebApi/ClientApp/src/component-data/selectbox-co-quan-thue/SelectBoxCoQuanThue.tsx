@@ -133,12 +133,13 @@ const SelectBoxCoQuanThue = (props: ISelectBoxCoQuanThueProps) => {
                 onOpenChange={setOpen}
                 items={displayItems}
                 selected={selectedItem}
-                onSelectedChange={(data: SelectPanelItem | undefined) => {
-                    if (!data) {
+                onSelectedChange={(data: any) => {
+                    if (!data?.data) {
                         return;
                     }
-                    setSelectedCQT(data.data);
-                    props.onValueChanged(data.id, data.data);
+                    const cqt = data.data as ICoQuanThue;
+                    setSelectedCQT(cqt);
+                    props.onValueChanged(data.id, cqt);
                 }}
                 onFilterChange={setFilter}
                 showItemDividers={true}

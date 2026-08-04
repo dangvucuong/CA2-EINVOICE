@@ -46,7 +46,7 @@ namespace Model.Respone
             {
                 StatusCode = (int)this.status_code,
                 Content = Newtonsoft.Json.JsonConvert.SerializeObject(this),
-                ContentType = "json"
+                ContentType = "application/json"
             };
         }
         public Task<ContentResult> ToContentResultAsync()
@@ -55,7 +55,7 @@ namespace Model.Respone
             {
                 StatusCode = (int)this.status_code,
                 Content = Newtonsoft.Json.JsonConvert.SerializeObject(this),
-                ContentType = "json"
+                ContentType = "application/json"
             });
         }
     }
@@ -95,7 +95,7 @@ namespace Model.Respone
             {
                 StatusCode = (int)this.status_code,
                 Content = Newtonsoft.Json.JsonConvert.SerializeObject(this),
-                ContentType = "json"
+                ContentType = "application/json"
             };
         }
         public Task<ContentResult> ToContentResultAsync()
@@ -104,7 +104,7 @@ namespace Model.Respone
             {
                 StatusCode = (int)this.status_code,
                 Content = Newtonsoft.Json.JsonConvert.SerializeObject(this),
-                ContentType = "json"
+                ContentType = "application/json"
             });
         }
     }

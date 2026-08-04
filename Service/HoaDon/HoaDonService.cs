@@ -133,19 +133,16 @@ namespace Service.HoaDon
                 //     return new ErrorResult<int>(
                 //         $"Ngày hóa đơn phải từ ngày {donVi.ngay_hoa_don_max.Value.ToString("dd/MM/yyyy")}");
 
-                if (model.ngay_hoa_don.Date > DateTime.Today)
+                if (model.hoa_don_hinh_thuc_code != "M")
                 {
-                    return new ErrorResult<int>(
-                        "Ngày hóa đơn không được lớn hơn ngày hiện tại"
-                    );
-                }
-
-
-                var ngayHoaDonMax = await _repositoryWrapper.HoaDon.HoaDon.GetNgayHoaDonPhatHanhMaxAsynsc(model.donvi_ma_dv, model.hoa_don_dang_ky_phat_hanh_mau_so, model.hoa_don_dang_ky_phat_hanh_ky_hieu);
-                if (ngayHoaDonMax != null && model.ngay_hoa_don < ngayHoaDonMax.Value)
-                {
-                    return new ErrorResult<int>(
-                    $"Ngày hóa đơn phải từ ngày {ngayHoaDonMax.Value.ToString("dd/MM/yyyy")}");
+                    var ngayHoaDonError = await ValidateNgayHoaDonKhiLuuAsync(
+                        model.donvi_ma_dv,
+                        model.hoa_don_dang_ky_phat_hanh_mau_so,
+                        model.hoa_don_dang_ky_phat_hanh_ky_hieu,
+                        model.ngay_hoa_don,
+                        0);
+                    if (ngayHoaDonError != null)
+                        return ngayHoaDonError;
                 }
 
                 //hóa đơn đã thay thế -> không đc điều chỉnh hoặc thay thế
@@ -333,26 +330,16 @@ namespace Service.HoaDon
                     //     return new ErrorResult<int>(
                     //         $"Ngày hóa đơn phải từ ngày {donVi.ngay_hoa_don_max.Value.ToString("dd/MM/yyyy")}");
 
-                    if (obj.ma_so_hoa_don > 0 && obj.ngay_hoa_don != model.ngay_hoa_don)
+                    if (model.hoa_don_hinh_thuc_code != "M")
                     {
-                        return new ErrorResult<int>(
-                         "Hóa đơn đã ký số, không được phép chỉnh sửa ngày hóa đơn"
-                     );
-                    }
-
-
-                    if (model.ngay_hoa_don.Date > DateTime.Today)
-                    {
-                        return new ErrorResult<int>(
-                            "Ngày hóa đơn không được lớn hơn ngày hiện tại"
-                        );
-                    }
-
-                    var ngayHoaDonMax = await _repositoryWrapper.HoaDon.HoaDon.GetNgayHoaDonPhatHanhMaxAsynsc(model.donvi_ma_dv, model.hoa_don_dang_ky_phat_hanh_mau_so, model.hoa_don_dang_ky_phat_hanh_ky_hieu);
-                    if (ngayHoaDonMax != null && model.ngay_hoa_don < ngayHoaDonMax.Value)
-                    {
-                        return new ErrorResult<int>(
-                        $"Ngày hóa đơn phải từ ngày {ngayHoaDonMax.Value.ToString("dd/MM/yyyy")}");
+                        var ngayHoaDonError = await ValidateNgayHoaDonKhiLuuAsync(
+                            model.donvi_ma_dv,
+                            model.hoa_don_dang_ky_phat_hanh_mau_so,
+                            model.hoa_don_dang_ky_phat_hanh_ky_hieu,
+                            model.ngay_hoa_don,
+                            model.id);
+                        if (ngayHoaDonError != null)
+                            return ngayHoaDonError;
                     }
 
                     obj.ngay_hoa_don = model.ngay_hoa_don;
@@ -3718,6 +3705,92 @@ namespace Service.HoaDon
         {
             var ngayMax = await _repositoryWrapper.HoaDon.HoaDon.GetNgayHoaDonPhatHanhMaxAsynsc(donvi_ma_dv, hoa_don_dang_ky_phat_hanh_mau_so, hoa_don_dang_ky_phat_hanh_ky_hieu);
             return new SuccessResult<DateTime?>(ngayMax);
+        }
+
+        public async Task<FunctionResult<bool>> ValidateNgayHoaDonAsync(hoa_don hoaDon)
+        {
+            if (hoaDon == null)
+                return new ErrorResult<bool>("Không tìm thấy hóa đơn");
+            if (hoaDon.hoa_don_hinh_thuc_code == "M")
+                return new SuccessResult<bool>(true);
+
+            var error = await ValidateNgayHoaDonKhiLuuAsync(
+                hoaDon.donvi_ma_dv,
+                hoaDon.hoa_don_dang_ky_phat_hanh_mau_so,
+                hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu,
+                hoaDon.ngay_hoa_don,
+                hoaDon.id);
+            if (error != null)
+                return new ErrorResult<bool>(error.message);
+            return new SuccessResult<bool>(true);
+        }
+
+        private static string ValidateNgayHoaDonTheoLuong(
+            DateTime ngaySua,
+            DateTime? ngayLienKeTruoc,
+            DateTime? ngayLienKeSau,
+            DateTime? ngayHoaDonMax)
+        {
+            var ngay = ngaySua.Date;
+            var today = DateTime.Today;
+            var minChoPhep = today.AddDays(-2);
+
+            if (!ngayLienKeTruoc.HasValue && !ngayLienKeSau.HasValue)
+            {
+                if (ngay > today)
+                    return "Không được lập hóa đơn cho ngày tương lai";
+                if (ngay < minChoPhep)
+                    return "không được lập hóa đơn cách ngày hiện tại quá 2 ngày";
+                return null;
+            }
+
+            if (ngayLienKeTruoc.HasValue && !ngayLienKeSau.HasValue)
+            {
+                if (ngayHoaDonMax.HasValue && ngay < ngayHoaDonMax.Value.Date)
+                    return $"không thể sửa ngày hóa đơn nhỏ hơn \"{ngayHoaDonMax.Value:dd/MM/yyyy}\"";
+                if (ngay > today)
+                    return "Không được lập hóa đơn cho ngày tương lai";
+                if (ngay < minChoPhep)
+                    return "không được lập hóa đơn cách ngày hiện tại quá 2 ngày";
+                return null;
+            }
+
+            if (ngayLienKeTruoc.HasValue && ngayLienKeSau.HasValue)
+            {
+                if (ngay < ngayLienKeTruoc.Value.Date)
+                    return $"không được lập hóa đơn nhỏ hơn \"{ngayLienKeTruoc.Value:dd/MM/yyyy}\"";
+                if (ngay > ngayLienKeSau.Value.Date)
+                    return "không lập được hóa đơn lớn hơn ngày hóa đơn liền kề sau";
+                return null;
+            }
+
+            if (ngay > today)
+                return "Không được lập hóa đơn cho ngày tương lai";
+            if (ngay < minChoPhep)
+                return "không được lập hóa đơn cách ngày hiện tại quá 2 ngày";
+            return null;
+        }
+
+        private async Task<ErrorResult<int>?> ValidateNgayHoaDonKhiLuuAsync(
+            string donvi_ma_dv,
+            string mau_so,
+            string ky_hieu,
+            DateTime ngay_hoa_don,
+            int hoa_don_id)
+        {
+            var lienKe = await _repositoryWrapper.HoaDon.HoaDon.SelectNgayHoaDonLienKeAsync(
+                donvi_ma_dv, mau_so, ky_hieu, hoa_don_id);
+            var ngayMax = await _repositoryWrapper.HoaDon.HoaDon.GetNgayHoaDonPhatHanhMaxAsynsc(
+                donvi_ma_dv, mau_so, ky_hieu);
+
+            var message = ValidateNgayHoaDonTheoLuong(
+                ngay_hoa_don,
+                lienKe?.ngay_truoc,
+                lienKe?.ngay_sau,
+                ngayMax);
+            if (message != null)
+                return new ErrorResult<int>(message);
+            return null;
         }
 
         // update tach ds

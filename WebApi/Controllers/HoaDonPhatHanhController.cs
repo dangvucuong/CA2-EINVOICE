@@ -56,13 +56,20 @@ namespace WebApi.Controllers
             {
                 return this.BadRequest("Số bắt đầu không được nhỏ hơn số hóa đơn đã sử dụng");
             }
+
+            var insertValidationError = await _hoaDonDangKyPhatHanh.ValidateSoKhoangPhatHanhAsync(model);
+            if (insertValidationError != null)
+            {
+                return this.BadRequest(insertValidationError);
+            }
+
             model.id = await _hoaDonDangKyPhatHanh.InsertAsync(model);
             if (model.id > 0)
             {
                 await this.SaveLogAsync($"Đăng ký phát hành hóa đơn ({model.id}): ký hiệu {model.ky_hieu} từ {model.so_bat_dau} đến {model.so_ket_thuc}", model);
                 return this.OK(model);
             }
-            return this.BadRequest();
+            return this.BadRequest("Thêm đăng ký phát hành không thành công");
         }
         /// <summary>
         /// Sửa đăng ký phát hành
@@ -76,7 +83,7 @@ namespace WebApi.Controllers
         {
             var user_id = this.GetUserId();
             var obj = await _hoaDonDangKyPhatHanh.SelectByIdAsync(model.id);
-            if (obj == null) return this.BadRequest();
+            if (obj == null) return this.BadRequest("Không tìm thấy đăng ký phát hành");
             var isDaSuDung = await _hoaDonDangKyPhatHanh.CheckIfPhatHanhDaSuDung(obj.donvi_ma_dv, obj.mau_so, obj.ky_hieu);
             if (isDaSuDung)
             {
@@ -120,12 +127,21 @@ namespace WebApi.Controllers
                 return this.BadRequest(validationError);
             }
 
+            obj.so_luong = obj.so_ket_thuc.ConvertToInt() - obj.so_bat_dau.ConvertToInt() + 1;
+
             var isUpdated = await _hoaDonDangKyPhatHanh.UpdateAsync(obj);
             if (isUpdated)
             {
                 await this.SaveLogAsync($"Cập nhật đăng ký phát hành hóa ({model.id}) đơn ký hiệu {model.ky_hieu} từ {model.so_bat_dau} đến {model.so_ket_thuc}", model);
+                return this.OK(obj);
             }
-            return isUpdated ? this.OK(obj) : this.BadRequest("Cập nhật đăng ký phát hành không thành công");
+
+            var validationAfterFail = await _hoaDonDangKyPhatHanh.ValidateSoKhoangPhatHanhAsync(obj);
+            if (validationAfterFail != null)
+            {
+                return this.BadRequest(validationAfterFail);
+            }
+            return this.BadRequest("Cập nhật đăng ký phát hành không thành công");
         }
         /// <summary>
         /// Xóa đăng ký phát hành

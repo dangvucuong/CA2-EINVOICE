@@ -28,12 +28,6 @@ namespace Service.HoaDon
         }
         public override async Task<bool> UpdateAsync(hoa_don_dang_ky_phat_hanh obj)
         {
-            var validationError = await ValidateSoKhoangPhatHanhAsync(obj);
-            if (validationError != null)
-            {
-                return false;
-            }
-
             var isUpdated = await _hoaDonDangKyPhatHanhRepository.UpdateAsync(obj);
             if (isUpdated)
             {
@@ -107,7 +101,7 @@ namespace Service.HoaDon
             if (soKetThuc < soHoaDonMax)
             {
                 return soHoaDonMax > 0
-                    ? $"Số kết thúc ({soKetThuc}) không được nhỏ hơn số hóa đơn đã phát hành ({soHoaDonMax})"
+                    ? $"Số kết thúc ({soKetThuc}) không được nhỏ hơn số hóa đơn đã phát hành ({soHoaDonMax}) của đăng ký phát hành ký hiệu {obj.ky_hieu}, mẫu số {obj.mau_so}"
                     : "Số kết thúc không hợp lệ";
             }
 

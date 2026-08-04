@@ -24,6 +24,7 @@ import { IHoaDon } from "../../models/responses/hoa-don/IHoaDon";
 import { HoaDonTimelineModal } from "../hoa-don/HoaDonTimelineModal";
 import HoaDonDieuChinhFilter from "./HoaDonDieuChinhFilter";
 import HoaDonStatus from "../../component-data/hoa-don-status";
+import ViewHoaDonButtonActionListItem from "../../component-data/view-hoa-don-modal";
 import { eHoaDonTrangThai } from "../../models/commons/eHoaDonTrangThai";
 import { rootAction } from "../../state/actions/rootAction";
 import { useAppSelector } from "../../hooks/useAppSelector";
@@ -192,6 +193,20 @@ const HoaDonDieuChinhPage = () => {
               rowHeader: false,
               width: "80px",
               // sortBy: "alphanumeric"
+            },
+            {
+              id: "xem",
+              header: "Xem",
+              width: "50px",
+              renderCell: (row: IHoaDon) => {
+                return (
+                  <ViewHoaDonButtonActionListItem
+                    id={row.id}
+                    showText={false}
+                    hinhThucHoaDonId={eHoaDonHinhThuc.HOA_DON_DIEU_CHINH}
+                  />
+                );
+              },
             },
             {
               id: "edit",

@@ -51,6 +51,7 @@ namespace Contracts.Service.HoaDon
         Task<FunctionResult<HoaDonPhatHanhRespone>> XuLyThongDiepAsync(string thongDiep);
         Task<FunctionResult<int>> GetSoHoaDonAsyn(string donvi_ma_dv, string hoa_don_dang_ky_phat_hanh_mau_so, string hoa_don_dang_ky_phat_hanh_ky_hieu);
         Task<FunctionResult<DateTime?>> GetNgayHoaDonPhatHanhMaxAsynsc(string donvi_ma_dv, string hoa_don_dang_ky_phat_hanh_mau_so, string hoa_don_dang_ky_phat_hanh_ky_hieu);
+        Task<FunctionResult<bool>> ValidateNgayHoaDonAsync(hoa_don hoaDon);
         Task<FunctionResult<int>> UpdateHoaDonPhatHanhLoiNhieuLanAsync();
         Task<FunctionResult<int>> UpdateHoaDonPhatHanhLoiChuaPhatHanhAsync();
         Task<FunctionResult<int>> SaoChepHoaDonNghichDaoAsync();
