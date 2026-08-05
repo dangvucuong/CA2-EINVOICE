@@ -10,6 +10,7 @@ using Model.Respone.HoaDon;
 using Model.Respone.ThongKe;
 using Model.Table;
 using Repository.Base;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using WebApp;
@@ -58,13 +59,14 @@ namespace Repository.HoaDon
             return _dbConnection.SelectFirstOrDefaultAsync<DateTime?>("hoa_don_get_max_ngay_hoa_don_da_phat_hanh", param);
         }
 
-        public Task<HoaDonNgayLienKeRespone> SelectNgayHoaDonLienKeAsync(string donvi_ma_dv, string mau_so, string ky_hieu, int hoa_don_id)
+        public Task<HoaDonNgayLienKeRespone> SelectNgayHoaDonLienKeAsync(string donvi_ma_dv, string mau_so, string ky_hieu, int hoa_don_id, DateTime ngay_hoa_don)
         {
             var param = new DynamicParameters();
             param.Add("@donvi_ma_dv", donvi_ma_dv.ConvertToString());
             param.Add("@mau_so", mau_so.ConvertToString());
             param.Add("@ky_hieu", ky_hieu.ConvertToString());
             param.Add("@hoa_don_id", hoa_don_id);
+            param.Add("@ngay_hoa_don", ngay_hoa_don.Date);
             return _dbConnection.SelectFirstOrDefaultAsync<HoaDonNgayLienKeRespone>("hoa_don_select_ngay_lien_ke", param);
         }
 

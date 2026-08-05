@@ -286,13 +286,6 @@ namespace WebApi.Controllers
             var hoaDon = await _hoaDonService.SelectByIdAsync(id);
             if (hoaDon != null)
             {
-                if (hoaDon.hoa_don_hinh_thuc_code != "M")
-                {
-                    var validateNgay = await _hoaDonService.ValidateNgayHoaDonAsync(hoaDon);
-                    if (!validateNgay.is_success)
-                        return this.BadRequest(validateNgay.message);
-                }
-
                 if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DA_HUY_NOI_BO)
                 {
                     return this.BadRequest("Hóa đơn đã hủy nội bộ");
@@ -374,12 +367,6 @@ namespace WebApi.Controllers
             foreach (var hoaDon in hoaDons)
             {
                 var id = hoaDon.id;
-                if (hoaDon.hoa_don_hinh_thuc_code != "M")
-                {
-                    var validateNgay = await _hoaDonService.ValidateNgayHoaDonAsync(hoaDon);
-                    if (!validateNgay.is_success)
-                        return this.BadRequest(validateNgay.message);
-                }
                 if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DA_HUY_NOI_BO)
                 {
                     return this.BadRequest("Hóa đơn đã hủy nội bộ");

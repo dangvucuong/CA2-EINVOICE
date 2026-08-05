@@ -3764,6 +3764,17 @@ namespace Service.HoaDon
                 return null;
             }
 
+            if (!ngayLienKeTruoc.HasValue && ngayLienKeSau.HasValue)
+            {
+                if (ngay > ngayLienKeSau.Value.Date)
+                    return "không lập được hóa đơn lớn hơn ngày hóa đơn liền kề sau";
+                if (ngay > today)
+                    return "Không được lập hóa đơn cho ngày tương lai";
+                if (ngay < minChoPhep)
+                    return "không được lập hóa đơn cách ngày hiện tại quá 2 ngày";
+                return null;
+            }
+
             if (ngay > today)
                 return "Không được lập hóa đơn cho ngày tương lai";
             if (ngay < minChoPhep)
@@ -3779,7 +3790,7 @@ namespace Service.HoaDon
             int hoa_don_id)
         {
             var lienKe = await _repositoryWrapper.HoaDon.HoaDon.SelectNgayHoaDonLienKeAsync(
-                donvi_ma_dv, mau_so, ky_hieu, hoa_don_id);
+                donvi_ma_dv, mau_so, ky_hieu, hoa_don_id, ngay_hoa_don);
             var ngayMax = await _repositoryWrapper.HoaDon.HoaDon.GetNgayHoaDonPhatHanhMaxAsynsc(
                 donvi_ma_dv, mau_so, ky_hieu);
 
