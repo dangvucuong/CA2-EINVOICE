@@ -67,6 +67,10 @@ import { NhatKyChungTuModal } from "./NhatKyChungTuModal";
 import KySoModal from "../../component-data/ky-so-modal";
 import GuiChungTuLenCQTModal from "./GuiChungTuLenCQTModal";
 import ChungTuKySoPhatHanhMultiple from "./ChungTuKySoPhatHanhMultiple";
+import {
+  buildChungTuDownloadZipUrl,
+  MAX_CHUNG_TU_DOWNLOAD,
+} from "../../helpers/chungTuDownloadHelper";
 
 const tabData = [
   {
@@ -129,6 +133,29 @@ const QuanlychungtuPage = () => {
   const [openConFirmRemoveModal, setOpenConFirmRemoveModal] = useState(false);
   const [openGuiChungTuModal, setOpenGuiChungTuModal] = useState(false);
   const [isSending, setIsSending] = useState(false);
+
+  const handleDownloadChungTuZip = useCallback(
+    (type: "pdf" | "xml") => {
+      const ids = hoaDonSelectedIds ?? [];
+      if (ids.length === 0) return;
+      if (ids.length > MAX_CHUNG_TU_DOWNLOAD) {
+        NotifyHelper.Error(
+          `Không được tải xuống quá ${MAX_CHUNG_TU_DOWNLOAD} chứng từ cùng lúc`
+        );
+        return;
+      }
+      const madonvi =
+        user?.donvi_ma_dv || user?.donvi?.ma_dv || "";
+      if (!madonvi) {
+        NotifyHelper.Error("Không xác định được mã đơn vị.");
+        return;
+      }
+      const url = buildChungTuDownloadZipUrl(type, ids, madonvi);
+      window.open(url, "_blank");
+    },
+    [hoaDonSelectedIds, user]
+  );
+
 
   const { checkAccesiableTo } = useCommonContext();
 
@@ -193,6 +220,10 @@ const QuanlychungtuPage = () => {
     if (parseRes.status === "success") {
       const newData = parseRes.data?.map((item: any, index: number) => ({
         ...item,
+        MaCT:
+          item?.MaCT !== undefined && item?.MaCT !== null
+            ? Number(item.MaCT)
+            : item?.MaCT,
         PhanbietCTValue: item?.PhanbietCT,
         TinhtrangCTText: GetTinhtrangCT(item?.TinhtrangCT),
         PhanbietCT:
@@ -744,6 +775,39 @@ const QuanlychungtuPage = () => {
 
           <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
             <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 1 }}>
+              {(hoaDonSelectedIds?.length ?? 0) > 0 && (
+                <ActionMenu>
+                  <ActionMenu.Button
+                    size="small"
+                    leadingVisual={DownloadIcon}
+                  >
+                    Tải xuống
+                  </ActionMenu.Button>
+                  <ActionMenu.Overlay>
+                    <ActionList showDividers>
+                      <ActionList.Item
+                        onSelect={() => handleDownloadChungTuZip("pdf")}
+                      >
+                        <ActionList.LeadingVisual>
+                          <FileIcon />
+                        </ActionList.LeadingVisual>
+                        Tải pdf
+                      </ActionList.Item>
+                      {tab !== "nhap" && (
+                        <ActionList.Item
+                          onSelect={() => handleDownloadChungTuZip("xml")}
+                        >
+                          <ActionList.LeadingVisual>
+                            <FileCodeIcon />
+                          </ActionList.LeadingVisual>
+                          Tải xml gửi CQT
+                        </ActionList.Item>
+                      )}
+                    </ActionList>
+                  </ActionMenu.Overlay>
+                </ActionMenu>
+              )}
+
               {(hoaDonSelectedIds?.length ?? 0) > 0 &&
                 (!tab || tab === "nhap" || tab === "cho-phat-hanh") && (
                   <>
@@ -960,19 +1024,14 @@ const QuanlychungtuPage = () => {
                   });
                 }
               }}
-              selection={
-                !tab || tab === "da-gui-cqt" || tab === "nhap"
-                  ? {
-                    mode: "multiple",
-                    keyExpr: "MaCT",
-                    selectedRowKeys: hoaDonSelectedIds,
-                    onSelectionChanged: (keys) => {
-                      // dispatch(hoaDonAction.changeSelectedId(keys));
-                      setHoaDonSelectedIds(keys);
-                    },
-                  }
-                  : undefined
-              }
+              selection={{
+                mode: "multiple",
+                keyExpr: "MaCT",
+                selectedRowKeys: hoaDonSelectedIds,
+                onSelectionChanged: (keys) => {
+                  setHoaDonSelectedIds(keys);
+                },
+              }}
               columns={[
                 {
                   id: "actions",
