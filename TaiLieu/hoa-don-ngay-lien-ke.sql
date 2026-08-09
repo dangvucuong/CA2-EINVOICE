@@ -1,5 +1,6 @@
 -- Ngày hóa đơn liền kề trước/sau theo NGÀY (cùng đơn vị, mẫu số, ký hiệu).
 -- Loại trừ @hoa_don_id khi > 0. So sánh theo @ngay_hoa_don đang lưu/ký.
+-- Khi sửa HĐ cuối (không có ngày liền kề sau ở ngày hiện tại trên DB), app kiểm tra thêm MAX(ngay) HĐ đã phát hành.
 IF OBJECT_ID('hoa_don_select_ngay_lien_ke', 'P') IS NOT NULL
     DROP PROCEDURE hoa_don_select_ngay_lien_ke;
 GO

@@ -4253,10 +4253,22 @@ Public Class service
 
             Dim trangthai As String = LoadData(mact, "TinhtrangCT")
 
-            If Not String.IsNullOrEmpty(trangthai) AndAlso Convert.ToInt32(trangthai) = 33 Then
+            If String.IsNullOrEmpty(trangthai) Then
+                response("status") = "error"
+                response("message") = "Không tìm thấy chứng từ"
+                Return JsonConvert.SerializeObject(response)
+            End If
+
+            Dim trangThaiCt As Integer = Convert.ToInt32(trangthai)
+
+            If trangThaiCt = 3 Then
+                response("status") = "success"
+                response("message") = "In chuyển đổi thành công"
+                response("data") = mact
+            ElseIf trangThaiCt = 2 OrElse trangThaiCt = 33 Then
                 Using conn As New SqlConnection(connectionString)
                     conn.Open()
-                    Using comm As New SqlCommand("update ChungtuthueTNCN set TinhtrangCT=3 where MaCT =@mact and MasothueTC=@madv", conn)
+                    Using comm As New SqlCommand("UPDATE ChungtuthueTNCN SET TinhtrangCT=3 WHERE MaCT=@mact AND MasothueTC=@madv", conn)
                         comm.CommandTimeout = 0
                         comm.Parameters.AddWithValue("@mact", mact)
                         comm.Parameters.AddWithValue("@madv", madonvi)
@@ -4269,7 +4281,7 @@ Public Class service
                 response("data") = mact
             Else
                 response("status") = "error"
-                response("message") = "In chuyển đổi không thành công"
+                response("message") = "Chứng từ không ở trạng thái cho phép in chuyển đổi"
             End If
 
         Catch ex As Exception
@@ -4787,6 +4799,10 @@ Public Class service
 
         Try
             '--- Xây dựng SQL
+            If String.IsNullOrEmpty(mauso) Then
+                mauso = "03/TNCN"
+            End If
+
             If mauso = "03/TNCN" Then
                 Select Case loaiTimKiem
                     Case 0
@@ -4910,6 +4926,10 @@ Public Class service
 
         Try
             '--- Xây dựng SQL
+            If String.IsNullOrEmpty(mauso) Then
+                mauso = "03/TNCN"
+            End If
+
             If mauso = "03/TNCN" Then
                 Select Case loaiTimKiem
                     Case 0
@@ -5031,26 +5051,36 @@ Public Class service
             Dim chuoiketnoi As String = connectionString
 
             ' Tính offset cho phân trang
+            If pageIndex < 1 Then pageIndex = 1
             Dim offset As Integer = (pageIndex - 1) * pageSize
 
-            ' Xác định câu SQL
-            If mauso = "03/TNCN" Then
-                Select Case loaiTimKiem
-                    Case 0
-                        sql = GetSqlQuery(1, madonvi, tungay, denngay, mauso, kyhieu, "", "", False, True)
-                        sqlCount = GetSqlQuery(1, madonvi, tungay, denngay, mauso, kyhieu, "", "", True, False)
-                        CapnhatKhoaphienchungtuchuacapnhatKQ(madonvi, kyhieu)
-                    Case 1
-                        sql = GetSqlQuery(2, madonvi, "", "", mauso, kyhieu, sochungtu, "", False, True)
-                        sqlCount = GetSqlQuery(2, madonvi, "", "", mauso, kyhieu, sochungtu, "", True, False)
-                        CapnhatKhoaphienchungtuchuacapnhatKQ(madonvi, kyhieu)
-                    Case 2
-                        sql = GetSqlQuery(3, madonvi, "", "", mauso, kyhieu, "", matracuu, False, True)
-                        sqlCount = GetSqlQuery(3, madonvi, "", "", mauso, kyhieu, "", matracuu, True, False)
-                        CapnhatKhoaphienchungtuchuacapnhatKQ(madonvi, kyhieu)
-                    Case Else
-                        sql = String.Empty
-                End Select
+            If String.IsNullOrEmpty(mauso) Then
+                mauso = "03/TNCN"
+            End If
+
+            ' Xác định câu SQL (theo mẫu số, mặc định 03/TNCN)
+            Select Case loaiTimKiem
+                Case 0
+                    sql = GetSqlQuery(1, madonvi, tungay, denngay, mauso, kyhieu, "", "", False, True)
+                    sqlCount = GetSqlQuery(1, madonvi, tungay, denngay, mauso, kyhieu, "", "", True, False)
+                    CapnhatKhoaphienchungtuchuacapnhatKQ(madonvi, kyhieu)
+                Case 1
+                    sql = GetSqlQuery(2, madonvi, "", "", mauso, kyhieu, sochungtu, "", False, True)
+                    sqlCount = GetSqlQuery(2, madonvi, "", "", mauso, kyhieu, sochungtu, "", True, False)
+                    CapnhatKhoaphienchungtuchuacapnhatKQ(madonvi, kyhieu)
+                Case 2
+                    sql = GetSqlQuery(3, madonvi, "", "", mauso, kyhieu, "", matracuu, False, True)
+                    sqlCount = GetSqlQuery(3, madonvi, "", "", mauso, kyhieu, "", matracuu, True, False)
+                    CapnhatKhoaphienchungtuchuacapnhatKQ(madonvi, kyhieu)
+                Case Else
+                    sql = String.Empty
+                    sqlCount = String.Empty
+            End Select
+
+            If String.IsNullOrEmpty(sqlCount) OrElse String.IsNullOrEmpty(sql) Then
+                response("status") = "error"
+                response("message") = "Thiếu tham số truy vấn danh sách chứng từ"
+                Return JsonConvert.SerializeObject(response)
             End If
 
             Dim totalRecords As Integer = 0
@@ -5257,6 +5287,10 @@ Public Class service
 
         Try
             '--- Xây dựng SQL
+            If String.IsNullOrEmpty(mauso) Then
+                mauso = "03/TNCN"
+            End If
+
             If mauso = "03/TNCN" Then
                 Select Case loaiTimKiem
                     Case 0
@@ -5350,6 +5384,10 @@ Public Class service
 
         Try
             '--- Xây dựng SQL
+            If String.IsNullOrEmpty(mauso) Then
+                mauso = "03/TNCN"
+            End If
+
             If mauso = "03/TNCN" Then
                 Select Case loaiTimKiem
                     Case 0
@@ -5445,20 +5483,28 @@ Public Class service
 
 
             ' Xác định câu SQL
-            If mauso = "03/TNCN" Then
-                Select Case loaiTimKiem
-                    Case 0
-                        sql = GetSqlQuery(1, madonvi, tungay, denngay, mauso, kyhieu, "", "", False, False)
-                        CapnhatKhoaphienchungtuchuacapnhatKQ(madonvi, kyhieu)
-                    Case 1
-                        sql = GetSqlQuery(2, madonvi, "", "", mauso, kyhieu, sochungtu, "", False, False)
-                        CapnhatKhoaphienchungtuchuacapnhatKQ(madonvi, kyhieu)
-                    Case 2
-                        sql = GetSqlQuery(3, madonvi, "", "", mauso, kyhieu, "", matracuu, False, False)
-                        CapnhatKhoaphienchungtuchuacapnhatKQ(madonvi, kyhieu)
-                    Case Else
-                        sql = String.Empty
-                End Select
+            If String.IsNullOrEmpty(mauso) Then
+                mauso = "03/TNCN"
+            End If
+
+            Select Case loaiTimKiem
+                Case 0
+                    sql = GetSqlQuery(1, madonvi, tungay, denngay, mauso, kyhieu, "", "", False, False)
+                    CapnhatKhoaphienchungtuchuacapnhatKQ(madonvi, kyhieu)
+                Case 1
+                    sql = GetSqlQuery(2, madonvi, "", "", mauso, kyhieu, sochungtu, "", False, False)
+                    CapnhatKhoaphienchungtuchuacapnhatKQ(madonvi, kyhieu)
+                Case 2
+                    sql = GetSqlQuery(3, madonvi, "", "", mauso, kyhieu, "", matracuu, False, False)
+                    CapnhatKhoaphienchungtuchuacapnhatKQ(madonvi, kyhieu)
+                Case Else
+                    sql = String.Empty
+            End Select
+
+            If String.IsNullOrEmpty(sql) Then
+                response("status") = "error"
+                response("message") = "Thiếu tham số truy vấn danh sách chứng từ"
+                Return JsonConvert.SerializeObject(response)
             End If
 
             Dim totalRecords As Integer = 0

@@ -65,6 +65,11 @@ namespace Repository.Base
             return SqlMapper.QueryFirstOrDefaultAsync<T>(GetConnection(), StoreProcedueName, param, commandType: System.Data.CommandType.StoredProcedure);
         }
 
+        public Task<T> QueryFirstOrDefaultAsync<T>(string sql, DynamicParameters param)
+        {
+            return SqlMapper.QueryFirstOrDefaultAsync<T>(GetConnection(), sql, param, commandType: System.Data.CommandType.Text);
+        }
+
     }
 }
 

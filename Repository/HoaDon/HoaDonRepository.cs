@@ -19,6 +19,27 @@ namespace Repository.HoaDon
 {
     public class HoaDonRepository : CRUDRepository<hoa_don>, IHoaDonRepository
     {
+        /// <summary>
+        /// Chỉ lấy HĐ nháp (trang_thai_id = 1) đã cấp số, chưa ký (is_ky_so_succes = 0).
+        /// HĐ có trang_thai_id &gt; 1 (đã phát hành, chờ CQT, lỗi...) không nằm trong kết quả.
+        /// </summary>
+        private const string SqlSelectSoNhoHonChuaKySo = @"
+SELECT TOP 1
+    hd.id,
+    hd.ma_so_hoa_don
+FROM hoa_don hd
+WHERE hd.donvi_ma_dv = @donvi_ma_dv
+  AND hd.hoa_don_dang_ky_phat_hanh_mau_so = @mau_so
+  AND hd.hoa_don_dang_ky_phat_hanh_ky_hieu = @ky_hieu
+  AND hd.is_deleted = 0
+  AND hd.hoa_don_hinh_thuc_id <> 5
+  AND hd.ma_so_hoa_don > 0
+  AND hd.hoa_don_trang_thai_id = 1
+  AND ISNULL(hd.is_ky_so_succes, 0) = 0
+  AND hd.ma_so_hoa_don < @ma_so_hoa_don_hien_tai
+  AND hd.id <> @hoa_don_id
+ORDER BY hd.ma_so_hoa_don ASC";
+
         public HoaDonRepository(IMSSQLConnection dbConnection) : base(dbConnection)
         {
 
@@ -68,6 +89,17 @@ namespace Repository.HoaDon
             param.Add("@hoa_don_id", hoa_don_id);
             param.Add("@ngay_hoa_don", ngay_hoa_don.Date);
             return _dbConnection.SelectFirstOrDefaultAsync<HoaDonNgayLienKeRespone>("hoa_don_select_ngay_lien_ke", param);
+        }
+
+        public Task<HoaDonSoNhoHonChuaKySoRespone> SelectSoHoaDonNhoHonChuaKySoAsync(string donvi_ma_dv, string mau_so, string ky_hieu, int hoa_don_id, int ma_so_hoa_don_hien_tai)
+        {
+            var param = new DynamicParameters();
+            param.Add("@donvi_ma_dv", donvi_ma_dv.ConvertToString());
+            param.Add("@mau_so", mau_so.ConvertToString());
+            param.Add("@ky_hieu", ky_hieu.ConvertToString());
+            param.Add("@hoa_don_id", hoa_don_id);
+            param.Add("@ma_so_hoa_don_hien_tai", ma_so_hoa_don_hien_tai);
+            return _dbConnection.QueryFirstOrDefaultAsync<HoaDonSoNhoHonChuaKySoRespone>(SqlSelectSoNhoHonChuaKySo, param);
         }
 
         public Task<IEnumerable<ThongKeTopKhachHangTheoSoLuongHoaDonRespone>> GetTopKhachHangBySoGiaTriHDAsync(ThongKeTopKhachHangTheoHoaDonRequest request)

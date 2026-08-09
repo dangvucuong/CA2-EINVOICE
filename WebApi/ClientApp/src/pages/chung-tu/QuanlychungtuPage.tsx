@@ -20,6 +20,7 @@ import {
   ShieldXIcon,
   SyncIcon,
   TrashIcon,
+  WorkflowIcon,
 } from "@primer/octicons-react";
 
 import {
@@ -103,6 +104,7 @@ const QuanlychungtuPage = () => {
   const [hoaDonActionMenuOpenId, setHoaDonActionMenuOpenId] = useState(0);
   const [dataDetail, setDataDetail] = useState<any>(null);
   const [openModalXemChungTu, setOpenModalXemChungTu] = useState(false);
+  const [xemChungTuInChuyenDoi, setXemChungTuInChuyenDoi] = useState(false);
   const [openHistoryModal, setOpenHistoryModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [base64KySo, setBase64KySo] = useState("");
@@ -115,7 +117,7 @@ const QuanlychungtuPage = () => {
   const { user } = useAuth();
   const [dataFileter, setDataFilter] = useState({
     loai_chung_tu: "",
-    mau_so: "",
+    mau_so: "03/TNCN",
     ky_hieu: "",
     tu_ngay: "",
     den_ngay: "",
@@ -190,14 +192,14 @@ const QuanlychungtuPage = () => {
   <soap12:Body>
     <${apiName} xmlns="http://tempuri.org/">
       <loaiTimKiem>${0}</loaiTimKiem>
-      <mauso>${payload?.mau_so}</mauso>
+      <mauso>${payload?.mau_so ?? "03/TNCN"}</mauso>
       <kyhieu>${payload?.ky_hieu}</kyhieu>
       <tungay>${payload?.tu_ngay}</tungay>
       <denngay>${payload?.den_ngay}</denngay>
       <soct></soct>
       <matracuu></matracuu>
       <madonvi>${user?.donvi?.ma_dv}</madonvi>
-      <pageIndex>${payload?.pageIndex}</pageIndex>
+      <pageIndex>${payload?.pageIndex ?? 1}</pageIndex>
       <pageSize>${payload?.pageSize ?? pagination.pageSize}</pageSize>
     </${apiName}>
   </soap12:Body>
@@ -1063,6 +1065,7 @@ const QuanlychungtuPage = () => {
                                   // }}
                                   onClick={() => {
                                     setDataDetail(row);
+                                    setXemChungTuInChuyenDoi(false);
                                     setOpenModalXemChungTu(true);
                                   }}
                                 >
@@ -1071,6 +1074,24 @@ const QuanlychungtuPage = () => {
                                   </ActionList.LeadingVisual>
                                   Xem chứng từ
                                 </ActionList.Item>
+                                {((tab === "da-ky" && row?.TinhtrangCT === 2) ||
+                                  (tab === "da-gui-cqt" &&
+                                    [2, 3, 33].includes(row?.TinhtrangCT))) && (
+                                  <ActionList.Item
+                                    onClick={() => {
+                                      setDataDetail(row);
+                                      setXemChungTuInChuyenDoi(true);
+                                      setOpenModalXemChungTu(true);
+                                    }}
+                                  >
+                                    <ActionList.LeadingVisual>
+                                      <WorkflowIcon />
+                                    </ActionList.LeadingVisual>
+                                    {row?.TinhtrangCT === 3
+                                      ? "In lại chuyển đổi"
+                                      : "In chuyển đổi"}
+                                  </ActionList.Item>
+                                )}
                                 {tab === "nhap" && (
                                   <>
                                     <ActionList.Item
@@ -1472,9 +1493,20 @@ const QuanlychungtuPage = () => {
       {openModalXemChungTu && dataDetail && (
         <XemChungTu
           isOpen={openModalXemChungTu}
-          onClose={() => setOpenModalXemChungTu(false)}
+          onClose={() => {
+            setOpenModalXemChungTu(false);
+            setXemChungTuInChuyenDoi(false);
+          }}
           machungtu={dataDetail?.MaCT}
           user={user}
+          inChuyenDoi={xemChungTuInChuyenDoi}
+          onInChuyenDoiApplied={() => {
+            LayDanhSachChungTu({
+              loaiTimKiem: 0,
+              pageIndex: pagination.pageIndex,
+              pageSize: pagination.pageSize,
+            });
+          }}
         />
       )}
 

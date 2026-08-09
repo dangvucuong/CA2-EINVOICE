@@ -16,6 +16,7 @@ import { eSortMode } from "../../../models/commons/eSortMode";
 import { IHoaDonSelectPagingRequest } from "../../../models/requests/hoa-don/IHoaDonSelectPagingRequest";
 import { IPagingResultSummary, getPagingSummary } from "../../../models/responses/IBasePagingRespone";
 import { IHoaDon } from "../../../models/responses/hoa-don/IHoaDon";
+import { sanitizeThongKeTrangThaiIds } from '../../../utils/hoaDonListFilter';
 import { IHoaDonHangHoaVM } from '../../../models/responses/hoa-don/IHoaDonHangHoaVM';
 import { HoaDonTimelineModal } from "../../hoa-don/HoaDonTimelineModal";
 interface IHangHoaListProps {
@@ -66,7 +67,9 @@ const HangHoaList = (props: IHangHoaListProps) => {
         nguoi_mua_mst: props.nguoi_mua_mst,
         ma_dai_ly: props.ma_dai_ly,
 
-        hoa_don_trang_thai_ids: props.hoa_don_trang_thai_ids ?? [],
+        hoa_don_trang_thai_ids: sanitizeThongKeTrangThaiIds(
+            props.hoa_don_trang_thai_ids
+        ),
         hoa_don_hinh_thuc_id: props.hoa_don_hinh_thuc_id ?? 0
     }))
 }, [

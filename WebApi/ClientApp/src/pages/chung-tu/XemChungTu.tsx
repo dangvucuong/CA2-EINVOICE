@@ -8,30 +8,62 @@ import { appInfo } from "../../AppInfo";
 import { Box } from "@primer/react";
 import Button from "../../component-ui/button";
 import { PrintIcon } from "../../component-ui/icon";
-import { DownloadIcon } from "@primer/octicons-react";
+import { DownloadIcon, WorkflowIcon } from "@primer/octicons-react";
+import { inchuyendoiChungTu } from "../../helpers/chungTuDownloadHelper";
 
 function XemChungTu({
   isOpen,
   onClose,
   machungtu,
   user,
+  inChuyenDoi = false,
+  onInChuyenDoiApplied,
 }: {
   isOpen: boolean;
   onClose: () => void;
   machungtu: string;
   user: any;
+  inChuyenDoi?: boolean;
+  onInChuyenDoiApplied?: () => void;
 }) {
   const [thongdiep, setThongDiep] = useState<any>(null);
   const contentRef = useRef<HTMLDivElement>(null); // ✅ Thêm type cho ref
   const [isExporting, setIsExporting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (machungtu) {
-      LayHtmlChungTu(machungtu);
+    if (!isOpen || !machungtu) {
+      return;
     }
 
+    const load = async () => {
+      setThongDiep(null);
+      setIsLoading(true);
+      try {
+        if (inChuyenDoi) {
+          const inchuyendoiRes = await inchuyendoiChungTu(
+            machungtu,
+            user?.donvi_ma_dv
+          );
+          if (inchuyendoiRes?.status !== "success") {
+            NotifyHelper.Error(
+              inchuyendoiRes?.message ?? "In chuyển đổi không thành công"
+            );
+            onClose();
+            return;
+          }
+          onInChuyenDoiApplied?.();
+        }
+        await LayHtmlChungTu(machungtu);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    load();
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [machungtu]);
+  }, [isOpen, machungtu, inChuyenDoi]);
 
   const LayHtmlChungTu = async (machungtu: string | undefined) => {
     const soap = `<?xml version="1.0" encoding="utf-8"?>
@@ -103,7 +135,7 @@ function XemChungTu({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Xem chứng từ"
+      title={inChuyenDoi ? "In chuyển đổi chứng từ" : "Xem chứng từ"}
       width={"1200px"}
     >
       {thongdiep && (
@@ -116,11 +148,11 @@ function XemChungTu({
           }}
         >
           <Button
-            text="In tờ khai"
+            text={inChuyenDoi ? "In chứng từ chuyển đổi" : "In tờ khai"}
             onClick={handlePrint}
             variant="invisible"
             size="medium"
-            leadingVisual={PrintIcon}
+            leadingVisual={inChuyenDoi ? WorkflowIcon : PrintIcon}
           />
 
           <Button
@@ -154,8 +186,10 @@ function XemChungTu({
             style={{ display: "flex", justifyContent: "center" }}
             dangerouslySetInnerHTML={{ __html: thongdiep }}
           ></div>
-        ) : (
+        ) : isLoading ? (
           <div>Đang tải...</div>
+        ) : (
+          <div />
         )}
       </Box>
     </Modal>
