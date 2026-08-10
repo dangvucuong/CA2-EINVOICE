@@ -23,6 +23,7 @@ using Model.Table;
 using Service.Base;
 using Service.Caching;
 using Service.Helper;
+using Service.HoaDon.XuLyThongDiep;
 using Service.Hub;
 using StackExchange.Redis;
 using WebApp;
@@ -132,19 +133,16 @@ namespace Service.HoaDon
                 //     return new ErrorResult<int>(
                 //         $"Ngày hóa đơn phải từ ngày {donVi.ngay_hoa_don_max.Value.ToString("dd/MM/yyyy")}");
 
-                if (model.ngay_hoa_don.Date > DateTime.Today)
+                if (model.hoa_don_hinh_thuc_code != "M")
                 {
-                    return new ErrorResult<int>(
-                        "Ngày hóa đơn không được lớn hơn ngày hiện tại"
-                    );
-                }
-
-
-                var ngayHoaDonMax = await _repositoryWrapper.HoaDon.HoaDon.GetNgayHoaDonPhatHanhMaxAsynsc(model.donvi_ma_dv, model.hoa_don_dang_ky_phat_hanh_mau_so, model.hoa_don_dang_ky_phat_hanh_ky_hieu);
-                if (ngayHoaDonMax != null && model.ngay_hoa_don < ngayHoaDonMax.Value)
-                {
-                    return new ErrorResult<int>(
-                    $"Ngày hóa đơn phải từ ngày {ngayHoaDonMax.Value.ToString("dd/MM/yyyy")}");
+                    var ngayHoaDonError = await ValidateNgayHoaDonKhiLuuAsync(
+                        model.donvi_ma_dv,
+                        model.hoa_don_dang_ky_phat_hanh_mau_so,
+                        model.hoa_don_dang_ky_phat_hanh_ky_hieu,
+                        model.ngay_hoa_don,
+                        0);
+                    if (ngayHoaDonError != null)
+                        return ngayHoaDonError;
                 }
 
                 //hóa đơn đã thay thế -> không đc điều chỉnh hoặc thay thế
@@ -332,26 +330,16 @@ namespace Service.HoaDon
                     //     return new ErrorResult<int>(
                     //         $"Ngày hóa đơn phải từ ngày {donVi.ngay_hoa_don_max.Value.ToString("dd/MM/yyyy")}");
 
-                    if (obj.ma_so_hoa_don > 0 && obj.ngay_hoa_don != model.ngay_hoa_don)
+                    if (model.hoa_don_hinh_thuc_code != "M")
                     {
-                        return new ErrorResult<int>(
-                         "Hóa đơn đã ký số, không được phép chỉnh sửa ngày hóa đơn"
-                     );
-                    }
-
-
-                    if (model.ngay_hoa_don.Date > DateTime.Today)
-                    {
-                        return new ErrorResult<int>(
-                            "Ngày hóa đơn không được lớn hơn ngày hiện tại"
-                        );
-                    }
-
-                    var ngayHoaDonMax = await _repositoryWrapper.HoaDon.HoaDon.GetNgayHoaDonPhatHanhMaxAsynsc(model.donvi_ma_dv, model.hoa_don_dang_ky_phat_hanh_mau_so, model.hoa_don_dang_ky_phat_hanh_ky_hieu);
-                    if (ngayHoaDonMax != null && model.ngay_hoa_don < ngayHoaDonMax.Value)
-                    {
-                        return new ErrorResult<int>(
-                        $"Ngày hóa đơn phải từ ngày {ngayHoaDonMax.Value.ToString("dd/MM/yyyy")}");
+                        var ngayHoaDonError = await ValidateNgayHoaDonKhiLuuAsync(
+                            model.donvi_ma_dv,
+                            model.hoa_don_dang_ky_phat_hanh_mau_so,
+                            model.hoa_don_dang_ky_phat_hanh_ky_hieu,
+                            model.ngay_hoa_don,
+                            model.id);
+                        if (ngayHoaDonError != null)
+                            return ngayHoaDonError;
                     }
 
                     obj.ngay_hoa_don = model.ngay_hoa_don;
@@ -816,7 +804,7 @@ namespace Service.HoaDon
                     string tenThue = g.Key;
                     double phanTram = tenThue.Replace("KHAC:", "").Replace("%", "").Trim().ConvertToDouble(2);
 
-                    var thanh_tien = g.Where(x => x.hang_hoa_tinh_chat_id == 1).Sum(x => x.thanh_tien);
+                    var thanh_tien = g.Where(x => x.hang_hoa_tinh_chat_id == 1 || x.hang_hoa_tinh_chat_id == 5).Sum(x => x.thanh_tien);
                     var thanh_tien_ck = g.Where(x => x.hang_hoa_tinh_chat_id == 3).Sum(x => x.thanh_tien);
                     if (model.loai_tien != null && model.loai_tien.ToUpper() == "VND")
                     {
@@ -1005,7 +993,12 @@ namespace Service.HoaDon
                 if (!isPreview)
                 {
                     var objDb = await this.SelectByIdAsync(hoaDon.id);
-                    if (objDb != null && objDb.ma_so_hoa_don.ConvertToString() == "")//load lại từ db để lấy dữ liệu mới nhất
+                    if (objDb != null && objDb.ma_so_hoa_don.ConvertToInt() > 0)
+                    {
+                        obj.ma_so_hoa_don = objDb.ma_so_hoa_don;
+                        obj.so_hoa_don = objDb.so_hoa_don;
+                    }
+                    else if (objDb != null && objDb.ma_so_hoa_don.ConvertToString() == "")
                     {
                         if (obj.ma_so_hoa_don.ConvertToString() == "")
                         {
@@ -1021,6 +1014,7 @@ namespace Service.HoaDon
                                              obj.ma_so_hoa_don;
                         }
                     }
+
                     var CKM = this.GetHoaDonType(obj.hoa_don_dang_ky_phat_hanh_ky_hieu);
                     if (CKM == "M" && obj.ma_so_hoa_don_mtt.ConvertToString() == "")
                     {
@@ -1032,6 +1026,12 @@ namespace Service.HoaDon
                         }
 
                         obj.ma_so_hoa_don_mtt = soHoaDonMTTResult.data;
+                    }
+
+                    var validateSoKySo = await this.ValidateKhongCoSoHoaDonNhoHonChuaKySoAsync(obj);
+                    if (!validateSoKySo.is_success)
+                    {
+                        return new ErrorResult<Model.Request.Xml.HoaDon>(validateSoKySo.message);
                     }
 
                     obj.SetUpdateInfo(user_id);
@@ -1126,8 +1126,18 @@ namespace Service.HoaDon
                 {
                     thue_suats = thue_suats
                 };
-                thongTinThanhToan.tong_tien_chua_thue = obj.tong_tien_truong_thue.ConvertToStringAndRemoveZeroPart();
-                thongTinThanhToan.tong_tien_thue = obj.tong_tien_thue.ConvertToStringAndRemoveZeroPart();
+                if (thueSuatTuDb.Any())
+                {
+                    thongTinThanhToan.tong_tien_chua_thue = thueSuatTuDb.Sum(x => x.ThTien)
+                        .ConvertToStringAndRemoveZeroPart();
+                    thongTinThanhToan.tong_tien_thue = thueSuatTuDb.Sum(x => x.TThue)
+                        .ConvertToStringAndRemoveZeroPart();
+                }
+                else
+                {
+                    thongTinThanhToan.tong_tien_chua_thue = obj.tong_tien_truong_thue.ConvertToStringAndRemoveZeroPart();
+                    thongTinThanhToan.tong_tien_thue = obj.tong_tien_thue.ConvertToStringAndRemoveZeroPart();
+                }
             }
 
             var model = new Model.Request.Xml.HoaDon()
@@ -2367,6 +2377,65 @@ namespace Service.HoaDon
                 : soHoaDonDuKien);
         }
 
+        private static bool LaHoaDonNhapCoSoChuaKySo(hoa_don hd)
+        {
+            if (hd == null || hd.is_deleted)
+            {
+                return false;
+            }
+
+            if (hd.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DA_HUY_NOI_BO)
+            {
+                return false;
+            }
+
+            if (hd.ma_so_hoa_don.ConvertToInt() <= 0)
+            {
+                return false;
+            }
+
+            if (hd.hoa_don_trang_thai_id != (int)e_hoa_don_trang_thai.NHAP)
+            {
+                return false;
+            }
+
+            if (hd.is_ky_so_succes == true)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private async Task<FunctionResult<string>> ValidateKhongCoSoHoaDonNhoHonChuaKySoAsync(hoa_don hoaDon)
+        {
+            var maSo = hoaDon.ma_so_hoa_don.ConvertToInt();
+            if (maSo <= 0)
+            {
+                return new SuccessResult<string>();
+            }
+
+            var pending = await _repositoryWrapper.HoaDon.HoaDon.SelectSoHoaDonNhoHonChuaKySoAsync(
+                hoaDon.donvi_ma_dv,
+                hoaDon.hoa_don_dang_ky_phat_hanh_mau_so,
+                hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu,
+                hoaDon.id,
+                maSo);
+            if (pending == null || pending.id <= 0 || pending.ma_so_hoa_don <= 0)
+            {
+                return new SuccessResult<string>();
+            }
+
+            var pendingDb = await this.SelectByIdAsync(pending.id);
+            if (!LaHoaDonNhapCoSoChuaKySo(pendingDb))
+            {
+                return new SuccessResult<string>();
+            }
+
+            return new ErrorResult<string>(
+                $"Còn hóa đơn số {pendingDb.ma_so_hoa_don} chưa ký số. Vui lòng ký số hóa đơn đó trước.");
+        }
+
         public async Task<FunctionResult<HoaDonPhatHanhRespone>> XuLyThongDiepAsync(string thongDiep)
         {
             var ketQuaThongDiepRespone = thongDiep.ConvertToObject<Model.Respone.Xml.KetQuaThongDiepRespone>();
@@ -2404,7 +2473,7 @@ namespace Service.HoaDon
 
                 if (service != null)
                 {
-                    if (ketQuaThongDiepRespone.TTChung.MLTDiep != "999")
+                    if (ThongDiepHoaDonHelper.ShouldRunFullXuLy(ketQuaThongDiepRespone, thongDiep))
                     {
                         var result = await service.XuLyThongDiepAsync(hoaDon, ketQuaThongDiepRespone, thongDiep);
                         await _serviceWrapper.HoaDon.PushMessageToVender.CheckAndPushMessageAsync(hoaDon);
@@ -2420,45 +2489,7 @@ namespace Service.HoaDon
 
                         if (result.data.hoa_don_trang_thai_id == (int)e_hoa_don_trang_thai.DA_PHAT_HANH)
                         {
-                            //nếu là hóa đơn điều chỉnh/ thay thế thì cập nhật hóa đơn gốc
-                            if (hoaDon.IsHoaDonDieuChinhThayThe())
-                            {
-                                var hoaDonGoc = await _repositoryWrapper.HoaDon.HoaDon.SelectHoaDonGocAsync(
-                                    hoaDon.donvi_ma_dv, hoaDon.hoa_don_dang_ky_phat_hanh_mau_so_goc,
-                                    hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu_goc,
-                                    hoaDon.ma_so_hoa_don_goc.ConvertToInt()
-                                );
-                                if (hoaDonGoc != null)
-                                {
-                                    var hoa_don_ids_thaythe_dieuchinh = hoaDonGoc.hoa_don_ids_thaythe_dieuchinh
-                                        .ConvertToString().Split(",")
-                                        .Where(x => x != string.Empty).ToList();
-                                    if (!hoa_don_ids_thaythe_dieuchinh.Contains(hoaDon.id.ToString()))
-                                    {
-                                        hoa_don_ids_thaythe_dieuchinh.Add(hoaDon.id.ToString());
-                                    }
-
-                                    hoaDonGoc.hoa_don_ids_thaythe_dieuchinh = hoa_don_ids_thaythe_dieuchinh.Join(",");
-                                    if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DIEU_CHINH)
-                                    {
-                                        hoaDonGoc.hoa_don_hinh_thuc_id = (int)e_hoa_don_hinh_thuc.HOA_DON_BI_DIEU_CHINH;
-                                    }
-
-                                    if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_THAY_THE)
-                                    {
-                                        hoaDonGoc.hoa_don_hinh_thuc_id = (int)e_hoa_don_hinh_thuc.HOA_DON_BI_THAY_THE;
-                                    }
-
-                                    hoaDonGoc.SetUpdateInfo(hoaDon.user_id_phathanh);
-                                    await this.UpdateAsync(hoaDonGoc);
-                                }
-                            }
-
-
-                           
-                          
-
-                           
+                            await CapNhatHoaDonGocSauPhatHanhThanhCongAsync(result.data.id, hoaDon.user_id_phathanh);
 
                             await _serviceWrapper.HoaDon.HoaDonSendEmail.SendEmailHoaDonAsync(new List<int>()
                                 { result.data.id }, true);
@@ -2584,8 +2615,6 @@ namespace Service.HoaDon
             var isHoldKey = false;
             if (obj != null && obj.is_ky_so_succes != true)
             {
-                obj.is_ky_so_succes = true;
-                obj.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.CHUA_GUI_CQT;
                 try
                 {
                     await donViHoaDonLock.WaitAsync();
@@ -2603,6 +2632,15 @@ namespace Service.HoaDon
                         obj.so_hoa_don = obj.hoa_don_dang_ky_phat_hanh_mau_so + obj.hoa_don_dang_ky_phat_hanh_ky_hieu +
                                          obj.ma_so_hoa_don;
                     }
+
+                    var validateSoKySo = await this.ValidateKhongCoSoHoaDonNhoHonChuaKySoAsync(obj);
+                    if (!validateSoKySo.is_success)
+                    {
+                        return new ErrorResult<string>(validateSoKySo.message);
+                    }
+
+                    obj.is_ky_so_succes = true;
+                    obj.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.CHUA_GUI_CQT;
 
                     var CKM = this.GetHoaDonType(obj.hoa_don_dang_ky_phat_hanh_ky_hieu);
                     if (CKM == "M" && obj.ma_so_hoa_don_mtt.ConvertToString() == "")
@@ -3034,7 +3072,7 @@ namespace Service.HoaDon
             }
             else if (slInput != 0 && dgInput != 0)
             {
-                thanhTienBase = slInput * donGiaGoc;
+                thanhTienBase = slInput * dgInput;
             }
 
             return thanhTienBase;
@@ -3153,7 +3191,25 @@ namespace Service.HoaDon
                     }
                 }
 
-                // ✅ Tính thuế suất (đã trừ chiết khấu)
+                // Làm tròn từng mặt hàng trước khi tính tổng/thuế (đồng bộ với XML)
+                if (model.loai_tien.ConvertToString() == "VND" || model.loai_tien.ConvertToString() == "")
+                {
+                    foreach (var hang_hoa in model.hoang_hoas)
+                    {
+                        hang_hoa.thanh_tien = Math.Round(hang_hoa.thanh_tien, 0, MidpointRounding.AwayFromZero);
+                    }
+                }
+
+                tong_thanh_tien = model.hoang_hoas
+                    .Where(x => x.hang_hoa_tinh_chat_id == 1 || x.hang_hoa_tinh_chat_id == 5)
+                    .Sum(x => x.thanh_tien);
+                tong_tien_mat_hang_chieu_khau = model.hoang_hoas
+                    .Where(x => x.hang_hoa_tinh_chat_id == 3)
+                    .Sum(x => x.thanh_tien);
+                tong_tien_chiet_khau = tong_tien_mat_hang_chieu_khau;
+
+                // Tính thuế suất từ thành tiền đã làm tròn
+                tong_vat = 0;
                 var thue_suats = model.hoang_hoas
                     .Select(x => x.thue_vat.ConvertToString())
                     .Distinct()
@@ -3170,21 +3226,18 @@ namespace Service.HoaDon
                         .Trim()
                         .ConvertToDouble(2);
 
-                    // Thành tiền hàng hóa (tính chất = 1)
                     var thanh_tien_hang_hoa = model.hoang_hoas
                      .Where(x => (x.hang_hoa_tinh_chat_id == 1 || x.hang_hoa_tinh_chat_id == 5) &&
                                  x.thue_vat.ConvertToString() == thue_suat.ten_thue_suat)
                      .Select(x => x.thanh_tien)
                      .Sum();
 
-                    // Thành tiền chiết khấu (tính chất = 3)
                     var thanh_tien_chiet_khau = model.hoang_hoas
                         .Where(x => x.hang_hoa_tinh_chat_id == 3 &&
                                     x.thue_vat.ConvertToString() == thue_suat.ten_thue_suat)
                         .Select(x => x.thanh_tien)
                         .Sum();
 
-                    // Thành tiền dùng để tính thuế = hàng hóa - chiết khấu
                     var thanh_tien_tinh_thue = thanh_tien_hang_hoa - thanh_tien_chiet_khau;
                     if (model.loai_tien == "VND")
                     {
@@ -3194,21 +3247,11 @@ namespace Service.HoaDon
                     {
                         phanTramThue = 0;
                     }
-                    // Tính thuế
                     var tien_thue = model.loai_tien == "VND"
                         ? ((double)thanh_tien_tinh_thue * phanTramThue / 100).ConvertToDouble(0).ConvertToDecimal()
                         : ((double)thanh_tien_tinh_thue * phanTramThue / 100).ConvertToDouble().ConvertToDecimal();
 
                     tong_vat += tien_thue;
-                }
-
-                // Làm tròn từng mặt hàng
-                foreach (var hang_hoa in model.hoang_hoas)
-                {
-                    if (model.loai_tien.ConvertToString() == "VND")
-                    {
-                        hang_hoa.thanh_tien = Math.Round(hang_hoa.thanh_tien, 2, MidpointRounding.AwayFromZero);
-                    }
                 }
             }
 
@@ -3742,6 +3785,125 @@ namespace Service.HoaDon
             return new SuccessResult<DateTime?>(ngayMax);
         }
 
+        public async Task<FunctionResult<bool>> ValidateNgayHoaDonAsync(hoa_don hoaDon)
+        {
+            if (hoaDon == null)
+                return new ErrorResult<bool>("Không tìm thấy hóa đơn");
+            if (hoaDon.hoa_don_hinh_thuc_code == "M")
+                return new SuccessResult<bool>(true);
+
+            var error = await ValidateNgayHoaDonKhiLuuAsync(
+                hoaDon.donvi_ma_dv,
+                hoaDon.hoa_don_dang_ky_phat_hanh_mau_so,
+                hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu,
+                hoaDon.ngay_hoa_don,
+                hoaDon.id);
+            if (error != null)
+                return new ErrorResult<bool>(error.message);
+            return new SuccessResult<bool>(true);
+        }
+
+        private static string ValidateNgayHoaDonTheoLuong(
+            DateTime ngaySua,
+            DateTime? ngayLienKeTruoc,
+            DateTime? ngayLienKeSau,
+            DateTime? ngayHoaDonMax,
+            bool laHoaDonCuoiKhongCoNgaySau)
+        {
+            var ngay = ngaySua.Date;
+            var today = DateTime.Today;
+            var minChoPhep = today.AddDays(-2);
+
+            if (laHoaDonCuoiKhongCoNgaySau && ngayHoaDonMax.HasValue && ngay < ngayHoaDonMax.Value.Date)
+                return $"không thể sửa ngày hóa đơn nhỏ hơn \"{ngayHoaDonMax.Value:dd/MM/yyyy}\"";
+
+            if (!ngayLienKeTruoc.HasValue && !ngayLienKeSau.HasValue)
+            {
+                if (ngay > today)
+                    return "Không được lập hóa đơn cho ngày tương lai";
+                if (ngay < minChoPhep)
+                    return "không được lập hóa đơn cách ngày hiện tại quá 2 ngày";
+                return null;
+            }
+
+            if (ngayLienKeTruoc.HasValue && !ngayLienKeSau.HasValue)
+            {
+                if (ngayHoaDonMax.HasValue && ngay < ngayHoaDonMax.Value.Date)
+                    return $"không thể sửa ngày hóa đơn nhỏ hơn \"{ngayHoaDonMax.Value:dd/MM/yyyy}\"";
+                if (ngay > today)
+                    return "Không được lập hóa đơn cho ngày tương lai";
+                if (ngay < minChoPhep)
+                    return "không được lập hóa đơn cách ngày hiện tại quá 2 ngày";
+                return null;
+            }
+
+            if (ngayLienKeTruoc.HasValue && ngayLienKeSau.HasValue)
+            {
+                if (ngay < ngayLienKeTruoc.Value.Date)
+                    return $"không được lập hóa đơn nhỏ hơn \"{ngayLienKeTruoc.Value:dd/MM/yyyy}\"";
+                if (ngay > ngayLienKeSau.Value.Date)
+                    return "không lập được hóa đơn lớn hơn ngày hóa đơn liền kề sau";
+                return null;
+            }
+
+            if (!ngayLienKeTruoc.HasValue && ngayLienKeSau.HasValue)
+            {
+                if (ngay > ngayLienKeSau.Value.Date)
+                    return "không lập được hóa đơn lớn hơn ngày hóa đơn liền kề sau";
+                if (ngay > today)
+                    return "Không được lập hóa đơn cho ngày tương lai";
+                if (ngay < minChoPhep)
+                    return "không được lập hóa đơn cách ngày hiện tại quá 2 ngày";
+                return null;
+            }
+
+            if (ngay > today)
+                return "Không được lập hóa đơn cho ngày tương lai";
+            if (ngay < minChoPhep)
+                return "không được lập hóa đơn cách ngày hiện tại quá 2 ngày";
+            return null;
+        }
+
+        private async Task<ErrorResult<int>?> ValidateNgayHoaDonKhiLuuAsync(
+            string donvi_ma_dv,
+            string mau_so,
+            string ky_hieu,
+            DateTime ngay_hoa_don,
+            int hoa_don_id)
+        {
+            var lienKe = await _repositoryWrapper.HoaDon.HoaDon.SelectNgayHoaDonLienKeAsync(
+                donvi_ma_dv, mau_so, ky_hieu, hoa_don_id, ngay_hoa_don);
+            var ngayMax = await _repositoryWrapper.HoaDon.HoaDon.GetNgayHoaDonPhatHanhMaxAsynsc(
+                donvi_ma_dv, mau_so, ky_hieu);
+
+            var laHoaDonCuoiKhongCoNgaySau = false;
+            if (hoa_don_id > 0)
+            {
+                var hoaDonHienTai = await _repositoryWrapper.HoaDon.HoaDon.SelectByIdAsync(hoa_don_id);
+                if (hoaDonHienTai != null)
+                {
+                    var lienKeTheoNgayHienTai = await _repositoryWrapper.HoaDon.HoaDon.SelectNgayHoaDonLienKeAsync(
+                        donvi_ma_dv,
+                        mau_so,
+                        ky_hieu,
+                        hoa_don_id,
+                        hoaDonHienTai.ngay_hoa_don);
+                    laHoaDonCuoiKhongCoNgaySau = lienKeTheoNgayHienTai == null
+                        || !lienKeTheoNgayHienTai.ngay_sau.HasValue;
+                }
+            }
+
+            var message = ValidateNgayHoaDonTheoLuong(
+                ngay_hoa_don,
+                lienKe?.ngay_truoc,
+                lienKe?.ngay_sau,
+                ngayMax,
+                laHoaDonCuoiKhongCoNgaySau);
+            if (message != null)
+                return new ErrorResult<int>(message);
+            return null;
+        }
+
         // update tach ds
 
         public Task<PagingResult<IEnumerable<hoa_don_vm>>> SelectChoPhanHoiCQTAsync(string donvi_ma_dv,HoaDonSelectPagingRequest pagingRequest)
@@ -3941,6 +4103,71 @@ namespace Service.HoaDon
             }
         }
 
+        public async Task CapNhatHoaDonGocSauPhatHanhThanhCongAsync(int hoaDonId, int userIdPhatHanh = 0)
+        {
+            var hoaDon = await SelectByIdAsync(hoaDonId);
+            if (hoaDon == null || !hoaDon.IsHoaDonDieuChinhHoacThayTheDangPhatHanh())
+            {
+                return;
+            }
+
+            var soHoaDonGoc = hoaDon.ma_so_hoa_don_goc.ConvertToInt();
+            if (soHoaDonGoc <= 0)
+            {
+                return;
+            }
+
+            var hoaDonGoc = await _repositoryWrapper.HoaDon.HoaDon.SelectHoaDonGocAsync(
+                hoaDon.donvi_ma_dv,
+                hoaDon.hoa_don_dang_ky_phat_hanh_mau_so_goc,
+                hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu_goc,
+                soHoaDonGoc);
+
+            if (hoaDonGoc == null || hoaDonGoc.id == hoaDon.id)
+            {
+                return;
+            }
+
+            if (hoaDonGoc.ma_so_hoa_don != soHoaDonGoc)
+            {
+                return;
+            }
+
+            if (hoaDonGoc.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DIEU_CHINH
+                || hoaDonGoc.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_THAY_THE)
+            {
+                return;
+            }
+
+            var hoa_don_ids_thaythe_dieuchinh = hoaDonGoc.hoa_don_ids_thaythe_dieuchinh
+                .ConvertToString()
+                .Split(",", StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .Where(x => x != "")
+                .ToList();
+
+            var hoaDonIdStr = hoaDon.id.ToString();
+            if (!hoa_don_ids_thaythe_dieuchinh.Contains(hoaDonIdStr))
+            {
+                hoa_don_ids_thaythe_dieuchinh.Add(hoaDonIdStr);
+            }
+
+            hoaDonGoc.hoa_don_ids_thaythe_dieuchinh = string.Join(",", hoa_don_ids_thaythe_dieuchinh);
+
+            if (hoaDon.IsHoaDonDieuChinhDangPhatHanh())
+            {
+                hoaDonGoc.hoa_don_hinh_thuc_id = (int)e_hoa_don_hinh_thuc.HOA_DON_BI_DIEU_CHINH;
+            }
+            else if (hoaDon.IsHoaDonThayTheDangPhatHanh())
+            {
+                hoaDonGoc.hoa_don_hinh_thuc_id = (int)e_hoa_don_hinh_thuc.HOA_DON_BI_THAY_THE;
+            }
+
+            var userId = userIdPhatHanh > 0 ? userIdPhatHanh : hoaDon.user_id_phathanh;
+            hoaDonGoc.SetUpdateInfo(userId);
+            await UpdateAsync(hoaDonGoc);
+        }
+
         public async Task<FunctionResult<object>> KhoiPhucTrangThaiAsync(int id)
         {
             try
@@ -3962,10 +4189,15 @@ namespace Service.HoaDon
                 var hasLog3 = logs.Any(x => x.hoa_don_log_type_id == (int)e_hoa_don_log_type.KY_SO_SUCCESS);
                 var hasLog202 = logs.Any(x => x.mltdiep == "202");
                 var hasLog204 = logs.Any(x => x.mltdiep == "204");
+                var hasLogLoiThongDiep = logs.Any(x => x.mltdiep?.Trim() == "-1");
 
                 hoaDon.hoa_don_hinh_thuc_id = (int)e_hoa_don_hinh_thuc.HOA_DON_GOC;
 
-                if (hasLog7 && hasLog8 && hasLog202)
+                if (hasLogLoiThongDiep)
+                {
+                    hoaDon.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.LOI_THONG_DIEP;
+                }
+                else if (hasLog7 && hasLog8 && hasLog202)
                 {
                     hoaDon.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.DA_PHAT_HANH;
                 }

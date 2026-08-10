@@ -7,8 +7,9 @@ interface ISelectBoxHoaDonTrangThaiMultipleProps {
     onValueChanged: (ids: number[]) => void,
     value: number[],
     maxWidth?: any,
-    isShowClearBtn?: boolean
-
+    isShowClearBtn?: boolean,
+    /** Không hiển thị các trạng thái này trong danh sách chọn (vd. Thống kê không lọc HĐ nháp) */
+    excludeTrangThaiIds?: number[],
 }
 
 const SelectBoxHoaDonTrangThaiMultiple = (props: ISelectBoxHoaDonTrangThaiMultipleProps) => {
@@ -16,13 +17,14 @@ const SelectBoxHoaDonTrangThaiMultiple = (props: ISelectBoxHoaDonTrangThaiMultip
     const { hoaDonTrangThais } = useHoaDonTrangThaisHook();
     const [filter, setFilter] = useState('')
     const dataSource = useMemo(() => {
-        return hoaDonTrangThais.map(x => {
-            return {
+        const excluded = new Set(props.excludeTrangThaiIds ?? []);
+        return hoaDonTrangThais
+            .filter((x) => !excluded.has(x.id))
+            .map((x) => ({
                 id: x.id,
-                text: x.name
-            }
-        })
-    }, [hoaDonTrangThais])
+                text: x.name,
+            }));
+    }, [hoaDonTrangThais, props.excludeTrangThaiIds])
     const filterdData = useMemo(() => {
         return dataSource.filter(item =>
             item.text.toLowerCase().includes(filter.toLowerCase())

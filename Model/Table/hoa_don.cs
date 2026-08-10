@@ -1,5 +1,6 @@
 using Common;
 using Model.Base;
+using Model.Enum;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Swashbuckle.AspNetCore.Annotations;
@@ -265,6 +266,25 @@ namespace Model.Table
         return true;
       }
       return false;
+    }
+
+    public bool IsHoaDonDieuChinhHoacThayTheDangPhatHanh()
+    {
+      return IsHoaDonDieuChinhThayThe()
+          && (hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DIEU_CHINH
+              || hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_THAY_THE);
+    }
+
+    public bool IsHoaDonDieuChinhDangPhatHanh()
+    {
+      return IsHoaDonDieuChinhThayThe()
+          && hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DIEU_CHINH;
+    }
+
+    public bool IsHoaDonThayTheDangPhatHanh()
+    {
+      return IsHoaDonDieuChinhThayThe()
+          && hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_THAY_THE;
     }
 
 

@@ -286,18 +286,6 @@ namespace WebApi.Controllers
             var hoaDon = await _hoaDonService.SelectByIdAsync(id);
             if (hoaDon != null)
             {
-                if (hoaDon.hoa_don_hinh_thuc_code != "M")
-                {
-                    var getNgayPhatHanhMax = await _hoaDonService.GetNgayHoaDonPhatHanhMaxAsynsc(hoaDon.donvi_ma_dv, hoaDon.hoa_don_dang_ky_phat_hanh_mau_so, hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu);
-                    if (getNgayPhatHanhMax.is_success && getNgayPhatHanhMax.data.HasValue)
-                    {
-                        if (getNgayPhatHanhMax.data.Value.Date > hoaDon.ngay_hoa_don.Date)
-                        {
-                            return this.BadRequest($"Đã tồn tại hóa đơn phát hành ngày {getNgayPhatHanhMax.data.Value.ToString("dd/MM/yyyy")}");
-                        }
-                    }
-                }
-
                 if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DA_HUY_NOI_BO)
                 {
                     return this.BadRequest("Hóa đơn đã hủy nội bộ");
@@ -379,17 +367,6 @@ namespace WebApi.Controllers
             foreach (var hoaDon in hoaDons)
             {
                 var id = hoaDon.id;
-                if (hoaDon.hoa_don_hinh_thuc_code != "M")
-                {
-                    var getNgayPhatHanhMax = await _hoaDonService.GetNgayHoaDonPhatHanhMaxAsynsc(hoaDon.donvi_ma_dv, hoaDon.hoa_don_dang_ky_phat_hanh_mau_so, hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu);
-                    if (getNgayPhatHanhMax.is_success && getNgayPhatHanhMax.data.HasValue)
-                    {
-                        if (getNgayPhatHanhMax.data.Value.Date > hoaDon.ngay_hoa_don.Date)
-                        {
-                            return this.BadRequest($"Đã tồn tại hóa đơn phát hành ngày {getNgayPhatHanhMax.data.Value.ToString("dd/MM/yyyy")}");
-                        }
-                    }
-                }
                 if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DA_HUY_NOI_BO)
                 {
                     return this.BadRequest("Hóa đơn đã hủy nội bộ");

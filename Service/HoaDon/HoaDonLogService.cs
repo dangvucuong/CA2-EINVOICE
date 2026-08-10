@@ -31,7 +31,7 @@ namespace Service.HoaDon
             var match = Regex.Match(xmlResult, pattern, RegexOptions.Singleline);
             if (match.Success)
             {
-                mltdiep = match.Groups[1].Value;
+                mltdiep = match.Groups[1].Value.Trim();
             }
 
             var log = new hoa_don_log()

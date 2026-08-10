@@ -4,7 +4,20 @@ export const getApiErrorMessage = (
 ): string => {
     const data = error?.response?.data;
     if (typeof data === "string" && data.trim()) {
-        return data.trim();
+        const trimmed = data.trim();
+        if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+            try {
+                const parsed = JSON.parse(trimmed);
+                const parsedMessage =
+                    parsed?.message ?? parsed?.Message ?? parsed?.title;
+                if (typeof parsedMessage === "string" && parsedMessage.trim()) {
+                    return parsedMessage.trim();
+                }
+            } catch {
+                // not JSON
+            }
+        }
+        return trimmed;
     }
     const message = data?.message ?? data?.Message ?? data?.title;
     if (typeof message === "string" && message.trim()) {

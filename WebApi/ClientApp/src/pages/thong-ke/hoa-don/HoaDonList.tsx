@@ -23,6 +23,7 @@ import {
   getPagingSummary,
 } from "../../../models/responses/IBasePagingRespone";
 import { IHoaDon } from "../../../models/responses/hoa-don/IHoaDon";
+import { HOADON_LIST_SEARCH_PLACEHOLDER, sanitizeThongKeTrangThaiIds, THONG_KE_EXCLUDE_TRANG_THAI_IDS } from "../../../utils/hoaDonListFilter";
 import { HoaDonTimelineModal } from "../../hoa-don/HoaDonTimelineModal";
 import {
   thongKeHDDHuyTemplate,
@@ -71,10 +72,12 @@ const HoaDonList = (props: IHoaDonListProps) => {
   const [isExporting, setIsExporting] = useState(false);
   const { user } = useAuth();
 
+const thongKeTrangThaiIds = sanitizeThongKeTrangThaiIds;
+
 useEffect(()=>{
     setFilter(x=>({
         ...x,
-        hoa_don_trang_thai_ids: props.hoa_don_trang_thai_ids ?? [],
+        hoa_don_trang_thai_ids: thongKeTrangThaiIds(props.hoa_don_trang_thai_ids),
         hoa_don_hinh_thuc_id: props.hoa_don_hinh_thuc_id ?? 0,
 
         tu_ngay: props.tu_ngay,
@@ -204,19 +207,20 @@ useEffect(()=>{
         actionComponent={
           <>
           <SelectBoxHoaDonTrangThaiMultiple
-    value={filter.hoa_don_trang_thai_ids ?? []}
-    onValueChanged={(ids) => {
+            excludeTrangThaiIds={THONG_KE_EXCLUDE_TRANG_THAI_IDS}
+            value={filter.hoa_don_trang_thai_ids ?? []}
+            onValueChanged={(ids) => {
+              const sanitized = thongKeTrangThaiIds(ids);
+              setFilter({
+                ...filter,
+                hoa_don_trang_thai_ids: sanitized,
+              });
 
-        setFilter({
-            ...filter,
-            hoa_don_trang_thai_ids: ids,
-        });
-
-        props.onFilterChanged?.({
-            hoa_don_trang_thai_ids: ids
-        })
-    }}
-/>
+              props.onFilterChanged?.({
+                hoa_don_trang_thai_ids: sanitized,
+              });
+            }}
+          />
            
 
            <SelectBoxHoaDonHinhThuc
@@ -312,6 +316,7 @@ useEffect(()=>{
         }
         searchConfig={{
           enable: true,
+          placeholder: HOADON_LIST_SEARCH_PLACEHOLDER,
           onValueChanged: (key: string) => {
             setFilter({
               ...filter,

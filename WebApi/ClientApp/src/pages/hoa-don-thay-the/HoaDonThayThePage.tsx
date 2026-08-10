@@ -16,9 +16,10 @@ import { IHoaDonSelectPagingRequest } from "../../models/requests/hoa-don/IHoaDo
 import { IHoaDon } from "../../models/responses/hoa-don/IHoaDon";
 import { HoaDonTimelineModal } from "../hoa-don/HoaDonTimelineModal";
 import HoaDonThayTheFilter from "./HoaDonThayTheFilter";
+import ViewHoaDonButtonActionListItem from "../../component-data/view-hoa-don-modal";
 import { useHoaDonDangKyPhatHanhLoader } from "../../hooks/useHoaDonDangKyPhatHanhLoader";
 import { usePagedHoaDonLoader } from "../../hooks/usePagedHoaDonLoader";
-import { getDefaultDateRange } from "../../utils/hoaDonListFilter";
+import { getDefaultDateRange, HOADON_LIST_SEARCH_PLACEHOLDER } from "../../utils/hoaDonListFilter";
 
 const HoaDonThayThePage = () => {
   const history = useHistory();
@@ -98,6 +99,7 @@ const HoaDonThayThePage = () => {
           }
           searchConfig={{
             enable: true,
+            placeholder: HOADON_LIST_SEARCH_PLACEHOLDER,
             onValueChanged: (key: string) => {
               setFilter({
                 ...filter,
@@ -137,6 +139,20 @@ const HoaDonThayThePage = () => {
               rowHeader: false,
               width: "80px",
               // sortBy: "alphanumeric"
+            },
+            {
+              id: "xem",
+              header: "Xem",
+              width: "50px",
+              renderCell: (row: IHoaDon) => {
+                return (
+                  <ViewHoaDonButtonActionListItem
+                    id={row.id}
+                    showText={false}
+                    hinhThucHoaDonId={eHoaDonHinhThuc.HOA_DON_THAY_THE}
+                  />
+                );
+              },
             },
             {
               header: "Trạng thái",

@@ -3,6 +3,15 @@ import { eHoaDonTrangThai } from "../models/commons/eHoaDonTrangThai";
 import { eSortMode } from "../models/commons/eSortMode";
 import { IHoaDonSelectPagingRequest } from "../models/requests/hoa-don/IHoaDonSelectPagingRequest";
 
+export const HOADON_LIST_SEARCH_PLACEHOLDER =
+    "Tìm theo số HĐ, mã tra cứu, MST, tên người mua...";
+
+/** Trang Thống kê không lọc / không chọn trạng thái Hóa đơn nháp */
+export const sanitizeThongKeTrangThaiIds = (ids?: number[]): number[] =>
+    (ids ?? []).filter((id) => id !== eHoaDonTrangThai.NHAP);
+
+export const THONG_KE_EXCLUDE_TRANG_THAI_IDS = [eHoaDonTrangThai.NHAP];
+
 export const getDefaultDateRange = () => ({
     tu_ngay: moment().startOf("month").format("YYYY-MM-DD"),
     den_ngay: moment().format("YYYY-MM-DD"),

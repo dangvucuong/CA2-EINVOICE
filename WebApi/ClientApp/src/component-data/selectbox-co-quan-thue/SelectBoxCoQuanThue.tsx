@@ -1,7 +1,7 @@
 import { TriangleDownIcon, XCircleFillIcon } from '@primer/octicons-react';
 
 import { Box, Button, SelectPanel } from '@primer/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDebounce } from 'use-debounce';
 import { coQuanThueApi } from '../../api/category/coQuanThueApi';
 import { eSortMode } from '../../models/commons/eSortMode';
@@ -12,6 +12,18 @@ interface ISelectBoxCoQuanThueProps {
     maxWidth?: any,
     isShowClearBtn?: boolean
 }
+
+type SelectPanelItem = {
+    id: number;
+    text: string;
+    data: ICoQuanThue;
+};
+
+const toSelectPanelItem = (x: ICoQuanThue): SelectPanelItem => ({
+    id: x.id,
+    text: `[${x.ma_cqt}] - ${x.dia_chi}`,
+    data: x,
+});
 
 const SelectBoxCoQuanThue = (props: ISelectBoxCoQuanThueProps) => {
     const [open, setOpen] = useState(false)
@@ -53,16 +65,25 @@ const SelectBoxCoQuanThue = (props: ISelectBoxCoQuanThueProps) => {
         })
         setIsLoading(false)
         if (res.is_success) {
-            setItems(res.data.data.map((x: ICoQuanThue) => {
-                return {
-                    id: x.id,
-                    text: `[${x.ma_cqt}] - ${x.dia_chi}`,
-                    data: x
-                }
-            }))
+            setItems(res.data.data.map((x: ICoQuanThue) => toSelectPanelItem(x)))
         }
     }
-    const _selectedData: any = items.find((x: any) => props.value === x.id)
+
+    const selectedItem = useMemo(() => {
+        if (props.value <= 0) return undefined;
+        const fromItems = items.find((x) => props.value === x.id);
+        if (fromItems) return fromItems;
+        if (selectedCQT && selectedCQT.id === props.value) {
+            return toSelectPanelItem(selectedCQT);
+        }
+        return undefined;
+    }, [items, props.value, selectedCQT]);
+
+    const displayItems = useMemo(() => {
+        if (!selectedItem) return items;
+        if (items.some((x) => x.id === selectedItem.id)) return items;
+        return [selectedItem, ...items];
+    }, [items, selectedItem]);
 
 
     return (
@@ -110,10 +131,15 @@ const SelectBoxCoQuanThue = (props: ISelectBoxCoQuanThueProps) => {
                 open={open}
                 loading={isLoading}
                 onOpenChange={setOpen}
-                items={items}
-                selected={_selectedData}
+                items={displayItems}
+                selected={selectedItem}
                 onSelectedChange={(data: any) => {
-                    props.onValueChanged(data.id, data.data)
+                    if (!data?.data) {
+                        return;
+                    }
+                    const cqt = data.data as ICoQuanThue;
+                    setSelectedCQT(cqt);
+                    props.onValueChanged(data.id, cqt);
                 }}
                 onFilterChange={setFilter}
                 showItemDividers={true}

@@ -20,6 +20,7 @@ import {
   ShieldXIcon,
   SyncIcon,
   TrashIcon,
+  WorkflowIcon,
 } from "@primer/octicons-react";
 
 import {
@@ -67,6 +68,10 @@ import { NhatKyChungTuModal } from "./NhatKyChungTuModal";
 import KySoModal from "../../component-data/ky-so-modal";
 import GuiChungTuLenCQTModal from "./GuiChungTuLenCQTModal";
 import ChungTuKySoPhatHanhMultiple from "./ChungTuKySoPhatHanhMultiple";
+import {
+  buildChungTuDownloadZipUrl,
+  MAX_CHUNG_TU_DOWNLOAD,
+} from "../../helpers/chungTuDownloadHelper";
 
 const tabData = [
   {
@@ -99,6 +104,7 @@ const QuanlychungtuPage = () => {
   const [hoaDonActionMenuOpenId, setHoaDonActionMenuOpenId] = useState(0);
   const [dataDetail, setDataDetail] = useState<any>(null);
   const [openModalXemChungTu, setOpenModalXemChungTu] = useState(false);
+  const [xemChungTuInChuyenDoi, setXemChungTuInChuyenDoi] = useState(false);
   const [openHistoryModal, setOpenHistoryModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [base64KySo, setBase64KySo] = useState("");
@@ -111,7 +117,7 @@ const QuanlychungtuPage = () => {
   const { user } = useAuth();
   const [dataFileter, setDataFilter] = useState({
     loai_chung_tu: "",
-    mau_so: "",
+    mau_so: "03/TNCN",
     ky_hieu: "",
     tu_ngay: "",
     den_ngay: "",
@@ -129,6 +135,29 @@ const QuanlychungtuPage = () => {
   const [openConFirmRemoveModal, setOpenConFirmRemoveModal] = useState(false);
   const [openGuiChungTuModal, setOpenGuiChungTuModal] = useState(false);
   const [isSending, setIsSending] = useState(false);
+
+  const handleDownloadChungTuZip = useCallback(
+    (type: "pdf" | "xml") => {
+      const ids = hoaDonSelectedIds ?? [];
+      if (ids.length === 0) return;
+      if (ids.length > MAX_CHUNG_TU_DOWNLOAD) {
+        NotifyHelper.Error(
+          `Không được tải xuống quá ${MAX_CHUNG_TU_DOWNLOAD} chứng từ cùng lúc`
+        );
+        return;
+      }
+      const madonvi =
+        user?.donvi_ma_dv || user?.donvi?.ma_dv || "";
+      if (!madonvi) {
+        NotifyHelper.Error("Không xác định được mã đơn vị.");
+        return;
+      }
+      const url = buildChungTuDownloadZipUrl(type, ids, madonvi);
+      window.open(url, "_blank");
+    },
+    [hoaDonSelectedIds, user]
+  );
+
 
   const { checkAccesiableTo } = useCommonContext();
 
@@ -163,14 +192,14 @@ const QuanlychungtuPage = () => {
   <soap12:Body>
     <${apiName} xmlns="http://tempuri.org/">
       <loaiTimKiem>${0}</loaiTimKiem>
-      <mauso>${payload?.mau_so}</mauso>
+      <mauso>${payload?.mau_so ?? "03/TNCN"}</mauso>
       <kyhieu>${payload?.ky_hieu}</kyhieu>
       <tungay>${payload?.tu_ngay}</tungay>
       <denngay>${payload?.den_ngay}</denngay>
       <soct></soct>
       <matracuu></matracuu>
       <madonvi>${user?.donvi?.ma_dv}</madonvi>
-      <pageIndex>${payload?.pageIndex}</pageIndex>
+      <pageIndex>${payload?.pageIndex ?? 1}</pageIndex>
       <pageSize>${payload?.pageSize ?? pagination.pageSize}</pageSize>
     </${apiName}>
   </soap12:Body>
@@ -193,6 +222,10 @@ const QuanlychungtuPage = () => {
     if (parseRes.status === "success") {
       const newData = parseRes.data?.map((item: any, index: number) => ({
         ...item,
+        MaCT:
+          item?.MaCT !== undefined && item?.MaCT !== null
+            ? Number(item.MaCT)
+            : item?.MaCT,
         PhanbietCTValue: item?.PhanbietCT,
         TinhtrangCTText: GetTinhtrangCT(item?.TinhtrangCT),
         PhanbietCT:
@@ -744,6 +777,39 @@ const QuanlychungtuPage = () => {
 
           <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
             <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 1 }}>
+              {(hoaDonSelectedIds?.length ?? 0) > 0 && (
+                <ActionMenu>
+                  <ActionMenu.Button
+                    size="small"
+                    leadingVisual={DownloadIcon}
+                  >
+                    Tải xuống
+                  </ActionMenu.Button>
+                  <ActionMenu.Overlay>
+                    <ActionList showDividers>
+                      <ActionList.Item
+                        onSelect={() => handleDownloadChungTuZip("pdf")}
+                      >
+                        <ActionList.LeadingVisual>
+                          <FileIcon />
+                        </ActionList.LeadingVisual>
+                        Tải pdf
+                      </ActionList.Item>
+                      {tab !== "nhap" && (
+                        <ActionList.Item
+                          onSelect={() => handleDownloadChungTuZip("xml")}
+                        >
+                          <ActionList.LeadingVisual>
+                            <FileCodeIcon />
+                          </ActionList.LeadingVisual>
+                          Tải xml gửi CQT
+                        </ActionList.Item>
+                      )}
+                    </ActionList>
+                  </ActionMenu.Overlay>
+                </ActionMenu>
+              )}
+
               {(hoaDonSelectedIds?.length ?? 0) > 0 &&
                 (!tab || tab === "nhap" || tab === "cho-phat-hanh") && (
                   <>
@@ -960,19 +1026,14 @@ const QuanlychungtuPage = () => {
                   });
                 }
               }}
-              selection={
-                !tab || tab === "da-gui-cqt" || tab === "nhap"
-                  ? {
-                    mode: "multiple",
-                    keyExpr: "MaCT",
-                    selectedRowKeys: hoaDonSelectedIds,
-                    onSelectionChanged: (keys) => {
-                      // dispatch(hoaDonAction.changeSelectedId(keys));
-                      setHoaDonSelectedIds(keys);
-                    },
-                  }
-                  : undefined
-              }
+              selection={{
+                mode: "multiple",
+                keyExpr: "MaCT",
+                selectedRowKeys: hoaDonSelectedIds,
+                onSelectionChanged: (keys) => {
+                  setHoaDonSelectedIds(keys);
+                },
+              }}
               columns={[
                 {
                   id: "actions",
@@ -1004,6 +1065,7 @@ const QuanlychungtuPage = () => {
                                   // }}
                                   onClick={() => {
                                     setDataDetail(row);
+                                    setXemChungTuInChuyenDoi(false);
                                     setOpenModalXemChungTu(true);
                                   }}
                                 >
@@ -1012,6 +1074,24 @@ const QuanlychungtuPage = () => {
                                   </ActionList.LeadingVisual>
                                   Xem chứng từ
                                 </ActionList.Item>
+                                {((tab === "da-ky" && row?.TinhtrangCT === 2) ||
+                                  (tab === "da-gui-cqt" &&
+                                    [2, 3, 33].includes(row?.TinhtrangCT))) && (
+                                  <ActionList.Item
+                                    onClick={() => {
+                                      setDataDetail(row);
+                                      setXemChungTuInChuyenDoi(true);
+                                      setOpenModalXemChungTu(true);
+                                    }}
+                                  >
+                                    <ActionList.LeadingVisual>
+                                      <WorkflowIcon />
+                                    </ActionList.LeadingVisual>
+                                    {row?.TinhtrangCT === 3
+                                      ? "In lại chuyển đổi"
+                                      : "In chuyển đổi"}
+                                  </ActionList.Item>
+                                )}
                                 {tab === "nhap" && (
                                   <>
                                     <ActionList.Item
@@ -1413,9 +1493,20 @@ const QuanlychungtuPage = () => {
       {openModalXemChungTu && dataDetail && (
         <XemChungTu
           isOpen={openModalXemChungTu}
-          onClose={() => setOpenModalXemChungTu(false)}
+          onClose={() => {
+            setOpenModalXemChungTu(false);
+            setXemChungTuInChuyenDoi(false);
+          }}
           machungtu={dataDetail?.MaCT}
           user={user}
+          inChuyenDoi={xemChungTuInChuyenDoi}
+          onInChuyenDoiApplied={() => {
+            LayDanhSachChungTu({
+              loaiTimKiem: 0,
+              pageIndex: pagination.pageIndex,
+              pageSize: pagination.pageSize,
+            });
+          }}
         />
       )}
 
