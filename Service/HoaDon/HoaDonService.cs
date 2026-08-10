@@ -2420,7 +2420,8 @@ namespace Service.HoaDon
                 hoaDon.hoa_don_dang_ky_phat_hanh_mau_so,
                 hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu,
                 hoaDon.id,
-                maSo);
+                maSo,
+                hoaDon.ngay_hoa_don);
             if (pending == null || pending.id <= 0 || pending.ma_so_hoa_don <= 0)
             {
                 return new SuccessResult<string>();
@@ -2433,7 +2434,7 @@ namespace Service.HoaDon
             }
 
             return new ErrorResult<string>(
-                $"Còn hóa đơn số {pendingDb.ma_so_hoa_don} chưa ký số. Vui lòng ký số hóa đơn đó trước.");
+                $"Còn hóa đơn số {pendingDb.ma_so_hoa_don} ngày {pendingDb.ngay_hoa_don:dd/MM/yyyy} chưa ký số. Vui lòng ký số hóa đơn đó trước.");
         }
 
         public async Task<FunctionResult<HoaDonPhatHanhRespone>> XuLyThongDiepAsync(string thongDiep)
@@ -3803,6 +3804,21 @@ namespace Service.HoaDon
             return new SuccessResult<bool>(true);
         }
 
+        private static string ValidateNgayHoaDonTheoSo(
+            DateTime ngaySua,
+            DateTime? ngayToiThieu,
+            DateTime? ngayToiDa)
+        {
+            var ngay = ngaySua.Date;
+            if (ngayToiThieu.HasValue && ngay < ngayToiThieu.Value.Date)
+                return $"không thể sửa ngày hóa đơn nhỏ hơn \"{ngayToiThieu.Value:dd/MM/yyyy}\"";
+            if (ngayToiDa.HasValue && ngay > ngayToiDa.Value.Date)
+                return $"không thể sửa ngày hóa đơn lớn hơn \"{ngayToiDa.Value:dd/MM/yyyy}\"";
+            if (ngay > DateTime.Today)
+                return "Không được lập hóa đơn cho ngày tương lai";
+            return null;
+        }
+
         private static string ValidateNgayHoaDonTheoLuong(
             DateTime ngaySua,
             DateTime? ngayLienKeTruoc,
@@ -3871,6 +3887,26 @@ namespace Service.HoaDon
             DateTime ngay_hoa_don,
             int hoa_don_id)
         {
+            var maSoHoaDon = 0;
+            if (hoa_don_id > 0)
+            {
+                var hoaDonHienTai = await _repositoryWrapper.HoaDon.HoaDon.SelectByIdAsync(hoa_don_id);
+                maSoHoaDon = hoaDonHienTai?.ma_so_hoa_don.ConvertToInt() ?? 0;
+            }
+
+            if (maSoHoaDon > 0)
+            {
+                var choPhepTheoSo = await _repositoryWrapper.HoaDon.HoaDon.SelectNgayHoaDonChoPhepTheoSoAsync(
+                    donvi_ma_dv, mau_so, ky_hieu, hoa_don_id, maSoHoaDon);
+                var messageTheoSo = ValidateNgayHoaDonTheoSo(
+                    ngay_hoa_don,
+                    choPhepTheoSo?.ngay_toi_thieu,
+                    choPhepTheoSo?.ngay_toi_da);
+                if (messageTheoSo != null)
+                    return new ErrorResult<int>(messageTheoSo);
+                return null;
+            }
+
             var lienKe = await _repositoryWrapper.HoaDon.HoaDon.SelectNgayHoaDonLienKeAsync(
                 donvi_ma_dv, mau_so, ky_hieu, hoa_don_id, ngay_hoa_don);
             var ngayMax = await _repositoryWrapper.HoaDon.HoaDon.GetNgayHoaDonPhatHanhMaxAsynsc(

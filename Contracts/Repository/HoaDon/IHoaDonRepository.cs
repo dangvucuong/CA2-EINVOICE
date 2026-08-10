@@ -36,7 +36,8 @@ namespace Contracts.Repository.HoaDon
         Task<bool> UpdateMaSoHoaDonAsync(int id, int ma_so_hoa_don);
         Task<DateTime?> GetNgayHoaDonPhatHanhMaxAsynsc(string donvi_ma_dv, string hoa_don_dang_ky_phat_hanh_mau_so, string hoa_don_dang_ky_phat_hanh_ky_hieu);
         Task<HoaDonNgayLienKeRespone> SelectNgayHoaDonLienKeAsync(string donvi_ma_dv, string mau_so, string ky_hieu, int hoa_don_id, DateTime ngay_hoa_don);
-        Task<HoaDonSoNhoHonChuaKySoRespone> SelectSoHoaDonNhoHonChuaKySoAsync(string donvi_ma_dv, string mau_so, string ky_hieu, int hoa_don_id, int ma_so_hoa_don_hien_tai);
+        Task<HoaDonSoNhoHonChuaKySoRespone> SelectSoHoaDonNhoHonChuaKySoAsync(string donvi_ma_dv, string mau_so, string ky_hieu, int hoa_don_id, int ma_so_hoa_don_hien_tai, DateTime ngay_hoa_don_hien_tai);
+        Task<HoaDonNgayChoPhepTheoSoRespone> SelectNgayHoaDonChoPhepTheoSoAsync(string donvi_ma_dv, string mau_so, string ky_hieu, int hoa_don_id, int ma_so_hoa_don);
         Task<bool> UpdateTrangThaiAsync(int id, int hoa_don_trang_thai_id);
 
         Task<bool> InsertThueSuatHoaDonAsync(int id, IEnumerable<ThueSuatModel> dsThue);

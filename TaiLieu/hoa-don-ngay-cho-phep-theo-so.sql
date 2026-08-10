@@ -1,0 +1,3 @@
+-- Biên ngày HĐ khi sửa HĐ đã có số: giữ thứ tự (ngày, số) — ngày nhỏ thì số nhỏ, không lệch ngày/số.
+-- ngay_toi_thieu = MAX(ngay) của các HĐ khác có số nhỏ hơn; ngay_toi_da = MIN(ngay) của các HĐ khác có số lớn hơn.
+-- Logic triển khai trong Repository/HoaDon/HoaDonRepository.cs (SqlSelectNgayChoPhepTheoSo).

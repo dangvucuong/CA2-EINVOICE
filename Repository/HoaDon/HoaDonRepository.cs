@@ -19,26 +19,60 @@ namespace Repository.HoaDon
 {
     public class HoaDonRepository : CRUDRepository<hoa_don>, IHoaDonRepository
     {
+        private const string SqlHoaDonTrongLuongNgaySo = @"
+  AND hd.is_deleted = 0
+  AND hd.hoa_don_trang_thai_id <> 3
+  AND hd.hoa_don_hinh_thuc_id <> 5
+  AND (
+      hd.hoa_don_trang_thai_id = 1
+      OR hd.ma_so_hoa_don > 0
+      OR hd.hoa_don_trang_thai_id = 9
+  )";
+
         /// <summary>
-        /// Chỉ lấy HĐ nháp (trang_thai_id = 1) đã cấp số, chưa ký (is_ky_so_succes = 0).
-        /// HĐ có trang_thai_id &gt; 1 (đã phát hành, chờ CQT, lỗi...) không nằm trong kết quả.
+        /// HĐ nháp đã cấp số, chưa ký — thứ tự ký theo (ngày HĐ, số HĐ).
         /// </summary>
         private const string SqlSelectSoNhoHonChuaKySo = @"
 SELECT TOP 1
     hd.id,
-    hd.ma_so_hoa_don
+    hd.ma_so_hoa_don,
+    hd.ngay_hoa_don
 FROM hoa_don hd
 WHERE hd.donvi_ma_dv = @donvi_ma_dv
   AND hd.hoa_don_dang_ky_phat_hanh_mau_so = @mau_so
-  AND hd.hoa_don_dang_ky_phat_hanh_ky_hieu = @ky_hieu
-  AND hd.is_deleted = 0
-  AND hd.hoa_don_hinh_thuc_id <> 5
+  AND hd.hoa_don_dang_ky_phat_hanh_ky_hieu = @ky_hieu" + SqlHoaDonTrongLuongNgaySo + @"
   AND hd.ma_so_hoa_don > 0
   AND hd.hoa_don_trang_thai_id = 1
   AND ISNULL(hd.is_ky_so_succes, 0) = 0
-  AND hd.ma_so_hoa_don < @ma_so_hoa_don_hien_tai
   AND hd.id <> @hoa_don_id
-ORDER BY hd.ma_so_hoa_don ASC";
+  AND (
+      hd.ngay_hoa_don < @ngay_hoa_don_hien_tai
+      OR (hd.ngay_hoa_don = @ngay_hoa_don_hien_tai AND hd.ma_so_hoa_don < @ma_so_hoa_don_hien_tai)
+  )
+ORDER BY hd.ngay_hoa_don ASC, hd.ma_so_hoa_don ASC";
+
+        private const string SqlSelectNgayChoPhepTheoSo = @"
+SELECT
+    (
+        SELECT MAX(hd.ngay_hoa_don)
+        FROM hoa_don hd
+        WHERE hd.donvi_ma_dv = @donvi_ma_dv
+          AND hd.hoa_don_dang_ky_phat_hanh_mau_so = @mau_so
+          AND hd.hoa_don_dang_ky_phat_hanh_ky_hieu = @ky_hieu" + SqlHoaDonTrongLuongNgaySo + @"
+          AND hd.ma_so_hoa_don > 0
+          AND (@hoa_don_id <= 0 OR hd.id <> @hoa_don_id)
+          AND hd.ma_so_hoa_don < @ma_so_hoa_don
+    ) AS ngay_toi_thieu,
+    (
+        SELECT MIN(hd.ngay_hoa_don)
+        FROM hoa_don hd
+        WHERE hd.donvi_ma_dv = @donvi_ma_dv
+          AND hd.hoa_don_dang_ky_phat_hanh_mau_so = @mau_so
+          AND hd.hoa_don_dang_ky_phat_hanh_ky_hieu = @ky_hieu" + SqlHoaDonTrongLuongNgaySo + @"
+          AND hd.ma_so_hoa_don > 0
+          AND (@hoa_don_id <= 0 OR hd.id <> @hoa_don_id)
+          AND hd.ma_so_hoa_don > @ma_so_hoa_don
+    ) AS ngay_toi_da";
 
         public HoaDonRepository(IMSSQLConnection dbConnection) : base(dbConnection)
         {
@@ -91,7 +125,7 @@ ORDER BY hd.ma_so_hoa_don ASC";
             return _dbConnection.SelectFirstOrDefaultAsync<HoaDonNgayLienKeRespone>("hoa_don_select_ngay_lien_ke", param);
         }
 
-        public Task<HoaDonSoNhoHonChuaKySoRespone> SelectSoHoaDonNhoHonChuaKySoAsync(string donvi_ma_dv, string mau_so, string ky_hieu, int hoa_don_id, int ma_so_hoa_don_hien_tai)
+        public Task<HoaDonSoNhoHonChuaKySoRespone> SelectSoHoaDonNhoHonChuaKySoAsync(string donvi_ma_dv, string mau_so, string ky_hieu, int hoa_don_id, int ma_so_hoa_don_hien_tai, DateTime ngay_hoa_don_hien_tai)
         {
             var param = new DynamicParameters();
             param.Add("@donvi_ma_dv", donvi_ma_dv.ConvertToString());
@@ -99,7 +133,19 @@ ORDER BY hd.ma_so_hoa_don ASC";
             param.Add("@ky_hieu", ky_hieu.ConvertToString());
             param.Add("@hoa_don_id", hoa_don_id);
             param.Add("@ma_so_hoa_don_hien_tai", ma_so_hoa_don_hien_tai);
+            param.Add("@ngay_hoa_don_hien_tai", ngay_hoa_don_hien_tai.Date);
             return _dbConnection.QueryFirstOrDefaultAsync<HoaDonSoNhoHonChuaKySoRespone>(SqlSelectSoNhoHonChuaKySo, param);
+        }
+
+        public Task<HoaDonNgayChoPhepTheoSoRespone> SelectNgayHoaDonChoPhepTheoSoAsync(string donvi_ma_dv, string mau_so, string ky_hieu, int hoa_don_id, int ma_so_hoa_don)
+        {
+            var param = new DynamicParameters();
+            param.Add("@donvi_ma_dv", donvi_ma_dv.ConvertToString());
+            param.Add("@mau_so", mau_so.ConvertToString());
+            param.Add("@ky_hieu", ky_hieu.ConvertToString());
+            param.Add("@hoa_don_id", hoa_don_id);
+            param.Add("@ma_so_hoa_don", ma_so_hoa_don);
+            return _dbConnection.QueryFirstOrDefaultAsync<HoaDonNgayChoPhepTheoSoRespone>(SqlSelectNgayChoPhepTheoSo, param);
         }
 
         public Task<IEnumerable<ThongKeTopKhachHangTheoSoLuongHoaDonRespone>> GetTopKhachHangBySoGiaTriHDAsync(ThongKeTopKhachHangTheoHoaDonRequest request)
