@@ -3,6 +3,7 @@ import {
   PlusIcon,
   HistoryIcon,
   TrashIcon,
+  ChecklistIcon,
 } from "@primer/octicons-react";
 import { useEffect, useMemo, useState } from "react";
 import { IThongBaoSaiSot } from "../../models/responses/tbss/IThongBaoSaiSot";
@@ -23,6 +24,7 @@ import { ThongBaoSaiSotTimelineModal } from "./ThongBaoSaiSotTimelineModal";
 import { IThongBaoSaiSotChiTiet } from "../../models/responses/tbss/IThongBaoSaiSotChiTiet";
 import moment from "moment";
 import TBSSViewBtn from "./TBSSViewBtn";
+import XemKetQuaTBSS from "./XemKetQuaTBSS";
 import { useAppDispatch } from "../../hooks/useAppDispatch";
 import { rootAction } from "../../state/actions/rootAction";
 import ConfirmModal from "../../component-ui/confirm-modal";
@@ -37,6 +39,7 @@ const ThongBaoSaiSotPage = () => {
   const [isShowLogModal, setIsShowLogModal] = useState(false);
   const [editingData, setEditingData] = useState<IThongBaoSaiSot>();
   const [isShowDeleteConfirm, setIsShowDeleteConfirm] = useState(false);
+  const [isOpenResultModal, setIsOpenResultModal] = useState(false);
 
   const history = useHistory();
   useEffect(() => {
@@ -123,7 +126,7 @@ const ThongBaoSaiSotPage = () => {
           {
             id: "actions",
             header: "",
-            width: "180px",
+            width: "220px",
             renderCell: (data: IThongBaoSaiSot) => {
               return (
                 <>
@@ -160,6 +163,19 @@ const ThongBaoSaiSotPage = () => {
                           }}
                         />
                       </>
+                    )}
+
+                    {data.thong_bao_sai_sot_trang_thai_id === 4 && (
+                      <IconButton
+                        aria-label={`Xem kết quả`}
+                        title={`Xem kết quả`}
+                        icon={ChecklistIcon}
+                        variant="invisible"
+                        onClick={() => {
+                          setIsOpenResultModal(true);
+                          setEditingData(data);
+                        }}
+                      />
                     )}
 
                     <IconButton
@@ -283,6 +299,14 @@ const ThongBaoSaiSotPage = () => {
           onClose={() => {
             setIsShowLogModal(false);
           }}
+        />
+      )}
+
+      {isOpenResultModal && editingData && (
+        <XemKetQuaTBSS
+          isOpen={isOpenResultModal}
+          onClose={() => setIsOpenResultModal(false)}
+          tbssId={editingData.id}
         />
       )}
 

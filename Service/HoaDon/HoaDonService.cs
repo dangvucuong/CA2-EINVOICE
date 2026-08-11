@@ -133,17 +133,14 @@ namespace Service.HoaDon
                 //     return new ErrorResult<int>(
                 //         $"Ngày hóa đơn phải từ ngày {donVi.ngay_hoa_don_max.Value.ToString("dd/MM/yyyy")}");
 
-                if (model.hoa_don_hinh_thuc_code != "M")
-                {
-                    var ngayHoaDonError = await ValidateNgayHoaDonKhiLuuAsync(
-                        model.donvi_ma_dv,
-                        model.hoa_don_dang_ky_phat_hanh_mau_so,
-                        model.hoa_don_dang_ky_phat_hanh_ky_hieu,
-                        model.ngay_hoa_don,
-                        0);
-                    if (ngayHoaDonError != null)
-                        return ngayHoaDonError;
-                }
+                var ngayHoaDonError = await ValidateNgayHoaDonKhiLuuAsync(
+                    model.donvi_ma_dv,
+                    model.hoa_don_dang_ky_phat_hanh_mau_so,
+                    model.hoa_don_dang_ky_phat_hanh_ky_hieu,
+                    model.ngay_hoa_don,
+                    0);
+                if (ngayHoaDonError != null)
+                    return ngayHoaDonError;
 
                 //hóa đơn đã thay thế -> không đc điều chỉnh hoặc thay thế
                 //hóa đơn đã điều chỉnh -> chỉ được điều chỉnh tiếp
@@ -330,17 +327,14 @@ namespace Service.HoaDon
                     //     return new ErrorResult<int>(
                     //         $"Ngày hóa đơn phải từ ngày {donVi.ngay_hoa_don_max.Value.ToString("dd/MM/yyyy")}");
 
-                    if (model.hoa_don_hinh_thuc_code != "M")
-                    {
-                        var ngayHoaDonError = await ValidateNgayHoaDonKhiLuuAsync(
-                            model.donvi_ma_dv,
-                            model.hoa_don_dang_ky_phat_hanh_mau_so,
-                            model.hoa_don_dang_ky_phat_hanh_ky_hieu,
-                            model.ngay_hoa_don,
-                            model.id);
-                        if (ngayHoaDonError != null)
-                            return ngayHoaDonError;
-                    }
+                    var ngayHoaDonError = await ValidateNgayHoaDonKhiLuuAsync(
+                        model.donvi_ma_dv,
+                        model.hoa_don_dang_ky_phat_hanh_mau_so,
+                        model.hoa_don_dang_ky_phat_hanh_ky_hieu,
+                        model.ngay_hoa_don,
+                        model.id);
+                    if (ngayHoaDonError != null)
+                        return ngayHoaDonError;
 
                     obj.ngay_hoa_don = model.ngay_hoa_don;
                     obj.nguoi_mua_mst = model.nguoi_mua_mst;
@@ -3790,8 +3784,6 @@ namespace Service.HoaDon
         {
             if (hoaDon == null)
                 return new ErrorResult<bool>("Không tìm thấy hóa đơn");
-            if (hoaDon.hoa_don_hinh_thuc_code == "M")
-                return new SuccessResult<bool>(true);
 
             var error = await ValidateNgayHoaDonKhiLuuAsync(
                 hoaDon.donvi_ma_dv,
@@ -3824,11 +3816,15 @@ namespace Service.HoaDon
             DateTime? ngayLienKeTruoc,
             DateTime? ngayLienKeSau,
             DateTime? ngayHoaDonMax,
-            bool laHoaDonCuoiKhongCoNgaySau)
+            bool laHoaDonCuoiKhongCoNgaySau,
+            DateTime? ngayToiThieuChuaCoSo)
         {
             var ngay = ngaySua.Date;
             var today = DateTime.Today;
             var minChoPhep = today.AddDays(-2);
+
+            if (ngayToiThieuChuaCoSo.HasValue && ngay < ngayToiThieuChuaCoSo.Value.Date)
+                return $"không thể sửa ngày hóa đơn nhỏ hơn \"{ngayToiThieuChuaCoSo.Value:dd/MM/yyyy}\"";
 
             if (laHoaDonCuoiKhongCoNgaySau && ngayHoaDonMax.HasValue && ngay < ngayHoaDonMax.Value.Date)
                 return $"không thể sửa ngày hóa đơn nhỏ hơn \"{ngayHoaDonMax.Value:dd/MM/yyyy}\"";
@@ -3864,6 +3860,8 @@ namespace Service.HoaDon
 
             if (!ngayLienKeTruoc.HasValue && ngayLienKeSau.HasValue)
             {
+                if (ngayHoaDonMax.HasValue && ngay < ngayHoaDonMax.Value.Date)
+                    return $"không thể sửa ngày hóa đơn nhỏ hơn \"{ngayHoaDonMax.Value:dd/MM/yyyy}\"";
                 if (ngay > ngayLienKeSau.Value.Date)
                     return "không lập được hóa đơn lớn hơn ngày hóa đơn liền kề sau";
                 if (ngay > today)
@@ -3887,12 +3885,11 @@ namespace Service.HoaDon
             DateTime ngay_hoa_don,
             int hoa_don_id)
         {
-            var maSoHoaDon = 0;
+            hoa_don? hoaDonHienTai = null;
             if (hoa_don_id > 0)
-            {
-                var hoaDonHienTai = await _repositoryWrapper.HoaDon.HoaDon.SelectByIdAsync(hoa_don_id);
-                maSoHoaDon = hoaDonHienTai?.ma_so_hoa_don.ConvertToInt() ?? 0;
-            }
+                hoaDonHienTai = await _repositoryWrapper.HoaDon.HoaDon.SelectByIdAsync(hoa_don_id);
+
+            var maSoHoaDon = hoaDonHienTai?.ma_so_hoa_don.ConvertToInt() ?? 0;
 
             if (maSoHoaDon > 0)
             {
@@ -3911,30 +3908,18 @@ namespace Service.HoaDon
                 donvi_ma_dv, mau_so, ky_hieu, hoa_don_id, ngay_hoa_don);
             var ngayMax = await _repositoryWrapper.HoaDon.HoaDon.GetNgayHoaDonPhatHanhMaxAsynsc(
                 donvi_ma_dv, mau_so, ky_hieu);
+            var ngayToiThieuChuaCoSo = await _repositoryWrapper.HoaDon.HoaDon.SelectNgayToiThieuChuaCoSoAsync(
+                donvi_ma_dv, mau_so, ky_hieu, hoa_don_id, ngay_hoa_don);
 
-            var laHoaDonCuoiKhongCoNgaySau = false;
-            if (hoa_don_id > 0)
-            {
-                var hoaDonHienTai = await _repositoryWrapper.HoaDon.HoaDon.SelectByIdAsync(hoa_don_id);
-                if (hoaDonHienTai != null)
-                {
-                    var lienKeTheoNgayHienTai = await _repositoryWrapper.HoaDon.HoaDon.SelectNgayHoaDonLienKeAsync(
-                        donvi_ma_dv,
-                        mau_so,
-                        ky_hieu,
-                        hoa_don_id,
-                        hoaDonHienTai.ngay_hoa_don);
-                    laHoaDonCuoiKhongCoNgaySau = lienKeTheoNgayHienTai == null
-                        || !lienKeTheoNgayHienTai.ngay_sau.HasValue;
-                }
-            }
+            var laHoaDonCuoiKhongCoNgaySau = lienKe == null || !lienKe.ngay_sau.HasValue;
 
             var message = ValidateNgayHoaDonTheoLuong(
                 ngay_hoa_don,
                 lienKe?.ngay_truoc,
                 lienKe?.ngay_sau,
                 ngayMax,
-                laHoaDonCuoiKhongCoNgaySau);
+                laHoaDonCuoiKhongCoNgaySau,
+                ngayToiThieuChuaCoSo);
             if (message != null)
                 return new ErrorResult<int>(message);
             return null;

@@ -16,5 +16,6 @@ export const thongBaoSaiSotApi = {
     phatHanh: (rq: IHoaDonPhatHanhRequest) => apiClient.post(`${THONG_BAO_SAI_SOT_API}/phat-hanh`, rq),
     kySoVaPhatHanhRemoteAsync: (id: number) => apiClient.put(`${THONG_BAO_SAI_SOT_API}/${id}/ky-so-remote`, undefined),
     getHtmlView: (id: number) => apiClient.get(`${THONG_BAO_SAI_SOT_API}/${id}/html`),
+    getHtmlKetQua: (id: number) => apiClient.get(`${THONG_BAO_SAI_SOT_API}/${id}/ket-qua`),
     readFromExcel: (rq: IUploadRespone) => apiClient.post(THONG_BAO_SAI_SOT_API + "/import/valid", rq)
 }

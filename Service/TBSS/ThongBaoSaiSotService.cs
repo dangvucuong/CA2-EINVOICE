@@ -738,40 +738,48 @@ namespace Service.TBSS
             // var thongBaoChiTiets = taskThongBaoChiTiets.Result.ToList();
             var thongBaoLogs = taskThongBaoLog.Result.ToList();
             var thongBaoLogSuccess = thongBaoLogs.Where(x => x.thong_bao_sai_sot_log_type_id == 4).LastOrDefault();
+            var thongDiepGuiLog = thongBaoLogs
+                .Where(x => x.noi_dung_thuc_hien == "Tạo XML thông điệp"
+                    && !string.IsNullOrEmpty(x.file_thong_diep_url))
+                .OrderByDescending(x => x.id)
+                .FirstOrDefault();
             var taskDonVi = _serviceWrapper.Category.DonVi.SelectByMaDonViAsync(thongBao?.donvi_ma_dv ?? "");
             var taskCoQuanThue = _serviceWrapper.Category.CoQuanThue.SelectByMaAsync(thongBao?.ma_cqt ?? "");
             await Task.WhenAll(taskDonVi, taskCoQuanThue);
             var donVi = taskDonVi.Result;
             var coQuanThue = taskCoQuanThue.Result;
-            // if (thongBaoLogSuccess != null)
-            // {
-            // var docTest = XDocument.Load(thongBaoLogSuccess.file_thong_diep_url);
-            // var xmlStringTest = GetCompactXmlString(docTest);
             var xmlString = "";
-            var xml = await this.CreateXmlKySoAsync(id);
-            if (xml.ConvertToString() != "")
+            if (thongDiepGuiLog != null && File.Exists(thongDiepGuiLog.file_thong_diep_url))
             {
-                var doc = XDocument.Parse(xml);
-                if (doc != null)
+                xmlString = await File.ReadAllTextAsync(thongDiepGuiLog.file_thong_diep_url);
+            }
+            else
+            {
+                var xml = await this.CreateXmlKySoAsync(id);
+                if (xml.ConvertToString() != "")
                 {
-                    XElement currentRoot = doc.Root;
-                    XElement tdiepElement = new XElement("TDiep");
-                    XElement dLieuElement = new XElement("DLieu");
-                    dLieuElement.Add(currentRoot);
-                    tdiepElement.Add(dLieuElement);
-                    currentRoot.ReplaceWith(tdiepElement);
-                    var x509SubjectNameElement = new XElement("X509SubjectName");
-                    x509SubjectNameElement.Value = "CN=" + (donVi?.ten_dv ?? "") + ",";
-                    var SigningTimeElement = new XElement("SigningTime");
-                    SigningTimeElement.Value = (thongBaoLogSuccess?.created_time ?? DateTime.Now).ToString("O")
-                        .Substring(0, 19);
-                    tdiepElement.Add(x509SubjectNameElement);
-                    tdiepElement.Add(SigningTimeElement);
-                    xmlString = GetCompactXmlString(doc);
+                    var doc = XDocument.Parse(xml);
+                    if (doc != null)
+                    {
+                        XElement currentRoot = doc.Root;
+                        XElement tdiepElement = new XElement("TDiep");
+                        XElement dLieuElement = new XElement("DLieu");
+                        dLieuElement.Add(currentRoot);
+                        tdiepElement.Add(dLieuElement);
+                        currentRoot.ReplaceWith(tdiepElement);
+                        var x509SubjectNameElement = new XElement("X509SubjectName");
+                        x509SubjectNameElement.Value = "CN=" + (donVi?.ten_dv ?? "") + ",";
+                        var SigningTimeElement = new XElement("SigningTime");
+                        SigningTimeElement.Value = (thongBaoLogSuccess?.created_time ?? DateTime.Now).ToString("O")
+                            .Substring(0, 19);
+                        tdiepElement.Add(x509SubjectNameElement);
+                        tdiepElement.Add(SigningTimeElement);
+                        xmlString = GetCompactXmlString(doc);
+                    }
                 }
             }
 
-            var xslt_path = "Template/tbss.xslt";
+            var xslt_path = "Template/tbss/Tdiep_04tbss_hd.xslt";
             var xsltArgument = new XsltArgumentList();
             var result = await _serviceWrapper.Xslt.FillDataAsXmlAsync(xslt_path, xmlString, xsltArgument);
             // var resultTest = await _serviceWrapper.Xslt.FillDataAsXmlAsync(xslt_path, xmlStringTest, xsltArgument);
@@ -829,6 +837,35 @@ namespace Service.TBSS
             // }
 
             return string.Empty;
+        }
+
+        public async Task<FunctionResult<string>> GetHtmlKetQuaAsync(int id)
+        {
+            try
+            {
+                var thongBao = await this.SelectByIdAsync(id);
+                if (thongBao == null) return new ErrorResult<string>("Không tìm thấy dữ liệu hợp lệ");
+
+                var thongBaoHistory = (await _serviceWrapper.ThongBaoSaiSot.ThongBaoSaiSotLog.SelectByThongBaoIdAsync(id))
+                    .Where(x => !string.IsNullOrEmpty(x.file_thong_diep_url)
+                        && x.thong_bao_sai_sot_log_type_id == (int)e_to_khai_log_type.CQT_DONG_Y)
+                    .OrderByDescending(x => x.id)
+                    .FirstOrDefault();
+                if (thongBaoHistory == null) return new ErrorResult<string>("Không tìm thấy kết quả phản hồi từ cơ quan thuế");
+
+                var xmlFilePath = thongBaoHistory.file_thong_diep_url;
+                if (!File.Exists(xmlFilePath)) return new ErrorResult<string>("Không tìm thấy file thông điệp phản hồi");
+
+                var xsltPath = "Template/thongbaosaisot.xslt";
+                var xsltArgument = new XsltArgumentList();
+                var xmlData = await File.ReadAllTextAsync(xmlFilePath);
+                var html = await _serviceWrapper.Xslt.FillDataAsXmlAsync(xsltPath, xmlData, xsltArgument);
+                return html.is_success ? new SuccessResult<string>(html.data) : new ErrorResult<string>(html.message);
+            }
+            catch (Exception ex)
+            {
+                return new ErrorResult<string>(ex.Message);
+            }
         }
 
         private string GetCompactXmlString(XDocument doc)

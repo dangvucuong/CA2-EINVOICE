@@ -17,6 +17,7 @@ namespace Contracts.Service.TBSS
         Task<FunctionResult<bool>> PhatHanhAsync(int id, string signedText);
         Task<FunctionResult<bool>> XuLyThongDiepAsync(thong_bao_sai_sot thongBaoSaiSot, Model.Respone.Xml.KetQuaThongDiepRespone ketQuaThongDiepRespone, string xmlThongDiep);
         Task<string> GetHtmlPreviewAsync(int id);
+        Task<FunctionResult<string>> GetHtmlKetQuaAsync(int id);
         Task<FunctionResult<string>> CreateXmlBienBanFromTbssAsync(int id);
         Task<FunctionResult<DataTable>> ReadAndValidImportDataAsync(UploadRespone upload);
     }

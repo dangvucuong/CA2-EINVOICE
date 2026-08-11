@@ -144,6 +144,14 @@ namespace WebApi.Controllers
             var html = await _thongBaoSaiSotService.GetHtmlPreviewAsync(id);
             return this.OK(html);
         }
+        [HttpGet("{id}/ket-qua")]
+        [MustLogged]
+        [MustAuthorized("[GET]api/tbss")]
+        public async Task<ContentResult> GetHtmlKetQuaAsync([FromRoute] int id)
+        {
+            var html = await _thongBaoSaiSotService.GetHtmlKetQuaAsync(id);
+            return html.is_success ? this.OK(html.data) : this.BadRequest(html.message);
+        }
         [HttpGet("{id}/download")]
         // [MustLogged]
         // [MustAuthorized("[GET]api/tbss")]
