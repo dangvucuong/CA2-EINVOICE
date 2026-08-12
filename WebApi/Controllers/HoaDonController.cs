@@ -11,6 +11,7 @@ using Model.Respone.HoaDon;
 using Model.Respone.Upload;
 using Model.Static;
 using Model.Table;
+using Service.HoaDon;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -356,6 +357,63 @@ namespace WebApi.Controllers
             return this.BadRequest("Không tìm thấy hóa đơn.");
 
         }
+
+        /// <summary>
+        /// XML hóa đơn MTT để ký chữ ký người bán (HDon/DSCKS/NBan), chưa đóng thông điệp TDiep.
+        /// </summary>
+        [HttpGet("{id}/ky-so-nguoi-ban")]
+        [MustAuthorized("[POST]api/hoa-don/phat-hanh")]
+        public async Task<ContentResult> XmlKySoNguoiBanBase64Async([FromRoute] int id)
+        {
+            var hoaDon = await _hoaDonService.SelectByIdAsync(id);
+            if (hoaDon == null)
+            {
+                return this.BadRequest("Không tìm thấy hóa đơn.");
+            }
+            if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DA_HUY_NOI_BO)
+            {
+                return this.BadRequest("Hóa đơn đã hủy nội bộ");
+            }
+            if (hoaDon.is_ky_so_succes == true)
+            {
+                return this.BadRequest("Hóa đơn đã ký số người bán");
+            }
+            var donVi = await _serviceWrapper.Category.DonVi.SelectByMaDonViAsync(hoaDon.donvi_ma_dv);
+            if (donVi != null && donVi.total_cks_con_lai <= 0)
+            {
+                return this.BadRequest("Đã hết số lượng hóa đơn đăng ký. Vui lòng gia hạn thêm gói dịch vụ để tiếp tục");
+            }
+
+            if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DIEU_CHINH ||
+                hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_THAY_THE)
+            {
+                var getBase64BienBanResult = await _hoaDonService.GetBase64BienBanAsync(id);
+                var xmlResult = await _hoaDonService.CreateXmlKySoAsync(hoaDon);
+                if (!xmlResult.is_success)
+                {
+                    return this.BadRequest(xmlResult.message);
+                }
+                var base64HoaDon = xmlResult.data.ConvertToBase64();
+                var base64BienBan = getBase64BienBanResult.data;
+                if (base64BienBan != string.Empty)
+                {
+                    return this.OK(new HoaDonBase64BienBan()
+                    {
+                        hoa_don_base64 = base64HoaDon,
+                        bien_ban_base64 = base64BienBan
+                    });
+                }
+                return this.OK(base64HoaDon);
+            }
+
+            var xmlKySoResult = await _hoaDonService.CreateXmlKySoAsync(hoaDon);
+            if (!xmlKySoResult.is_success)
+            {
+                return this.BadRequest(xmlKySoResult.message);
+            }
+            return this.OK(xmlKySoResult.data.ConvertToBase64());
+        }
+
         [Route("ky-so-multiple")]
         [HttpPost]
         [MustAuthorized("[POST]api/hoa-don/phat-hanh")]
@@ -363,7 +421,8 @@ namespace WebApi.Controllers
         public async Task<ContentResult> XmlKySoBase64MultiplyAsync([FromBody] HoaDonDeletesRequest request)
         {
             var result = new List<HoaDonCreateXmlKySoResponeList>();
-            var hoaDons = await _hoaDonService.SelectByIdsAsync(request.ids);
+            var hoaDons = HoaDonService.OrderHoaDonsForKySo(await _hoaDonService.SelectByIdsAsync(request.ids));
+            var excludeHoaDonIds = hoaDons.Select(x => x.id).ToList();
             foreach (var hoaDon in hoaDons)
             {
                 var id = hoaDon.id;
@@ -377,7 +436,7 @@ namespace WebApi.Controllers
         hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_THAY_THE)
                 {
                     var getBase64BienBanResult = await _hoaDonService.GetBase64BienBanAsync(id);
-                    var getBase64HoaDon = hoaDon.hoa_don_hinh_thuc_code == "M" ? await _hoaDonService.CreateBase64MTTAsync(hoaDon) : await _hoaDonService.CreateXmlKySoAsync(hoaDon);
+                    var getBase64HoaDon = hoaDon.hoa_don_hinh_thuc_code == "M" ? await _hoaDonService.CreateBase64MTTAsync(hoaDon, excludeHoaDonIds) : await _hoaDonService.CreateXmlKySoAsync(hoaDon, excludeHoaDonIds);
                     var base64BienBan = getBase64BienBanResult.data;
                     var base64HoaDon = hoaDon.hoa_don_hinh_thuc_code == "M" ? getBase64HoaDon.data : getBase64HoaDon.data.ConvertToBase64();// getBase64HoaDon.data.ConvertToBase64();
                     if (getBase64HoaDon.is_success && getBase64BienBanResult.is_success)
@@ -403,7 +462,7 @@ namespace WebApi.Controllers
                 else
                 {
 
-                    var base64Result = hoaDon.hoa_don_hinh_thuc_code == "M" ? await _hoaDonService.CreateBase64MTTAsync(hoaDon) : await _hoaDonService.CreateXmlKySoAsync(hoaDon);
+                    var base64Result = hoaDon.hoa_don_hinh_thuc_code == "M" ? await _hoaDonService.CreateBase64MTTAsync(hoaDon, excludeHoaDonIds) : await _hoaDonService.CreateXmlKySoAsync(hoaDon, excludeHoaDonIds);
                     if (base64Result.is_success)
                         result.Add(new HoaDonCreateXmlKySoResponeList()
                         {

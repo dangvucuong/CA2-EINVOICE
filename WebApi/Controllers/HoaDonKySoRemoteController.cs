@@ -34,23 +34,18 @@ namespace WebApi.Controllers
                 var hoaDon = await _hoaDonService.SelectByIdAsync(id);
                 if (hoaDon != null)
                 {
+                    if (hoaDon.is_ky_so_succes == true)
+                    {
+                        return this.BadRequest("Hóa đơn đã ký số người bán");
+                    }
                     var donVi = await _serviceWrapper.Category.DonVi.SelectByMaDonViAsync(hoaDon.donvi_ma_dv);
                     if (donVi != null && donVi.total_cks_con_lai <= 0) return this.BadRequest("Đã hết chữ ký số");
-                    var base64 = "";
-                    if (hoaDon.hoa_don_hinh_thuc_code == "M")
+                    var xmlResult = await _hoaDonService.CreateXmlKySoAsync(hoaDon);
+                    if (!xmlResult.is_success)
                     {
-                        var base64Result = await _hoaDonService.CreateBase64MTTAsync(hoaDon);
-                        base64 = base64Result.data;
+                        return this.BadRequest(xmlResult.message);
                     }
-                    else
-                    {
-                        var xmlResult = await _hoaDonService.CreateXmlKySoAsync(hoaDon);
-                        if (!xmlResult.is_success)
-                        {
-                            return this.BadRequest(xmlResult.message);
-                        }
-                        base64 = xmlResult.data.ConvertToBase64();
-                    }
+                    var base64 = xmlResult.data.ConvertToBase64();
                     if (base64.ConvertToString() == "") return this.BadRequest("Không tạo được XML");
                     if (userSerialInfo.is_hsm_signing)
                     {

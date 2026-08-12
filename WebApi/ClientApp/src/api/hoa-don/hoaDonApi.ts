@@ -38,6 +38,7 @@ export const hoaDonApi = {
     save: (rq: IIHoaDonAddOrEditModel) => apiClient.post(`${HOA_DON_API}`, rq),
     delete: (id: number) => apiClient.delete(`${HOA_DON_API}/${id}`),
     createBase64KySo: (id: number) => apiClient.get(`${HOA_DON_API}/${id}/ky-so`),
+    createBase64KySoNguoiBan: (id: number) => apiClient.get(`${HOA_DON_API}/${id}/ky-so-nguoi-ban`),
     phatHanh: (rq: IHoaDonPhatHanhRequest) => apiClient.post(`${HOA_DON_API}/phat-hanh`, rq),
     updateKySoSuccess: (rq: IHoaDonPhatHanhRequest) => apiClient.post(`${HOA_DON_API}/${rq.id}/ky-so`, rq),
     readFromExcel: (rq: IHoaDonImportRequest) => apiClient.post(HOA_DON_API + "/import/valid", rq),

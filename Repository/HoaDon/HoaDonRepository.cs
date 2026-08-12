@@ -13,6 +13,7 @@ using Repository.Base;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using WebApp;
 
 namespace Repository.HoaDon
@@ -70,8 +71,12 @@ namespace Repository.HoaDon
             return _dbConnection.SelectFirstOrDefaultAsync<HoaDonNgayLienKeRespone>("hoa_don_select_ngay_lien_ke", param);
         }
 
-        public Task<HoaDonSoNhoHonChuaKySoRespone> SelectSoHoaDonNhoHonChuaKySoAsync(string donvi_ma_dv, string mau_so, string ky_hieu, int hoa_don_id, int ma_so_hoa_don_hien_tai, DateTime ngay_hoa_don_hien_tai)
+        public Task<HoaDonSoNhoHonChuaKySoRespone> SelectSoHoaDonNhoHonChuaKySoAsync(string donvi_ma_dv, string mau_so, string ky_hieu, int hoa_don_id, int ma_so_hoa_don_hien_tai, DateTime ngay_hoa_don_hien_tai, IEnumerable<int> excludeHoaDonIds = null)
         {
+            var excludeIds = (excludeHoaDonIds ?? Enumerable.Empty<int>())
+                .Where(x => x > 0)
+                .Distinct()
+                .ToList();
             var param = new DynamicParameters();
             param.Add("@donvi_ma_dv", donvi_ma_dv.ConvertToString());
             param.Add("@mau_so", mau_so.ConvertToString());
@@ -79,7 +84,38 @@ namespace Repository.HoaDon
             param.Add("@hoa_don_id", hoa_don_id);
             param.Add("@ma_so_hoa_don_hien_tai", ma_so_hoa_don_hien_tai);
             param.Add("@ngay_hoa_don_hien_tai", ngay_hoa_don_hien_tai.Date);
-            return _dbConnection.SelectFirstOrDefaultAsync<HoaDonSoNhoHonChuaKySoRespone>("hoa_don_select_so_nho_hon_chua_ky_so", param);
+
+            var excludeSql = "";
+            if (excludeIds.Count > 0)
+            {
+                param.Add("@exclude_ids_wrapped", "," + string.Join(",", excludeIds) + ",");
+                excludeSql = " AND CHARINDEX(',' + CAST(hd.id AS VARCHAR(20)) + ',', @exclude_ids_wrapped) = 0 ";
+            }
+
+            var sql = $@"
+SELECT TOP 1
+    hd.id,
+    hd.ma_so_hoa_don,
+    hd.ngay_hoa_don
+FROM hoa_don hd
+WHERE hd.donvi_ma_dv = @donvi_ma_dv
+  AND hd.hoa_don_dang_ky_phat_hanh_mau_so = @mau_so
+  AND hd.hoa_don_dang_ky_phat_hanh_ky_hieu = @ky_hieu
+  AND hd.is_deleted = 0
+  AND hd.hoa_don_trang_thai_id <> 3
+  AND hd.hoa_don_hinh_thuc_id <> 5
+  AND hd.ma_so_hoa_don > 0
+  AND hd.hoa_don_trang_thai_id = 1
+  AND ISNULL(hd.is_ky_so_succes, 0) = 0
+  AND hd.id <> @hoa_don_id
+  {excludeSql}
+  AND (
+      hd.ngay_hoa_don < @ngay_hoa_don_hien_tai
+      OR (hd.ngay_hoa_don = @ngay_hoa_don_hien_tai AND hd.ma_so_hoa_don < @ma_so_hoa_don_hien_tai)
+  )
+ORDER BY hd.ngay_hoa_don ASC, hd.ma_so_hoa_don ASC";
+
+            return _dbConnection.QueryFirstOrDefaultAsync<HoaDonSoNhoHonChuaKySoRespone>(sql, param);
         }
 
         public Task<HoaDonNgayChoPhepTheoSoRespone> SelectNgayHoaDonChoPhepTheoSoAsync(string donvi_ma_dv, string mau_so, string ky_hieu, int hoa_don_id, int ma_so_hoa_don)

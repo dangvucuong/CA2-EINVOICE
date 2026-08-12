@@ -108,14 +108,20 @@ const HoaDonKySoPhatHanhMultiple = (
         progress_id,
       });
       if (res.is_success) {
-        const data = res.data.map((x: any) => {
-          const item: IHoaDonCreateXmlKySoRespone = {
-            id: x.id,
-            xml_base64: x.xml_base64,
-            code: createUUID().replace(/-/g, ""),
-          };
-          return item;
-        });
+        const errRes = (res.data ?? []).filter((x: any) => x.is_success === false);
+        if (errRes.length > 0) {
+          NotifyHelper.Error(errRes[0]?.message ?? "Có hóa đơn không tạo được XML ký số");
+        }
+        const data = (res.data ?? [])
+          .filter((x: any) => x.is_success !== false && x.xml_base64)
+          .map((x: any) => {
+            const item: IHoaDonCreateXmlKySoRespone = {
+              id: x.id,
+              xml_base64: x.xml_base64,
+              code: createUUID().replace(/-/g, ""),
+            };
+            return item;
+          });
         _refHoaDon.current = data;
         // SendToToolKySo();
       }

@@ -170,6 +170,7 @@ const HoaDonForm = () => {
   const [base64BienBan, setBase64BienBan] = useState("");
   const [isShowKySoModal, setIsShowKySoModal] = useState(false);
   const [isKySoVaPhatHanh, setIsKySoVaPhatHanh] = useState(false);
+  const [isMttPhatHanh, setIsMttPhatHanh] = useState(false);
   const { signalRConnectionServer } = useCommonContext();
   const [isShowPhatHanhResultModal, setIsShowPhatHanhResultModal] =
     useState(false);
@@ -480,6 +481,32 @@ const HoaDonForm = () => {
       NotifyHelper.Error(res?.message ?? "Không thể tải dữ liệu hóa đơn gốc");
     }
   };
+  const openKySoModalFromResponse = (res: any) => {
+    const data = res.data;
+    if (typeof data === "string") {
+      setBase64KySo(data);
+      setIsShowKySoModal(true);
+    } else if (typeof data === "object" && data !== null) {
+      const { hoa_don_base64, bien_ban_base64 } = data;
+      setBase64KySo(hoa_don_base64);
+      setBase64BienBan(bien_ban_base64);
+      setIsShowKySoModal(true);
+    } else {
+      NotifyHelper.Error("Dữ liệu không hợp lệ.");
+    }
+  };
+
+  const handleGetBase64KySoNguoiBan = async () => {
+    setIsSaving(true);
+    const res = await hoaDonApi.createBase64KySoNguoiBan(hoaDonId);
+    setIsSaving(false);
+    if (res.is_success) {
+      openKySoModalFromResponse(res);
+    } else {
+      NotifyHelper.Error(res?.message ?? "Có lỗi không xác định");
+    }
+  };
+
   const handleGetBase64KySo = async () => {
     const isKhacNgay =
       moment(new Date()).format("YYYY-MM-DD") !==
@@ -521,24 +548,7 @@ const HoaDonForm = () => {
 
     setIsSaving(false);
     if (res.is_success) {
-      const data = res.data;
-
-      if (typeof data === "string") {
-        setBase64KySo(data);
-        setIsShowKySoModal(true);
-      } else if (typeof data === "object" && data !== null) {
-        const { hoa_don_base64, bien_ban_base64 } = data;
-
-        setBase64KySo(hoa_don_base64);
-        setBase64BienBan(bien_ban_base64);
-
-        setIsShowKySoModal(true);
-      } else {
-        NotifyHelper.Error("Dữ liệu không hợp lệ.");
-      }
-
-      // setBase64KySo(res.data);
-      // setIsShowKySoModal(true);
+      openKySoModalFromResponse(res);
     } else {
       NotifyHelper.Error(res?.message ?? "Có lỗi không xác định");
     }
@@ -650,13 +660,16 @@ const HoaDonForm = () => {
         id: hoaDonId,
       });
       if (res.is_success) {
-        NotifyHelper.Success("Đã ký số");
+        NotifyHelper.Success(
+          CKM === "M" ? "Đã ký số người bán" : "Đã ký số",
+        );
         setHoaDonViewModel({
           ...hoaDonViewModel,
           is_ky_so_succes: true,
         });
+        handleGetHoaDonViewModel(hoaDonId);
 
-        if (isKySoVaPhatHanh) {
+        if (isKySoVaPhatHanh && CKM !== "M") {
           handlePhatHanhAsync(signedtext, bienBanSignedText);
         }
       } else {
@@ -2289,7 +2302,95 @@ const HoaDonForm = () => {
               )}
               {hoaDonId > 0 && (
                 <>
-                  {CKM !== "C" && (
+                  {CKM === "M" && (
+                    <>
+                      {hoaDonViewModel?.is_ky_so_succes !== true && (
+                        <>
+                          {user &&
+                            !user.is_hsm_signing &&
+                            !user.is_remote_signing && (
+                              <Button
+                                text="Ký số người bán"
+                                sx={{ minWidth: "100px" }}
+                                variant="primary"
+                                size="large"
+                                type="button"
+                                leadingVisual={IssueClosedIcon}
+                                isLoading={isSaving}
+                                onClick={() => {
+                                  setIsMttPhatHanh(false);
+                                  setIsKySoVaPhatHanh(false);
+                                  handleGetBase64KySoNguoiBan();
+                                }}
+                                disabled={!isAllowPhatHanh}
+                              />
+                            )}
+                          {user &&
+                            (user.is_hsm_signing || user.is_remote_signing) && (
+                              <Button
+                                text="Ký số người bán"
+                                sx={{ minWidth: "100px" }}
+                                variant="primary"
+                                size="large"
+                                type="button"
+                                leadingVisual={IssueClosedIcon}
+                                isLoading={isSaving}
+                                onClick={() => {
+                                  setIsMttPhatHanh(false);
+                                  setIsKySoVaPhatHanh(false);
+                                  handleKySoRemoteAsync();
+                                }}
+                                disabled={!isAllowPhatHanh}
+                              />
+                            )}
+                        </>
+                      )}
+                      {(hoaDonViewModel?.hoa_don_trang_thai_id ===
+                        eHoaDonTrangThai.NHAP ||
+                        hoaDonViewModel?.hoa_don_trang_thai_id ===
+                          eHoaDonTrangThai.CHUA_GUI_CQT) && (
+                        <>
+                          {user &&
+                            !user.is_hsm_signing &&
+                            !user.is_remote_signing && (
+                              <Button
+                                text="Phát hành hóa đơn"
+                                sx={{ minWidth: "100px" }}
+                                disabled={!isAllowPhatHanh}
+                                variant="primary"
+                                size="large"
+                                type="button"
+                                leadingVisual={IssueClosedIcon}
+                                isLoading={isSaving}
+                                onClick={() => {
+                                  setIsMttPhatHanh(true);
+                                  setIsKySoVaPhatHanh(false);
+                                  handleGetBase64KySo();
+                                }}
+                              />
+                            )}
+                          {user &&
+                            (user.is_hsm_signing || user.is_remote_signing) && (
+                              <Button
+                                text="Phát hành hóa đơn"
+                                sx={{ minWidth: "100px" }}
+                                disabled={!isAllowPhatHanh}
+                                variant="primary"
+                                size="large"
+                                type="button"
+                                leadingVisual={IssueClosedIcon}
+                                isLoading={isSaving}
+                                onClick={() => {
+                                  setIsMttPhatHanh(true);
+                                  handleKySoVaPhatHanhRemoteAsync();
+                                }}
+                              />
+                            )}
+                        </>
+                      )}
+                    </>
+                  )}
+                  {CKM !== "C" && CKM !== "M" && (
                     <>
                       {user &&
                         !user.is_hsm_signing &&
@@ -2303,6 +2404,7 @@ const HoaDonForm = () => {
                             leadingVisual={IssueClosedIcon}
                             isLoading={isSaving}
                             onClick={() => {
+                              setIsMttPhatHanh(false);
                               handleGetBase64KySo();
                               setIsKySoVaPhatHanh(false);
                             }}
@@ -2323,6 +2425,7 @@ const HoaDonForm = () => {
                             leadingVisual={IssueClosedIcon}
                             isLoading={isSaving}
                             onClick={() => {
+                              setIsMttPhatHanh(false);
                               handleKySoRemoteAsync();
                               setIsKySoVaPhatHanh(false);
                             }}
@@ -2332,68 +2435,69 @@ const HoaDonForm = () => {
                             }
                           />
                         )}
+                      {hoaDonViewModel?.is_ky_so_succes === true && (
+                        <Button
+                          text="Phát hành"
+                          sx={{ minWidth: "100px" }}
+                          disabled={!isAllowPhatHanh}
+                          variant="primary"
+                          size="large"
+                          type="button"
+                          leadingVisual={IssueClosedIcon}
+                          isLoading={isSaving}
+                          onClick={() => {
+                            handlePhatHanhAsync("");
+                          }}
+                        />
+                      )}
+                      {hoaDonViewModel?.is_ky_so_succes !== true &&
+                        (hoaDonViewModel?.hoa_don_trang_thai_id ===
+                          eHoaDonTrangThai.NHAP ||
+                          hoaDonViewModel?.hoa_don_trang_thai_id ===
+                            eHoaDonTrangThai.CHUA_GUI_CQT) && (
+                          <>
+                            {user &&
+                              !user.is_hsm_signing &&
+                              !user.is_remote_signing && (
+                                <Button
+                                  text="Ký số và phát hành"
+                                  sx={{ minWidth: "100px" }}
+                                  disabled={!isAllowPhatHanh}
+                                  variant="primary"
+                                  size="large"
+                                  type="button"
+                                  leadingVisual={IssueClosedIcon}
+                                  isLoading={isSaving}
+                                  onClick={() => {
+                                    setIsMttPhatHanh(false);
+                                    handleGetBase64KySo();
+                                    setIsKySoVaPhatHanh(true);
+                                  }}
+                                />
+                              )}
+                            {user &&
+                              (user.is_hsm_signing ||
+                                user.is_remote_signing) && (
+                                <Button
+                                  text="Ký số và phát hành"
+                                  sx={{ minWidth: "100px" }}
+                                  disabled={!isAllowPhatHanh}
+                                  variant="primary"
+                                  size="large"
+                                  type="button"
+                                  leadingVisual={IssueClosedIcon}
+                                  isLoading={isSaving}
+                                  onClick={() => {
+                                    setIsMttPhatHanh(false);
+                                    setIsKySoVaPhatHanh(true);
+                                    handleKySoVaPhatHanhRemoteAsync();
+                                  }}
+                                />
+                              )}
+                          </>
+                        )}
                     </>
                   )}
-                  {hoaDonViewModel?.is_ky_so_succes === true && CKM !== "C" && (
-                    <Button
-                      text="Phát hành"
-                      sx={{ minWidth: "100px" }}
-                      // disabled={false}
-                      disabled={!isAllowPhatHanh}
-                      variant="primary"
-                      size="large"
-                      type="button"
-                      leadingVisual={IssueClosedIcon}
-                      isLoading={isSaving}
-                      onClick={() => {
-                        handlePhatHanhAsync("");
-                      }}
-                      // tooltip='Bạn chỉ có thể gửi tờ khai sau khi đã ký số'
-                    />
-                  )}
-                  {hoaDonViewModel?.is_ky_so_succes !== true &&
-                    (hoaDonViewModel?.hoa_don_trang_thai_id ===
-                      eHoaDonTrangThai.NHAP ||
-                      hoaDonViewModel?.hoa_don_trang_thai_id ===
-                        eHoaDonTrangThai.CHUA_GUI_CQT) && (
-                      <>
-                        {user &&
-                          !user.is_hsm_signing &&
-                          !user.is_remote_signing && (
-                            <Button
-                              text="Ký số và phát hành"
-                              sx={{ minWidth: "100px" }}
-                              disabled={!isAllowPhatHanh}
-                              variant="primary"
-                              size="large"
-                              type="button"
-                              leadingVisual={IssueClosedIcon}
-                              isLoading={isSaving}
-                              onClick={() => {
-                                handleGetBase64KySo();
-                                setIsKySoVaPhatHanh(true);
-                              }}
-                            />
-                          )}
-                        {user &&
-                          (user.is_hsm_signing || user.is_remote_signing) && (
-                            <Button
-                              text="Ký số và phát hành"
-                              sx={{ minWidth: "100px" }}
-                              disabled={!isAllowPhatHanh}
-                              variant="primary"
-                              size="large"
-                              type="button"
-                              leadingVisual={IssueClosedIcon}
-                              isLoading={isSaving}
-                              onClick={() => {
-                                setIsKySoVaPhatHanh(true);
-                                handleKySoVaPhatHanhRemoteAsync();
-                              }}
-                            />
-                          )}
-                      </>
-                    )}
                 </>
               )}
             </Box>
@@ -2409,8 +2513,11 @@ const HoaDonForm = () => {
           }}
           onSuccess={(signedtext, bienBanSignedText) => {
             setIsShowKySoModal(false);
-            handleUpdateKySoSuccss(signedtext, bienBanSignedText);
-            // handlePhatHanhAsync(signedtext)
+            if (CKM === "M" && isMttPhatHanh) {
+              handlePhatHanhAsync(signedtext, bienBanSignedText);
+            } else {
+              handleUpdateKySoSuccss(signedtext, bienBanSignedText);
+            }
           }}
         />
       )}

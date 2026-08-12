@@ -103,7 +103,8 @@ namespace Service.HoaDon
         public async Task<IEnumerable<HoaDonCreateXmlKySoRespone>> CreateXmlVaPhatHanhsAsync(HoaDonKyLoRequest request, bool isRunBackgroundForRS = false)
         {
 
-            var hoaDons = await _hoaDonService.SelectByIdsAsync(request.ids);
+            var hoaDons = HoaDonService.OrderHoaDonsForKySo(await _hoaDonService.SelectByIdsAsync(request.ids));
+            var excludeHoaDonIds = hoaDons.Select(x => x.id).ToList();
             var hoaDonsMTT = hoaDons.Where(x => x.hoa_don_hinh_thuc_code == "M").ToList();
             var hoaDonsThuong = hoaDons.Where(x => x.hoa_don_hinh_thuc_code != "M").ToList();
             //nếu tất cả là hóa đơn MTT -> bảng kê
@@ -132,8 +133,8 @@ namespace Service.HoaDon
             var lockStatus = new SemaphoreSlim(1, 1);
 
             var result = new List<HoaDonCreateXmlKySoRespone>();
-            var taskMTT = this.CreateXmlsMTTAsync(hoaDonsMTT, lockStatus, processChangedModel);
-            var taskThuong = this.CreateXmlsThuongAsync(hoaDonsThuong, lockStatus, processChangedModel);
+            var taskMTT = this.CreateXmlsMTTAsync(hoaDonsMTT, lockStatus, processChangedModel, excludeHoaDonIds);
+            var taskThuong = this.CreateXmlsThuongAsync(hoaDonsThuong, lockStatus, processChangedModel, excludeHoaDonIds);
             await Task.WhenAll(taskMTT, taskThuong);
             result.AddRange(taskMTT.Result);
             result.AddRange(taskThuong.Result);
@@ -383,79 +384,53 @@ namespace Service.HoaDon
                 return new ErrorResult<string>(ex.Message);
             }
         }
-        private async Task<IEnumerable<HoaDonCreateXmlKySoRespone>> CreateXmlsMTTAsync(List<hoa_don> hoaDons, SemaphoreSlim lockStatus, ProcessChangedModel processChangedModel)
+        private async Task<IEnumerable<HoaDonCreateXmlKySoRespone>> CreateXmlsMTTAsync(List<hoa_don> hoaDons, SemaphoreSlim lockStatus, ProcessChangedModel processChangedModel, List<int> excludeHoaDonIds)
         {
             var result = new List<HoaDonCreateXmlKySoRespone>();
-            var pageSize = 10;
-            var pageCount = (int)Math.Ceiling((double)hoaDons.Count() / pageSize);
-
-            for (int pageIndex = 0; pageIndex < pageCount; pageIndex++)
+            foreach (var hoaDon in hoaDons)
             {
-                var pageItems = hoaDons.Skip(pageIndex * pageSize).Take(pageSize).ToList();
-                var tasks = pageItems.Select(async hoaDon =>
+                var base64Result = await _hoaDonService.CreateBase64MTTAsync(hoaDon, excludeHoaDonIds);
+                result.Add(new HoaDonCreateXmlKySoRespone()
                 {
-                    var base64Result = await _hoaDonService.CreateBase64MTTAsync(hoaDon);
-                    if (base64Result.is_success)
-                    {
-                        result.Add(new HoaDonCreateXmlKySoRespone()
-                        {
-                            id = hoaDon.id,
-                            xml_base64 = base64Result.data
-                        });
-
-                    }
-                    if (processChangedModel != null)
-                    {
-                        await lockStatus.WaitAsync();
-                        var processStatus = (ProcessStatusRespone<ProcessStepDataBase>)processChangedModel.processStatus;
-                        processStatus.steps[0].data.success += base64Result.is_success ? 1 : 0;
-                        processStatus.steps[0].data.error += base64Result.is_success ? 0 : 1;
-                        await _processHub.OnProcessChangedAsync(processChangedModel);
-                        lockStatus.Release();
-                    }
-
-                }).ToList();
-                await Task.WhenAll(tasks);
-
+                    id = hoaDon.id,
+                    xml_base64 = base64Result.is_success ? base64Result.data : null,
+                    is_success = base64Result.is_success,
+                    message = base64Result.is_success ? null : base64Result.message
+                });
+                if (processChangedModel != null)
+                {
+                    await lockStatus.WaitAsync();
+                    var processStatus = (ProcessStatusRespone<ProcessStepDataBase>)processChangedModel.processStatus;
+                    processStatus.steps[0].data.success += base64Result.is_success ? 1 : 0;
+                    processStatus.steps[0].data.error += base64Result.is_success ? 0 : 1;
+                    await _processHub.OnProcessChangedAsync(processChangedModel);
+                    lockStatus.Release();
+                }
             }
             return result;
         }
-        private async Task<IEnumerable<HoaDonCreateXmlKySoRespone>> CreateXmlsThuongAsync(List<hoa_don> hoaDons, SemaphoreSlim lockStatus, ProcessChangedModel processChangedModel)
+        private async Task<IEnumerable<HoaDonCreateXmlKySoRespone>> CreateXmlsThuongAsync(List<hoa_don> hoaDons, SemaphoreSlim lockStatus, ProcessChangedModel processChangedModel, List<int> excludeHoaDonIds)
         {
             var result = new List<HoaDonCreateXmlKySoRespone>();
-            var pageSize = 10;
-            var pageCount = (int)Math.Ceiling((double)hoaDons.Count() / pageSize);
-
-            for (int pageIndex = 0; pageIndex < pageCount; pageIndex++)
+            foreach (var hoaDon in hoaDons)
             {
-                var pageItems = hoaDons.Skip(pageIndex * pageSize).Take(pageSize).ToList();
-                var tasks = pageItems.Select(async hoaDon =>
+                var xmlResult = await _hoaDonService.CreateXmlKySoAsync(hoaDon, excludeHoaDonIds);
+                result.Add(new HoaDonCreateXmlKySoRespone()
                 {
-                    var xmlResult = await _hoaDonService.CreateXmlKySoAsync(hoaDon);
-                    if (xmlResult.is_success)
-                    {
-                        var xml = xmlResult.data;
-                        var base64 = xmlResult.data.ConvertToBase64();
-                        result.Add(new HoaDonCreateXmlKySoRespone()
-                        {
-                            id = hoaDon.id,
-                            xml_base64 = base64
-                        });
-                        
-                    }
-                    if (processChangedModel != null)
-                    {
-                        await lockStatus.WaitAsync();
-                        var processStatus = (ProcessStatusRespone<ProcessStepDataBase>)processChangedModel.processStatus;
-                        processStatus.steps[0].data.success += xmlResult.is_success ? 1 : 0;
-                        processStatus.steps[0].data.error += xmlResult.is_success ? 1 : 0;
-                        await _processHub.OnProcessChangedAsync(processChangedModel);
-                        lockStatus.Release();
-                    }
-
-                }).ToList();
-                await Task.WhenAll(tasks);
-
+                    id = hoaDon.id,
+                    xml_base64 = xmlResult.is_success ? xmlResult.data.ConvertToBase64() : null,
+                    is_success = xmlResult.is_success,
+                    message = xmlResult.is_success ? null : xmlResult.message
+                });
+                if (processChangedModel != null)
+                {
+                    await lockStatus.WaitAsync();
+                    var processStatus = (ProcessStatusRespone<ProcessStepDataBase>)processChangedModel.processStatus;
+                    processStatus.steps[0].data.success += xmlResult.is_success ? 1 : 0;
+                    processStatus.steps[0].data.error += xmlResult.is_success ? 0 : 1;
+                    await _processHub.OnProcessChangedAsync(processChangedModel);
+                    lockStatus.Release();
+                }
             }
             return result;
         }

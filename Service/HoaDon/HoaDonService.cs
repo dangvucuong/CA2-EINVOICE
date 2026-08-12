@@ -920,20 +920,26 @@ namespace Service.HoaDon
             return new ErrorResult<string>();
         }
 
-        public async Task<FunctionResult<string>> CreateBase64MTTAsync(hoa_don hoaDon)
+        public async Task<FunctionResult<string>> CreateBase64MTTAsync(hoa_don hoaDon, IEnumerable<int> excludeHoaDonIds = null)
         {
             if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DA_HUY_NOI_BO)
             {
                 return new ErrorResult<string>("Hóa đơn đã hủy nội bộ");
             }
-            var modelResult = await this.CreateXmlObjectKySoAsync(hoaDon);
-            if (!modelResult.is_success)
+
+            var hoaDonXml = await this.TryGetSignedHoaDonXmlAsync(hoaDon.id);
+            if (hoaDonXml.ConvertToString() == "")
             {
-                return new ErrorResult<string>(modelResult.message);
+                var modelResult = await this.CreateXmlObjectKySoAsync(hoaDon, false, excludeHoaDonIds);
+                if (!modelResult.is_success)
+                {
+                    return new ErrorResult<string>(modelResult.message);
+                }
+
+                hoaDonXml = modelResult.data.ConvertToXml();
             }
 
             var userId = this.GetCurrentUserId();
-            var hoaDonXml = modelResult.data.ConvertToXml();
             var uuid = Guid.NewGuid().ToString().Replace("-", "").ToUpper();
             await _serviceWrapper.Cache.SetDataAsync<string>(uuid, "hoa_don", DateTime.Now.AddDays(30));
             await _repositoryWrapper.HoaDon.PhatHanhUUID.SaveLogUuidAsync(uuid, "hoa_don", userId);
@@ -962,13 +968,42 @@ namespace Service.HoaDon
             return new SuccessResult<string>(base64thongdiep);
         }
 
+        private async Task<string> TryGetSignedHoaDonXmlAsync(int hoaDonId)
+        {
+            var logs = await _hoaDonLogService.SelectByHoaDonAsync(hoaDonId);
+            var logKySo = logs
+                .Where(x => x.hoa_don_log_type_id == (int)e_hoa_don_log_type.KY_SO_SUCCESS)
+                .OrderByDescending(x => x.created_time)
+                .FirstOrDefault();
+            if (logKySo == null || logKySo.file_thong_diep_url.ConvertToString() == "" || !File.Exists(logKySo.file_thong_diep_url))
+            {
+                return "";
+            }
+
+            try
+            {
+                var xml = await File.ReadAllTextAsync(logKySo.file_thong_diep_url);
+                var doc = new XmlDocument();
+                doc.LoadXml(xml);
+                if (doc.DocumentElement != null && doc.DocumentElement.LocalName == "HDon")
+                {
+                    return xml;
+                }
+            }
+            catch
+            {
+            }
+
+            return "";
+        }
+
         public async Task<FunctionResult<Model.Request.Xml.HoaDon>> CreateXmlObjectKySoAsync(int id, bool isPreview = false)
         {
             var obj = await this.SelectByIdAsync(id);
             return await this.CreateXmlObjectKySoAsync(obj, isPreview);
         }
 
-        public async Task<FunctionResult<Model.Request.Xml.HoaDon>> CreateXmlObjectKySoAsync(hoa_don hoaDon, bool isPreview = false)
+        public async Task<FunctionResult<Model.Request.Xml.HoaDon>> CreateXmlObjectKySoAsync(hoa_don hoaDon, bool isPreview = false, IEnumerable<int> excludeHoaDonIds = null)
         {
             var obj = hoaDon;
             var user_id = this.GetCurrentUserId();
@@ -1022,7 +1057,7 @@ namespace Service.HoaDon
                         obj.ma_so_hoa_don_mtt = soHoaDonMTTResult.data;
                     }
 
-                    var validateSoKySo = await this.ValidateKhongCoSoHoaDonNhoHonChuaKySoAsync(obj);
+                    var validateSoKySo = await this.ValidateKhongCoSoHoaDonNhoHonChuaKySoAsync(obj, excludeHoaDonIds);
                     if (!validateSoKySo.is_success)
                     {
                         return new ErrorResult<Model.Request.Xml.HoaDon>(validateSoKySo.message);
@@ -1855,14 +1890,14 @@ namespace Service.HoaDon
             return new ErrorResult<string>(xmlData.message);
         }
 
-        public async Task<FunctionResult<string>> CreateXmlKySoAsync(hoa_don hoaDon)
+        public async Task<FunctionResult<string>> CreateXmlKySoAsync(hoa_don hoaDon, IEnumerable<int> excludeHoaDonIds = null)
         {
             if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DA_HUY_NOI_BO)
             {
                 //return string.Empty;
                 return new ErrorResult<string>("Hóa đơn đã hủy nội bộ");
             }
-            var xmlData = await this.CreateXmlObjectKySoAsync(hoaDon);
+            var xmlData = await this.CreateXmlObjectKySoAsync(hoaDon, false, excludeHoaDonIds);
 
             if (xmlData.is_success)
             {
@@ -2401,7 +2436,20 @@ namespace Service.HoaDon
             return true;
         }
 
-        private async Task<FunctionResult<string>> ValidateKhongCoSoHoaDonNhoHonChuaKySoAsync(hoa_don hoaDon)
+        public static List<hoa_don> OrderHoaDonsForKySo(IEnumerable<hoa_don> hoaDons)
+        {
+            return (hoaDons ?? Enumerable.Empty<hoa_don>())
+                .OrderBy(x => x.ngay_hoa_don)
+                .ThenBy(x =>
+                {
+                    var so = x.ma_so_hoa_don.ConvertToInt();
+                    return so > 0 ? so : int.MaxValue;
+                })
+                .ThenBy(x => x.id)
+                .ToList();
+        }
+
+        private async Task<FunctionResult<string>> ValidateKhongCoSoHoaDonNhoHonChuaKySoAsync(hoa_don hoaDon, IEnumerable<int> excludeHoaDonIds = null)
         {
             var maSo = hoaDon.ma_so_hoa_don.ConvertToInt();
             if (maSo <= 0)
@@ -2415,7 +2463,8 @@ namespace Service.HoaDon
                 hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu,
                 hoaDon.id,
                 maSo,
-                hoaDon.ngay_hoa_don);
+                hoaDon.ngay_hoa_don,
+                excludeHoaDonIds);
             if (pending == null || pending.id <= 0 || pending.ma_so_hoa_don <= 0)
             {
                 return new SuccessResult<string>();
@@ -2614,6 +2663,7 @@ namespace Service.HoaDon
                 {
                     await donViHoaDonLock.WaitAsync();
                     isHoldKey = true;
+                    var assignedNewNumber = false;
                     if (obj.ma_so_hoa_don.ConvertToString() == "")
                     {
                         var soHoaDonResult = await this.GetSoHoaDonAsyn(obj.donvi_ma_dv,
@@ -2626,12 +2676,16 @@ namespace Service.HoaDon
                         obj.ma_so_hoa_don = soHoaDonResult.data;
                         obj.so_hoa_don = obj.hoa_don_dang_ky_phat_hanh_mau_so + obj.hoa_don_dang_ky_phat_hanh_ky_hieu +
                                          obj.ma_so_hoa_don;
+                        assignedNewNumber = true;
                     }
 
-                    var validateSoKySo = await this.ValidateKhongCoSoHoaDonNhoHonChuaKySoAsync(obj);
-                    if (!validateSoKySo.is_success)
+                    if (assignedNewNumber)
                     {
-                        return new ErrorResult<string>(validateSoKySo.message);
+                        var validateSoKySo = await this.ValidateKhongCoSoHoaDonNhoHonChuaKySoAsync(obj);
+                        if (!validateSoKySo.is_success)
+                        {
+                            return new ErrorResult<string>(validateSoKySo.message);
+                        }
                     }
 
                     obj.is_ky_so_succes = true;
@@ -2681,7 +2735,9 @@ namespace Service.HoaDon
                             file_thong_diep_url = filePath,
                             ngay_thuc_hien = DateTime.Now,
                             nguoi_thuc_hien = user.full_name,
-                            noi_dung_thuc_hien = "Ký số thành công",
+                            noi_dung_thuc_hien = this.GetHoaDonType(obj.hoa_don_dang_ky_phat_hanh_ky_hieu) == "M"
+                                ? "Ký số người bán thành công"
+                                : "Ký số thành công",
                             hoa_don_id = obj.id,
                             hoa_don_log_type_id = (int)e_hoa_don_log_type.KY_SO_SUCCESS
                         };
@@ -3482,7 +3538,9 @@ namespace Service.HoaDon
 
         public async Task<FunctionResult<string>> CreateBase64MTTBangKeAsync(List<hoa_don> hoaDons)
         {
-            var tasks = hoaDons.Select(hoaDon => { return this.CreateXmlObjectKySoAsync(hoaDon); }).ToList();
+            hoaDons = OrderHoaDonsForKySo(hoaDons);
+            var excludeIds = hoaDons.Select(x => x.id).ToList();
+            var tasks = hoaDons.Select(hoaDon => { return this.CreateXmlObjectKySoAsync(hoaDon, false, excludeIds); }).ToList();
             await this.ExcuteDbTasks<FunctionResult<Model.Request.Xml.HoaDon>>(tasks, 10);
             var listHoaDonXmlModel = tasks.Where(x => x.Result.is_success).Select(x => x.Result.data).ToList();
             var hoaDonXmls = listHoaDonXmlModel.Select(hoaDonXmlModel => { return hoaDonXmlModel.ConvertToXml(); })

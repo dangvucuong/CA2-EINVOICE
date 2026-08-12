@@ -72,7 +72,13 @@ const HoaDonKySoPhatHanhMultipleRS = (
     });
     // setIsCreatingXml(false)
     if (res.is_success) {
-      _refHoaDon.current = res.data.map((x: any) => {
+      const errRes = (res.data ?? []).filter((x: any) => x.is_success === false);
+      if (errRes.length > 0) {
+        NotifyHelper.Error(errRes[0]?.message ?? "Có hóa đơn không tạo được XML ký số");
+      }
+      _refHoaDon.current = (res.data ?? [])
+        .filter((x: any) => x.is_success !== false && x.xml_base64)
+        .map((x: any) => {
         return {
           ...x,
           status_id: 1,

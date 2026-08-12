@@ -4,7 +4,10 @@ using ApiSign;
 using Model.Respone.ApiSign;
 using Common;
 using Model.Table;
+using Service.HoaDon;
 using WebApp;
+using System.Collections.Generic;
+using System.Linq;
 using System.Xml;
 
 namespace Service.ApiSign
@@ -69,17 +72,17 @@ namespace Service.ApiSign
             }
             return null;
         }
-        private async Task<ApiSignResultModel> SignHoaDonAsync(hoa_don hoaDon, string mst, string serial)
+        private async Task<ApiSignResultModel> SignHoaDonAsync(hoa_don hoaDon, string mst, string serial, IEnumerable<int> excludeHoaDonIds = null)
         {
             var base64 = "";
             if (hoaDon.hoa_don_hinh_thuc_code == "M")
             {
-                var base64Result = await _serviceWrapper.HoaDon.HoaDon.CreateBase64MTTAsync(hoaDon);
+                var base64Result = await _serviceWrapper.HoaDon.HoaDon.CreateBase64MTTAsync(hoaDon, excludeHoaDonIds);
                 base64 = base64Result.is_success ? base64Result.data : "";
             }
             else
             {
-                var xmlResult = await _serviceWrapper.HoaDon.HoaDon.CreateXmlKySoAsync(hoaDon);
+                var xmlResult = await _serviceWrapper.HoaDon.HoaDon.CreateXmlKySoAsync(hoaDon, excludeHoaDonIds);
                 if (!xmlResult.is_success) return null;
                 base64 = xmlResult.data.ConvertToBase64();
 
@@ -104,12 +107,18 @@ namespace Service.ApiSign
 
         public async Task<IEnumerable<ApiSignResultModel>> SignHoaDonsAsync(List<int> hoaDonIds, string serial)
         {
-
-            var hoaDons = await _serviceWrapper.HoaDon.HoaDon.SelectByIdsAsync(hoaDonIds);
-            var tasks = hoaDons.Select(hoaDon => SignHoaDonAsync(hoaDon, hoaDon.donvi_ma_dv, serial)).ToList();
-            var results = await Task.WhenAll(tasks);
-            return results.Where(result => result != null);
-
+            var hoaDons = HoaDonService.OrderHoaDonsForKySo(await _serviceWrapper.HoaDon.HoaDon.SelectByIdsAsync(hoaDonIds));
+            var excludeHoaDonIds = hoaDons.Select(x => x.id).ToList();
+            var results = new List<ApiSignResultModel>();
+            foreach (var hoaDon in hoaDons)
+            {
+                var result = await SignHoaDonAsync(hoaDon, hoaDon.donvi_ma_dv, serial, excludeHoaDonIds);
+                if (result != null)
+                {
+                    results.Add(result);
+                }
+            }
+            return results;
         }
     }
 }
