@@ -107,6 +107,7 @@ WHERE hd.donvi_ma_dv = @donvi_ma_dv
   AND hd.ma_so_hoa_don > 0
   AND hd.hoa_don_trang_thai_id = 1
   AND ISNULL(hd.is_ky_so_succes, 0) = 0
+  AND hd.ngay_hoa_don >= '2026-08-01'
   AND hd.id <> @hoa_don_id
   {excludeSql}
   AND (

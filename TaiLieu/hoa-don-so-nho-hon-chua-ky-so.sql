@@ -1,4 +1,5 @@
 -- Hóa đơn chặn ký số: HĐ nháp đã cấp số, chưa ký, đứng TRƯỚC theo (ngay_hoa_don, ma_so_hoa_don).
+-- Chỉ áp dụng hóa đơn có ngay_hoa_don >= 2026-08-01.
 -- @exclude_ids: csv id cùng lô đang ký. Dùng CHARINDEX (không dùng STRING_SPLIT — SQL cũ / compat < 130 sẽ lỗi).
 IF OBJECT_ID('hoa_don_select_so_nho_hon_chua_ky_so', 'P') IS NOT NULL
     DROP PROCEDURE hoa_don_select_so_nho_hon_chua_ky_so;
@@ -35,6 +36,7 @@ BEGIN
       AND hd.ma_so_hoa_don > 0
       AND hd.hoa_don_trang_thai_id = 1
       AND ISNULL(hd.is_ky_so_succes, 0) = 0
+      AND hd.ngay_hoa_don >= '2026-08-01'
       AND hd.id <> @hoa_don_id
       AND (
           @exclude_wrapped IS NULL

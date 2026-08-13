@@ -930,13 +930,19 @@ namespace Service.HoaDon
             var hoaDonXml = await this.TryGetSignedHoaDonXmlAsync(hoaDon.id);
             if (hoaDonXml.ConvertToString() == "")
             {
-                var modelResult = await this.CreateXmlObjectKySoAsync(hoaDon, false, excludeHoaDonIds);
+                var modelResult = await this.CreateXmlObjectKySoAsync(hoaDon, false, excludeHoaDonIds, skipValidateSoNhoHonChuaKySo: true);
                 if (!modelResult.is_success)
                 {
                     return new ErrorResult<string>(modelResult.message);
                 }
 
                 hoaDonXml = modelResult.data.ConvertToXml();
+            }
+
+            hoaDonXml = this.NormalizeHoaDonXmlForThongDiepWrap(hoaDonXml);
+            if (hoaDonXml.ConvertToString() == "")
+            {
+                return new ErrorResult<string>("Không tách được XML hóa đơn để đóng thông điệp");
             }
 
             var userId = this.GetCurrentUserId();
@@ -955,7 +961,8 @@ namespace Service.HoaDon
                     ma_noi_gui_uuid = $"{AppSettings.FixedValue.MNGui}{uuid}".ToUpper(),
                     ma_thong_diep_tham_chieu = $"",
                     mst = hoaDon.nguoi_ban_mst,
-                    so_luong = 1
+                    // SLuong được gán lại = số thẻ HDon trong DLieu (EnsureThongDiepSLuongMatchesHDonCount)
+                    so_luong = 0
                 },
             };
             hoaDon.phat_hanh_uuid = uuid;
@@ -983,11 +990,49 @@ namespace Service.HoaDon
             try
             {
                 var xml = await File.ReadAllTextAsync(logKySo.file_thong_diep_url);
+                return this.NormalizeHoaDonXmlForThongDiepWrap(xml);
+            }
+            catch
+            {
+            }
+
+            return "";
+        }
+
+        /// <summary>
+        /// Chỉ lấy XML gốc HDon để đóng TDiep. Nếu log lưu cả TDiep (ký remote/lô) thì tách HDon con, tránh đóng lồng thông điệp.
+        /// </summary>
+        private string NormalizeHoaDonXmlForThongDiepWrap(string xml)
+        {
+            if (xml.ConvertToString() == "")
+            {
+                return "";
+            }
+
+            try
+            {
                 var doc = new XmlDocument();
                 doc.LoadXml(xml);
-                if (doc.DocumentElement != null && doc.DocumentElement.LocalName == "HDon")
+                var root = doc.DocumentElement;
+                if (root == null)
+                {
+                    return "";
+                }
+
+                if (root.LocalName == "HDon")
                 {
                     return xml;
+                }
+
+                if (root.LocalName == "TDiep")
+                {
+                    var hoaDonNodes = root.SelectNodes("/TDiep/DLieu/HDon");
+                    if (hoaDonNodes == null || hoaDonNodes.Count != 1)
+                    {
+                        return "";
+                    }
+
+                    return hoaDonNodes[0].OuterXml;
                 }
             }
             catch
@@ -1003,7 +1048,7 @@ namespace Service.HoaDon
             return await this.CreateXmlObjectKySoAsync(obj, isPreview);
         }
 
-        public async Task<FunctionResult<Model.Request.Xml.HoaDon>> CreateXmlObjectKySoAsync(hoa_don hoaDon, bool isPreview = false, IEnumerable<int> excludeHoaDonIds = null)
+        public async Task<FunctionResult<Model.Request.Xml.HoaDon>> CreateXmlObjectKySoAsync(hoa_don hoaDon, bool isPreview = false, IEnumerable<int> excludeHoaDonIds = null, bool skipValidateSoNhoHonChuaKySo = false)
         {
             var obj = hoaDon;
             var user_id = this.GetCurrentUserId();
@@ -1057,10 +1102,13 @@ namespace Service.HoaDon
                         obj.ma_so_hoa_don_mtt = soHoaDonMTTResult.data;
                     }
 
-                    var validateSoKySo = await this.ValidateKhongCoSoHoaDonNhoHonChuaKySoAsync(obj, excludeHoaDonIds);
-                    if (!validateSoKySo.is_success)
+                    if (!skipValidateSoNhoHonChuaKySo)
                     {
-                        return new ErrorResult<Model.Request.Xml.HoaDon>(validateSoKySo.message);
+                        var validateSoKySo = await this.ValidateKhongCoSoHoaDonNhoHonChuaKySoAsync(obj, excludeHoaDonIds);
+                        if (!validateSoKySo.is_success)
+                        {
+                            return new ErrorResult<Model.Request.Xml.HoaDon>(validateSoKySo.message);
+                        }
                     }
 
                     obj.SetUpdateInfo(user_id);
@@ -2406,6 +2454,8 @@ namespace Service.HoaDon
                 : soHoaDonDuKien);
         }
 
+        private static readonly DateTime NgayApDungValidateSoNhoHonChuaKySo = new DateTime(2026, 8, 1);
+
         private static bool LaHoaDonNhapCoSoChuaKySo(hoa_don hd)
         {
             if (hd == null || hd.is_deleted)
@@ -2419,6 +2469,11 @@ namespace Service.HoaDon
             }
 
             if (hd.ma_so_hoa_don.ConvertToInt() <= 0)
+            {
+                return false;
+            }
+
+            if (hd.ngay_hoa_don.Date < NgayApDungValidateSoNhoHonChuaKySo)
             {
                 return false;
             }
@@ -2451,6 +2506,11 @@ namespace Service.HoaDon
 
         private async Task<FunctionResult<string>> ValidateKhongCoSoHoaDonNhoHonChuaKySoAsync(hoa_don hoaDon, IEnumerable<int> excludeHoaDonIds = null)
         {
+            if (hoaDon.ngay_hoa_don.Date < NgayApDungValidateSoNhoHonChuaKySo)
+            {
+                return new SuccessResult<string>();
+            }
+
             var maSo = hoaDon.ma_so_hoa_don.ConvertToInt();
             if (maSo <= 0)
             {
@@ -3540,7 +3600,7 @@ namespace Service.HoaDon
         {
             hoaDons = OrderHoaDonsForKySo(hoaDons);
             var excludeIds = hoaDons.Select(x => x.id).ToList();
-            var tasks = hoaDons.Select(hoaDon => { return this.CreateXmlObjectKySoAsync(hoaDon, false, excludeIds); }).ToList();
+            var tasks = hoaDons.Select(hoaDon => { return this.CreateXmlObjectKySoAsync(hoaDon, false, excludeIds, skipValidateSoNhoHonChuaKySo: true); }).ToList();
             await this.ExcuteDbTasks<FunctionResult<Model.Request.Xml.HoaDon>>(tasks, 10);
             var listHoaDonXmlModel = tasks.Where(x => x.Result.is_success).Select(x => x.Result.data).ToList();
             var hoaDonXmls = listHoaDonXmlModel.Select(hoaDonXmlModel => { return hoaDonXmlModel.ConvertToXml(); })
@@ -3561,7 +3621,8 @@ namespace Service.HoaDon
                     ma_noi_gui_uuid = $"{AppSettings.FixedValue.MNGui}{uuid}".ToUpper(),
                     ma_thong_diep_tham_chieu = $"",
                     mst = hoaDons.FirstOrDefault()?.nguoi_ban_mst ?? "",
-                    so_luong = hoaDons.Count
+                    // SLuong được gán lại = số thẻ HDon trong DLieu (EnsureThongDiepSLuongMatchesHDonCount)
+                    so_luong = 0
                 },
             };
             foreach (var hoaDon in hoaDons)

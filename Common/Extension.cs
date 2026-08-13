@@ -432,8 +432,10 @@ namespace Common
                     {
                         fileElement.SetAttribute("Id", AttributeId);
                     }
-                    fileElement.InnerXml = childNodeValue.Replace("<?xml version=\"1.0\" encoding=\"utf-16\"?>", "");
-                    fileElement.InnerXml = childNodeValue.Replace("<?xml version=\"1.0\" encoding=\"utf-8\"?>", "");
+                    var cleanedChild = childNodeValue
+                        .Replace("<?xml version=\"1.0\" encoding=\"utf-16\"?>", "")
+                        .Replace("<?xml version=\"1.0\" encoding=\"utf-8\"?>", "");
+                    fileElement.InnerXml = cleanedChild;
 
                     rootElement.AppendChild(fileElement);
                     if (isAddCKSNNT)
@@ -444,12 +446,62 @@ namespace Common
 
                     }
                     var xml = doc.OuterXml;
+                    if (childNode == "DLieu")
+                    {
+                        xml = xml.EnsureThongDiepSLuongMatchesHDonCount();
+                    }
                     return xml;
                 }
             }
 
 
         }
+
+        /// <summary>
+        /// SLuong trong TTChung phải bằng số thẻ HDon trực tiếp trong DLieu (không tính SLuong dòng hàng HHDVu).
+        /// Ví dụ: 3 thẻ HDon trong thông điệp thì SLuong = 3.
+        /// </summary>
+        public static string EnsureThongDiepSLuongMatchesHDonCount(this string tDiepXml)
+        {
+            if (tDiepXml.ConvertToString() == "")
+            {
+                return tDiepXml;
+            }
+
+            var doc = new XmlDocument();
+            doc.LoadXml(tDiepXml);
+            var ttChung = doc.SelectSingleNode("/TDiep/TTChung") as XmlElement;
+            var dLieu = doc.SelectSingleNode("/TDiep/DLieu") as XmlElement;
+            if (ttChung == null || dLieu == null)
+            {
+                return tDiepXml;
+            }
+
+            var hoaDonCount = 0;
+            foreach (XmlNode child in dLieu.ChildNodes)
+            {
+                if (child.NodeType == XmlNodeType.Element && child.LocalName == "HDon")
+                {
+                    hoaDonCount++;
+                }
+            }
+
+            if (hoaDonCount <= 0)
+            {
+                return tDiepXml;
+            }
+
+            var sluongNode = ttChung.SelectSingleNode("SLuong");
+            if (sluongNode == null)
+            {
+                sluongNode = doc.CreateElement("SLuong");
+                ttChung.AppendChild(sluongNode);
+            }
+
+            sluongNode.InnerText = hoaDonCount.ToString();
+            return doc.OuterXml;
+        }
+
         public static string ConvertToXmlAndAppendChilds<T>(this T obj,
             string parentNode,
             string childNode,
@@ -507,6 +559,10 @@ namespace Common
 
                     }
                     var xml = doc.OuterXml;
+                    if (childNode == "DLieu")
+                    {
+                        xml = xml.EnsureThongDiepSLuongMatchesHDonCount();
+                    }
                     return xml;
                 }
             }
