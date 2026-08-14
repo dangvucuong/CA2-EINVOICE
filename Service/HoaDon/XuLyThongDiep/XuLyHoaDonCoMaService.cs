@@ -60,7 +60,7 @@ namespace Service.HoaDon.XuLyThongDiep
             if (ThongDiepHoaDonHelper.IsLoiThongDiep(thongDiepRespone, xmlKetQua))
             {
                 hoaDon.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.LOI_THONG_DIEP;
-                hoaDon.ket_qua_phat_hanh = $"";
+                hoaDon.ket_qua_phat_hanh = ThongDiepHoaDonHelper.GetMTa(thongDiepRespone, xmlKetQua);
             }
             else if (mltdiep == "999")
             {

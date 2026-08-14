@@ -158,6 +158,9 @@ namespace Service.HoaDon
             // }
             // LogWriter.Writer("hoang_hoas done", $"{hoaDon.id}", "");
             var hangHoas = hoaDon.hoang_hoas;
+            var isHoaDonThuongMai = HoaDonThuongMaiHelper.IsHoaDonThuongMai(
+                hoaDon.hoa_don_dang_ky_phat_hanh_mau_so,
+                hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu);
             var donVi = await this.GetCurrentDonViAsync();
             var hoaDonData = new MauHoaDonCreateHtmlInput();
             hoaDonData.hoa_don = new Model.Request.Xml.HoaDon();
@@ -272,12 +275,12 @@ namespace Service.HoaDon
                     stt = x.stt > 0 ? x.stt.ToString() : string.Empty,
                     ten_hang_hoa_dich_vu = x.ten_hang,
                     thanh_tien = hoaDon.loai_tien == "VND" ? ((decimal)x.thanh_tien.ConvertToDouble(0)).ConvertToStringAndRemoveZeroPart() : x.thanh_tien.ConvertToStringAndRemoveZeroPart(),
-                    thue_suat = x.thue_vat,
+                    thue_suat = isHoaDonThuongMai ? null : x.thue_vat,
                     tinh_chat = x.hang_hoa_tinh_chat_id,
-                    ty_le_chiet_khau = x.ty_le_chiet_khau.ConvertToStringAndRemoveZeroPart(),
-                    so_tien_chiet_khau = x.tien_chiet_khau.ConvertToStringAndRemoveZeroPart()
+                    ty_le_chiet_khau = isHoaDonThuongMai ? null : x.ty_le_chiet_khau.ConvertToStringAndRemoveZeroPart(),
+                    so_tien_chiet_khau = isHoaDonThuongMai ? null : x.tien_chiet_khau.ConvertToStringAndRemoveZeroPart()
                 };
-                if (x.ty_le_chiet_khau.ConvertToString() != "")
+                if (!isHoaDonThuongMai && x.ty_le_chiet_khau.ConvertToString() != "")
                 {
                     objItem.ty_le_chiet_khau = x.ty_le_chiet_khau.ConvertToStringAndRemoveZeroPart();
                     objItem.so_tien_chiet_khau = x.tien_chiet_khau.ConvertToStringAndRemoveZeroPart();
@@ -380,7 +383,25 @@ namespace Service.HoaDon
                 // tong_tien_thanh_toan_bang_so = (hoaDon.tong_tien_truong_thue + hoaDon.tong_tien_thue).ConvertToDouble(0).ConvertToDecimal();
             }
             // LogWriter.Writer("ThongTinLienQuan done", $"{hoaDon.id}", "");
-            hoaDonData.hoa_don.du_lieu_hoa_don.noi_dung_hoa_don.thong_tin_thanh_toan = new ThongTinThanhToan()
+            hoaDonData.hoa_don.du_lieu_hoa_don.noi_dung_hoa_don.thong_tin_thanh_toan = isHoaDonThuongMai
+                ? new ThongTinThanhToan()
+                {
+                    tong_tien_thanh_toan_bang_chu = await tong_tien_thanh_toan_bang_so.ConvertToTextAsync(
+                        hoaDon.loai_tien.ConvertToString() != "" ? hoaDon.loai_tien.ConvertToString() : "VND"),
+                    tong_tien_thanh_toan_bang_so = tong_tien_thanh_toan_bang_so.ConvertToStringAndRemoveZeroPart(),
+                    thong_tin_phis = loaiPhis != null && loaiPhis.Count() > 0 ? new DSLPhi()
+                    {
+                        loai_phis = loaiPhis.Select(lp =>
+                        {
+                            return new LPhi()
+                            {
+                                ten_loai_phi = lp.ten_le_phi,
+                                tien_phi = lp.so_tien.ConvertToStringAndRemoveZeroPart()
+                            };
+                        }).ToList()
+                    } : null
+                }
+                : new ThongTinThanhToan()
             {
                 tong_tien_thue = hoaDon.tong_tien_thue.ConvertToStringAndRemoveZeroPart(),
                 tong_tien_chua_thue = hoaDon.tong_tien_truong_thue.ConvertToStringAndRemoveZeroPart(),
@@ -388,9 +409,6 @@ namespace Service.HoaDon
                     hoaDon.loai_tien.ConvertToString() != "" ? hoaDon.loai_tien.ConvertToString() : "VND"),
                 tong_tien_thanh_toan_bang_so = tong_tien_thanh_toan_bang_so.ConvertToStringAndRemoveZeroPart(),
                 tong_tien_chiet_khau = hoaDon.tong_tien_chiet_khau.ConvertToStringAndRemoveZeroPart(),
-                // tong_tien_thanh_toan_bang_so = hoaDon.loai_tien == "VND"
-                // ? (hoaDon.hoang_hoas.Select(x => x.thanh_tien).Sum() + thue_suats.Select(x => x.tien_thue.ConvertToDecimal()).Sum()).ConvertToStringAndRemoveZeroPart()
-                // : hoaDon.tong_tien_thanh_toan.ConvertToStringAndRemoveZeroPart(),
                 thong_tin_thue_suat = new THTTLTSuat()
                 {
                     thue_suats = thue_suats
@@ -1176,6 +1194,10 @@ namespace Service.HoaDon
             else
             {
                 var hangHoas = await _serviceWrapper.HoaDon.HoaDonHangHoa.SelectByHoaDonIdAsync(hoaDon.id);
+                var loaiPhis = await _serviceWrapper.HoaDon.HoaDonLoaiPhi.SelectByHoaDonAsync(hoaDon.id);
+                var isHoaDonThuongMai = HoaDonThuongMaiHelper.IsHoaDonThuongMai(
+                    hoaDon.hoa_don_dang_ky_phat_hanh_mau_so,
+                    hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu);
                 var donVi = await this.GetCurrentDonViAsync();
                 var hoaDonData = new MauHoaDonCreateHtmlInput();
                 hoaDonData.hoa_don = new Model.Request.Xml.HoaDon();
@@ -1246,10 +1268,10 @@ namespace Service.HoaDon
                     stt = x.stt.ToString(),
                     ten_hang_hoa_dich_vu = x.ten_hang,
                     thanh_tien = x.thanh_tien.ConvertToStringAndRemoveZeroPart(),
-                    thue_suat = x.thue_vat,
+                    thue_suat = isHoaDonThuongMai ? null : x.thue_vat,
                     tinh_chat = x.hang_hoa_tinh_chat_id,
-                    ty_le_chiet_khau = x.ty_le_chiet_khau.ConvertToStringAndRemoveZeroPart(),
-                    so_tien_chiet_khau = x.tien_chiet_khau.ConvertToStringAndRemoveZeroPart()
+                    ty_le_chiet_khau = isHoaDonThuongMai ? null : x.ty_le_chiet_khau.ConvertToStringAndRemoveZeroPart(),
+                    so_tien_chiet_khau = isHoaDonThuongMai ? null : x.tien_chiet_khau.ConvertToStringAndRemoveZeroPart()
                 }).ToList();
                 var thue_suats = hangHoas.Select(x => x.thue_vat).Distinct().Where(x => x.Contains("%")).ToList().Select(x => new LTSuat()
                 {
@@ -1262,7 +1284,23 @@ namespace Service.HoaDon
                     thue_suat.thanh_tien = thanh_tien.ConvertToStringAndRemoveZeroPart();
                     thue_suat.tien_thue = ((double)thanh_tien * phanTramThue / 100).ConvertToDouble(0).ConvertToDecimal().ConvertToStringAndRemoveZeroPart();
                 }
-                hoaDonData.hoa_don.du_lieu_hoa_don.noi_dung_hoa_don.thong_tin_thanh_toan = new ThongTinThanhToan()
+                hoaDonData.hoa_don.du_lieu_hoa_don.noi_dung_hoa_don.thong_tin_thanh_toan = isHoaDonThuongMai
+                    ? new ThongTinThanhToan()
+                    {
+                        tong_tien_thanh_toan_bang_chu = await hoaDon.tong_tien_thanh_toan.ConvertToTextAsync(
+                             hoaDon.loai_tien.ConvertToString() != "" ? hoaDon.loai_tien.ConvertToString() : "VND"
+                        ),
+                        tong_tien_thanh_toan_bang_so = hoaDon.tong_tien_thanh_toan.ConvertToStringAndRemoveZeroPart(),
+                        thong_tin_phis = loaiPhis != null && loaiPhis.Count() > 0 ? new DSLPhi()
+                        {
+                            loai_phis = loaiPhis.Select(lp => new LPhi()
+                            {
+                                ten_loai_phi = lp.ten_le_phi,
+                                tien_phi = lp.so_tien.ConvertToStringAndRemoveZeroPart()
+                            }).ToList()
+                        } : null
+                    }
+                    : new ThongTinThanhToan()
                 {
                     tong_tien_thue = hoaDon.tong_tien_thue.ConvertToStringAndRemoveZeroPart(),
                     tong_tien_chua_thue = hoaDon.tong_tien_truong_thue.ConvertToStringAndRemoveZeroPart(),
@@ -1277,15 +1315,6 @@ namespace Service.HoaDon
                     }
 
                 };
-                if (hoaDon.hoa_don_dang_ky_phat_hanh_mau_so.ConvertToString() == "7")
-                {
-                    hoaDonData.hoa_don.du_lieu_hoa_don.noi_dung_hoa_don.thong_tin_thanh_toan = new Model.Request.Xml.ThongTinThanhToan()
-                    {
-                        tong_tien_thanh_toan_bang_chu = "",
-                        tong_tien_thanh_toan_bang_so = hoaDon.tong_tien_thanh_toan.ConvertToStringAndRemoveZeroPart(),
-
-                    };
-                }
                 if (hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu_goc.ConvertToString() != "" && hoaDon.ngay_hoa_don_goc.HasValue)
                 {
                     // var hoaDonGoc = await this.SelectByIdAsync(obj.hoa_don_id_goc);

@@ -1,3 +1,23 @@
+/** Hóa đơn thương mại: hình thức mặc định không mã CQT, ký tự thứ 4 của ký hiệu là X */
+export const isHoaDonThuongMai = (loaiHoaDonCT?: {
+  code?: string;
+  name?: string;
+  name_en?: string;
+}): boolean => {
+  if (!loaiHoaDonCT) {
+    return false;
+  }
+  const code = (loaiHoaDonCT.code ?? "").trim().toUpperCase();
+  if (code === "X") {
+    return true;
+  }
+  const text = `${loaiHoaDonCT.name ?? ""} ${loaiHoaDonCT.name_en ?? ""}`
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  return text.includes("thuong mai");
+};
+
 /** Ký hiệu hóa đơn MTT: ký tự thứ 4 (index 3) là M, ví dụ 1C26MNT */
 export const isKyHieuMayTinhTien = (ky_hieu?: string): boolean => {
   if (!ky_hieu || ky_hieu.length < 4) {

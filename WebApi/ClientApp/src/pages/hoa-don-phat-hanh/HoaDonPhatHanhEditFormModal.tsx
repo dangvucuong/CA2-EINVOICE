@@ -14,11 +14,12 @@ import { useAppSelector } from "../../hooks/useAppSelector";
 import { useAuth } from "../../hooks/useAuth";
 import { useHinhThucLoaiMaHoaDons } from "../../hooks/useHinhThucLoaiMaHoaDon";
 import { useLoaiHoaDon } from "../../hooks/useLoaiHoaDon";
-import { useLoaiHoaDonCT } from "../../hooks/useLoaiHoaDonCT";
+import { useLoaiHoaDonCT, useLoaiHoaDonCTs } from "../../hooks/useLoaiHoaDonCT";
 import { IHoaDonDangKyPhatHanh } from "../../models/responses/hoa-don/IHoaDonDangKyPhatHanh";
 import { rootAction } from "../../state/actions/rootAction";
 import { eReducerStatusBase } from "../../state/reducer-models/eReducerStatusBase";
 import { NotifyHelper } from "../../helpers/toast";
+import { isHoaDonThuongMai } from "../../utils/hoaDonKyHieu";
 
 const HoaDonPhatHanhEditFormModal = ({
   hoaDonDangKyPhatHanhs,
@@ -48,9 +49,11 @@ const HoaDonPhatHanhEditFormModal = ({
   const hinhThucLoaiMaHoaDon = useMemo(() => {
     return hinhThucLoaiMaHoaDons.find((x) => x.id === hinhThucLoaiHoaDonId);
   }, [hinhThucLoaiMaHoaDons, hinhThucLoaiHoaDonId]);
+  const { loaiHoaDonCTs } = useLoaiHoaDonCTs();
   const { loaiHoaDonCT } = useLoaiHoaDonCT(loaiHoaDonCTId);
   const loaidHoaDonId = loaiHoaDonCT?.loai_hoa_don_id ?? 0;
   const { loaiHoaDon } = useLoaiHoaDon(loaidHoaDonId);
+  const laHoaDonThuongMai = isHoaDonThuongMai(loaiHoaDonCT);
   const {
     register,
     handleSubmit,
@@ -87,6 +90,7 @@ const HoaDonPhatHanhEditFormModal = ({
     const YY = moment().format("YYYY").substring(2, 4);
     let CTCode = hinhThucLoaiHoaDonId === "M" ? "M" : loaiHoaDonCT?.code ?? "";
     if (CTCode === "G" && !isChiuThue) CTCode = "H";
+    if (laHoaDonThuongMai) CTCode = "X";
     return `${CKM}${YY}${CTCode}${kyHieuDoanhNghiep}`;
   }, [
     hoaDonDangKyPhatHanhEditing,
@@ -95,6 +99,7 @@ const HoaDonPhatHanhEditFormModal = ({
     hinhThucLoaiHoaDonId,
     kyHieuDoanhNghiep,
     isChiuThue,
+    laHoaDonThuongMai,
   ]);
 
   const onSubmit = async (data: any) => {
@@ -190,6 +195,13 @@ const HoaDonPhatHanhEditFormModal = ({
                 setLoaiHoaDonCTId(id);
                 setIsChange(true);
                 clearErrors("loai_hoa_don_ct_id");
+                const selectedLoaiHoaDonCT = loaiHoaDonCTs.find(
+                  (x) => x.id === id
+                );
+                if (isHoaDonThuongMai(selectedLoaiHoaDonCT)) {
+                  setHinhThucLoaiHoaDonId("K");
+                  clearErrors("hinh_thuc_code");
+                }
               }}
               value={loaiHoaDonCTId}
             />

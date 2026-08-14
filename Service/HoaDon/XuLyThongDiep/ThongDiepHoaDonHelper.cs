@@ -43,6 +43,22 @@ namespace Service.HoaDon.XuLyThongDiep
         }
 
         /// <summary>
+        /// Mô tả lỗi kỹ thuật (MTa) khi MLTDiep = -1 hoặc 999 + TTTNhan = 1.
+        /// </summary>
+        public static string GetMTa(KetQuaThongDiepRespone thongDiepRespone, string xmlKetQua)
+        {
+            var mta = ExtractXmlTagValue(xmlKetQua, "MTa");
+            if (!string.IsNullOrEmpty(mta))
+            {
+                return mta;
+            }
+
+            return thongDiepRespone?.DLieu?.TBao?.DLTBao?.DSLDKCNhan?.LDo?.MTa?.Trim()
+                ?? thongDiepRespone?.DLieu?.TBao?.DLTBao?.DSHDon?.HDon?.DSLDKTNhan?.LDo?.MTa?.Trim()
+                ?? "";
+        }
+
+        /// <summary>
         /// Thông điệp 999 thuần chỉ lưu log; lỗi -1 (kể cả lồng trong 999) phải chạy đầy đủ XuLyThongDiep.
         /// </summary>
         public static bool ShouldRunFullXuLy(KetQuaThongDiepRespone thongDiepRespone, string xmlKetQua)

@@ -873,10 +873,11 @@ namespace Service.HoaDon
 
             if (ThongDiepHoaDonHelper.IsLoiThongDiep(thongDiepRespone, xmlKetQua))
             {
+                var mta = ThongDiepHoaDonHelper.GetMTa(thongDiepRespone, xmlKetQua);
                 foreach (var hoaDon in hoaDons)
                 {
                     hoaDon.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.LOI_THONG_DIEP;
-                    hoaDon.ket_qua_phat_hanh = $"";
+                    hoaDon.ket_qua_phat_hanh = mta;
                 }
             }
             else if (ThongDiepHoaDonHelper.GetMLTDiep(thongDiepRespone, xmlKetQua) == "999")

@@ -1176,11 +1176,14 @@ namespace Service.HoaDon
             //                : obj.nguoi_mua_ten_donvi;
 
 
+            var isHoaDonThuongMai = HoaDonThuongMaiHelper.IsHoaDonThuongMai(
+                obj.hoa_don_dang_ky_phat_hanh_mau_so,
+                obj.hoa_don_dang_ky_phat_hanh_ky_hieu);
+
             var thongTinThanhToan = new Model.Request.Xml.ThongTinThanhToan()
             {
                 tong_tien_thanh_toan_bang_chu = "",
                 tong_tien_thanh_toan_bang_so = tong_tien_thanh_toan_bang_so.ConvertToStringAndRemoveZeroPart(),
-                tong_tien_chiet_khau = obj.tong_tien_chiet_khau.ConvertToStringAndRemoveZeroPart(),
                 thong_tin_phis = loaiPhis.Count() > 0
                               ? new DSLPhi()
                               {
@@ -1196,8 +1199,13 @@ namespace Service.HoaDon
                               : null
             };
 
-            // --- NẾU MẪU SỐ KHÁC 2 THÌ THÊM THUẾ SUẤT ---
-            if (obj.hoa_don_dang_ky_phat_hanh_mau_so != "2")
+            if (!isHoaDonThuongMai)
+            {
+                thongTinThanhToan.tong_tien_chiet_khau = obj.tong_tien_chiet_khau.ConvertToStringAndRemoveZeroPart();
+            }
+
+            // --- NẾU MẪU SỐ KHÁC 2 VÀ KHÔNG PHẢI HĐ THƯƠNG MẠI THÌ THÊM THUẾ SUẤT ---
+            if (!isHoaDonThuongMai && obj.hoa_don_dang_ky_phat_hanh_mau_so != "2")
             {
                 thongTinThanhToan.thong_tin_thue_suat = new Model.Request.Xml.THTTLTSuat()
                 {
@@ -1280,15 +1288,6 @@ namespace Service.HoaDon
                     nguoi_mua = new Model.Request.Xml.CKSNguoiMua() { }
                 }
             };
-            if (obj.hoa_don_dang_ky_phat_hanh_mau_so.ConvertToString() == "7")
-            {
-                model.du_lieu_hoa_don.noi_dung_hoa_don.thong_tin_thanh_toan = new Model.Request.Xml.ThongTinThanhToan()
-                {
-                    tong_tien_thanh_toan_bang_chu = "",
-                    tong_tien_thanh_toan_bang_so = tong_tien_thanh_toan_bang_so.ToString(),
-
-                };
-            }
             if (obj.giam_thue_ghi_chu.ConvertToString() != "")
             {
                 model.du_lieu_hoa_don.thong_tin_chung.thong_tin_khac.thong_tin_khac_noi_dung.Add(
@@ -1698,11 +1697,11 @@ namespace Service.HoaDon
                     ten_hang_hoa_dich_vu = item.ten_hang,
                     thanh_tien = obj.loai_tien == "VND" ? ((decimal)item.thanh_tien.ConvertToDouble(0)).ConvertToStringAndRemoveZeroPart() :
                      item.thanh_tien.ConvertToStringAndRemoveZeroPart(),
-                    thue_suat = obj.hoa_don_dang_ky_phat_hanh_mau_so != "2"
+                    thue_suat = !isHoaDonThuongMai && obj.hoa_don_dang_ky_phat_hanh_mau_so != "2"
                     ? item.thue_vat
                     : null,
                 };
-                if (item.ty_le_chiet_khau.ConvertToString() != "")
+                if (!isHoaDonThuongMai && item.ty_le_chiet_khau.ConvertToString() != "")
                 {
                     objItem.ty_le_chiet_khau = item.ty_le_chiet_khau.ConvertToStringAndRemoveZeroPart();
                     objItem.so_tien_chiet_khau = item.tien_chiet_khau.ConvertToStringAndRemoveZeroPart();
@@ -4543,6 +4542,175 @@ namespace Service.HoaDon
             await _serviceWrapper.Cache.SetDataAsync<hoa_don>(uuid + "_hoa_don", hoaDon, DateTime.Now.AddDays(30));
         }
 
+        /// <summary>
+        /// Giữ nguyên thông điệp đã ký (không đóng TDiep mới để khỏi mất CKS khách):
+        /// đổi MTDiep và gán SLuong = số thẻ HDon trong DLieu.
+        /// </summary>
+        private string PrepareMttGuiLaiThongDiep(string tDiepXml, out string uuid)
+        {
+            uuid = "";
+            if (tDiepXml.ConvertToString() == "")
+            {
+                return "";
+            }
+
+            var doc = new XmlDocument();
+            doc.PreserveWhitespace = true;
+            doc.LoadXml(tDiepXml);
+            var ttChung = doc.SelectSingleNode("/TDiep/TTChung") as XmlElement;
+            var dLieu = doc.SelectSingleNode("/TDiep/DLieu") as XmlElement;
+            var mtDiepNode = doc.SelectSingleNode("/TDiep/TTChung/MTDiep");
+            if (ttChung == null || dLieu == null || mtDiepNode == null)
+            {
+                return "";
+            }
+
+            var mnGui = doc.SelectSingleNode("/TDiep/TTChung/MNGui")?.InnerText?.Trim();
+            if (string.IsNullOrEmpty(mnGui))
+            {
+                mnGui = AppSettings.FixedValue.MNGui;
+            }
+
+            uuid = Guid.NewGuid().ToString().Replace("-", "").ToUpper();
+            mtDiepNode.InnerText = $"{mnGui}{uuid}".ToUpper();
+
+            var hoaDonCount = 0;
+            foreach (XmlNode child in dLieu.ChildNodes)
+            {
+                if (child.NodeType == XmlNodeType.Element && child.LocalName == "HDon")
+                {
+                    hoaDonCount++;
+                }
+            }
+
+            if (hoaDonCount > 0)
+            {
+                var sluongNode = ttChung.SelectSingleNode("SLuong");
+                if (sluongNode == null)
+                {
+                    sluongNode = doc.CreateElement("SLuong");
+                    ttChung.AppendChild(sluongNode);
+                }
+
+                sluongNode.InnerText = hoaDonCount.ToString();
+            }
+
+            return doc.OuterXml;
+        }
+
+        private async Task<string> SaveMttGuiLaiThongDiepAsync(hoa_don hoaDon, string thongDiepXml, string uuid, int userId)
+        {
+            hoaDon.phat_hanh_uuid = uuid;
+            if (userId > 0)
+            {
+                hoaDon.user_id_phathanh = userId;
+            }
+
+            await this.UpdateAsync(hoaDon);
+            await RegisterPhatHanhUuidCacheAsync(hoaDon);
+
+            var fileName = Guid.NewGuid().ToString() + ".xml";
+            var filePath = $"Xml/{DateTime.Now.Year}/{DateTime.Now.Month}/{DateTime.Now.Day}/{fileName}";
+            var directoryPath = Path.GetDirectoryName(filePath);
+            if (!Directory.Exists(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
+
+            await File.WriteAllTextAsync(filePath, thongDiepXml);
+            var log = new hoa_don_log()
+            {
+                file_thong_diep_url = filePath,
+                ngay_thuc_hien = DateTime.Now,
+                nguoi_thuc_hien = "adminNCM",
+                noi_dung_thuc_hien = "Gửi lai thông điệp lên CQT",
+                hoa_don_id = hoaDon.id,
+                hoa_don_log_type_id = (int)e_hoa_don_log_type.GUI_THONG_DIEP
+            };
+            log.SetInsertInfo(28057);
+            _serviceWrapper.Core.TaskQueue.EnqueueTask(async _ =>
+            {
+                await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
+            });
+
+            return thongDiepXml;
+        }
+
+        private async Task<string> ReadGuiLaiXmlContentAsync(string urlXML)
+        {
+            if (urlXML.ConvertToString() == "")
+            {
+                return "";
+            }
+
+            try
+            {
+                var xml = await GetXmlAsync(urlXML);
+                if (xml.ConvertToString() != "")
+                {
+                    return xml;
+                }
+            }
+            catch
+            {
+            }
+
+            var localPath = urlXML;
+            const string marker = "ca2einv.nacencomm.vn/";
+            var idx = urlXML.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+            if (idx >= 0)
+            {
+                localPath = urlXML.Substring(idx + marker.Length);
+            }
+
+            if (localPath.ConvertToString() != "" && File.Exists(localPath))
+            {
+                return await File.ReadAllTextAsync(localPath);
+            }
+
+            return "";
+        }
+
+        private async Task<string> BuildMttGuiLaiThongDiepFromLogsAsync(DataTable dt, hoa_don hoaDon)
+        {
+            var rows = dt.Rows.Cast<DataRow>()
+                .OrderBy(r => Convert.ToInt32(r["hoa_don_log_type_id"]) == -7 ? 0 : 1)
+                .ToList();
+
+            foreach (var row in rows)
+            {
+                var urlXML = row["linkxml"]?.ToString() ?? "";
+                if (urlXML == "")
+                {
+                    continue;
+                }
+
+                var plainXML = await ReadGuiLaiXmlContentAsync(urlXML);
+                if (string.IsNullOrEmpty(plainXML))
+                {
+                    continue;
+                }
+
+                var thongDiepXml = PrepareMttGuiLaiThongDiep(plainXML, out var uuid);
+                if (thongDiepXml == "" || uuid == "")
+                {
+                    continue;
+                }
+
+                if (row["hoa_don_id"] != DBNull.Value)
+                {
+                    hoaDon.id = Convert.ToInt32(row["hoa_don_id"]);
+                }
+
+                var userId = row["created_user_id"] == DBNull.Value
+                    ? 0
+                    : Convert.ToInt32(row["created_user_id"]);
+                return await SaveMttGuiLaiThongDiepAsync(hoaDon, thongDiepXml, uuid, userId);
+            }
+
+            return string.Empty;
+        }
+
         public async Task<string> GetXMLString(int inhd,hoa_don hoaDon)
         {
             try
@@ -4572,6 +4740,13 @@ namespace Service.HoaDon
 
                 if (dt.Rows.Count > 0)
                 {
+                    var isMtt = hoaDon.hoa_don_hinh_thuc_code.ConvertToString() == "M"
+                        || dt.Rows[0]["hoa_don_hinh_thuc_code"].ConvertToString() == "M";
+                    if (isMtt)
+                    {
+                        return await BuildMttGuiLaiThongDiepFromLogsAsync(dt, hoaDon);
+                    }
+
                     if (dt.Rows.Count == 1) // chi co 1 ban ghi
                     {
                         string urlXML = dt.Rows[0]["linkxml"]?.ToString() ?? "";
@@ -4686,58 +4861,6 @@ namespace Service.HoaDon
                                 return base64thongdiep.ConvertToXmlFromBase64();
                             }
 
-                            else if (hd_hinhthuc_code == "M")
-                            {
-                                if (!string.IsNullOrEmpty(plainXML))
-                                {
-                                    XmlDocument doc = new XmlDocument();
-                                    doc.LoadXml(plainXML);
-                                    string thongdiep = string.Empty;
-                                    string key = "0103930279-001" + Guid.NewGuid().ToString().Replace("-", "").ToUpper();
-                                   
-                                    XmlNode mtDiepNode = doc.SelectSingleNode("/TDiep/TTChung/MTDiep");
-                                    if (mtDiepNode != null)
-                                    {
-                                        mtDiepNode.InnerText = key;
-                                        thongdiep = doc.InnerXml;
-                                    }
-                                    string uid = key.Replace("0103930279-001", "").ToUpper();
-                                    hoaDon.phat_hanh_uuid = uid;
-                                    hoaDon.id = (int)dt.Rows[0]["hoa_don_id"];
-                                    hoaDon.user_id_phathanh = (int)dt.Rows[0]["created_user_id"];
-                                    await this.UpdateAsync(hoaDon);
-                                    await RegisterPhatHanhUuidCacheAsync(hoaDon);
-
-                                    var fileName = Guid.NewGuid().ToString() + ".xml";
-                                    var filePath = $"Xml/{DateTime.Now.Year}/{DateTime.Now.Month}/{DateTime.Now.Day}/{fileName}";
-                                    var directoryPath = Path.GetDirectoryName(filePath);
-                                    if (!Directory.Exists(directoryPath))
-                                    {
-                                        Directory.CreateDirectory(directoryPath);
-                                    }
-                                    await File.WriteAllTextAsync(filePath, thongdiep);
-                                    var log = new hoa_don_log()
-                                    {
-                                        file_thong_diep_url = filePath,
-                                        ngay_thuc_hien = DateTime.Now,
-                                        nguoi_thuc_hien = "adminNCM",
-                                        noi_dung_thuc_hien = "Gửi lai thông điệp lên CQT",
-                                        hoa_don_id = hoaDon.id,
-                                        hoa_don_log_type_id = (int)e_hoa_don_log_type.GUI_THONG_DIEP
-                                    };
-                                    log.SetInsertInfo(28057);
-                                    _serviceWrapper.Core.TaskQueue.EnqueueTask(async _ =>
-                                    {
-                                        await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
-                                    });
-
-                                    return thongdiep;
-                                }
-                                else
-                                {
-                                    return string.Empty;
-                                }
-                            }
                             else
                             {
                                 return plainXML ?? string.Empty;
