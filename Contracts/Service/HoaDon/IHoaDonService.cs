@@ -20,7 +20,7 @@ namespace Contracts.Service.HoaDon
         Task<FunctionResult<int>> SaveHoaDonAsync(HoaDonAddOrEditModel model);
         Task<FunctionResult<Model.Request.Xml.HoaDon>> CreateXmlObjectKySoAsync(int id, bool isPreview = false);
         Task<FunctionResult<string>> CreateBase64MTTAsync(int id);
-        Task<FunctionResult<string>> CreateBase64MTTAsync(hoa_don hoaDon, IEnumerable<int> excludeHoaDonIds = null);
+        Task<FunctionResult<string>> CreateBase64MTTAsync(hoa_don hoaDon, IEnumerable<int> excludeHoaDonIds = null, bool requireSignedHoaDonXml = false);
         Task<FunctionResult<string>> CreateBase64MTTBangKeAsync(List<hoa_don> hoaDons);
         Task<FunctionResult<string>> CreateXmlKySoAsync(int id, bool isPreview = false);
         Task<FunctionResult<string>> CreateXmlKySoAsync(hoa_don hoaDon, IEnumerable<int> excludeHoaDonIds = null);

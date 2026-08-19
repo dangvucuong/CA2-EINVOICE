@@ -16,10 +16,15 @@ namespace Contracts.Service.HoaDon
         Task<bool> SignAndPhatHanhHSMAsync(hoa_don hoaDon, string base64, string serial, SemaphoreSlim lockStatus, ProcessChangedModel processChangedModel, string? bienBanBase64);
         
         Task<ApiSignResultModel> KySoHSMAsync(hoa_don hoaDon, string base64, string mst, string serial, string? bienBanBase64);
+        Task<ApiSignResultModel> KySoHSMOnlyAsync(hoa_don hoaDon, string base64, string mst, string serial);
         Task<FunctionResult<string>> KySoRemoteSigningAsync(hoa_don hoaDon, string base64, string mst, string serial);
+        Task<FunctionResult<string>> KySoRemoteSigningOnlyAsync(hoa_don hoaDon, string base64, string mst, string serial);
+        Task<FunctionResult<string>> KySoRemoteSigningPhatHanhMttBackgroundAsync(hoa_don hoaDon, string base64, string mst, string serial);
+        Task<FunctionResult<HoaDonPhatHanhRespone>> PhatHanhMttFormAsync(hoa_don hoaDon, string serial, bool isHsm, bool notifyRs = false);
         Task<FunctionResult<string>> KySoRemoteSigningBackgroundAsync(hoa_don hoaDon, string base64, string mst, string serial);
         Task<FunctionResult<string>> KySoRemoteSigningThenPhatHanhBackgroundAsync(hoa_don hoaDon, string base64, string mst, string serial, SemaphoreSlim lockStatus, ProcessChangedModel processChangedModel);
         Task<bool> XuLyThongDiepKySoHoaDonAsync(rs_yeu_cau_ky yeuCauKy);
+        Task<bool> XuLyThongDiepPhatHanhMttHoaDonAsync(rs_yeu_cau_ky yeuCauKy);
         Task<bool> XuLyThongDiepKySoVaPhatHanhHoaDonAsync(rs_yeu_cau_ky yeuCauKy);
         Task<bool> XuLyThongDiepKySoVaPhatHanhHoaDonBangKeAsync(rs_yeu_cau_ky yeuCauKy);
         Task<IEnumerable<HoaDonCreateXmlKySoRespone>> CreateXmlVaPhatHanhsMTTBangKeAsync(HoaDonKyLoRequest request, List<hoa_don> hoaDonMTTs, bool isRunBackgroundForRS = false);

@@ -301,7 +301,11 @@ namespace WebApi.Controllers
                     var base64HoaDon = "";
                     if (hoaDon.hoa_don_hinh_thuc_code == "M")
                     {
-                        var base64HoaDonResult = await _hoaDonService.CreateBase64MTTAsync(hoaDon);
+                        if (hoaDon.is_ky_so_succes != true)
+                        {
+                            return this.BadRequest("Chưa ký số người bán. Vui lòng ký số người bán trước khi phát hành.");
+                        }
+                        var base64HoaDonResult = await _hoaDonService.CreateBase64MTTAsync(hoaDon, null, requireSignedHoaDonXml: true);
                         if (!base64HoaDonResult.is_success)
                         {
                             return this.BadRequest(base64HoaDonResult.message);
@@ -342,7 +346,11 @@ namespace WebApi.Controllers
                 {
                     if (hoaDon.hoa_don_hinh_thuc_code == "M")
                     {
-                        var base64Result = await _hoaDonService.CreateBase64MTTAsync(hoaDon);
+                        if (hoaDon.is_ky_so_succes != true)
+                        {
+                            return this.BadRequest("Chưa ký số người bán. Vui lòng ký số người bán trước khi phát hành.");
+                        }
+                        var base64Result = await _hoaDonService.CreateBase64MTTAsync(hoaDon, null, requireSignedHoaDonXml: true);
                         return base64Result.is_success ? this.OK(base64Result.data) : this.BadRequest(base64Result.message);
                     }
                     else
@@ -412,6 +420,40 @@ namespace WebApi.Controllers
                 return this.BadRequest(xmlKySoResult.message);
             }
             return this.OK(xmlKySoResult.data.ConvertToBase64());
+        }
+
+        /// <summary>
+        /// MTT luồng 2: lấy số, gen HDon, đóng TDiep 206 (CKSNNT rỗng) để ký và phát hành đồng thời.
+        /// </summary>
+        [HttpGet("{id}/ky-so-mtt-dong-thoi")]
+        [MustAuthorized("[POST]api/hoa-don/phat-hanh")]
+        public async Task<ContentResult> XmlKySoMttDongThoiBase64Async([FromRoute] int id)
+        {
+            var hoaDon = await _hoaDonService.SelectByIdAsync(id);
+            if (hoaDon == null)
+            {
+                return this.BadRequest("Không tìm thấy hóa đơn.");
+            }
+            if (hoaDon.hoa_don_hinh_thuc_code != "M")
+            {
+                return this.BadRequest("Chỉ áp dụng với hóa đơn MTT");
+            }
+            if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DA_HUY_NOI_BO)
+            {
+                return this.BadRequest("Hóa đơn đã hủy nội bộ");
+            }
+            if (hoaDon.is_ky_so_succes == true)
+            {
+                return this.BadRequest("Hóa đơn đã ký số người bán. Vui lòng dùng Phát hành.");
+            }
+            var donVi = await _serviceWrapper.Category.DonVi.SelectByMaDonViAsync(hoaDon.donvi_ma_dv);
+            if (donVi != null && donVi.total_cks_con_lai <= 0)
+            {
+                return this.BadRequest("Đã hết số lượng hóa đơn đăng ký. Vui lòng gia hạn thêm gói dịch vụ để tiếp tục");
+            }
+
+            var base64Result = await _hoaDonService.CreateBase64MTTAsync(hoaDon, null, requireSignedHoaDonXml: false);
+            return base64Result.is_success ? this.OK(base64Result.data) : this.BadRequest(base64Result.message);
         }
 
         [Route("ky-so-multiple")]
@@ -522,10 +564,18 @@ namespace WebApi.Controllers
         public async Task<ContentResult> PhatHanhAsync([FromBody] HoaDonPhatHanhRequest request)
         {
             var hoaDon = await _hoaDonService.SelectByIdAsync(request.id);
+            if (hoaDon == null)
+            {
+                return this.BadRequest("Không tìm thấy hóa đơn.");
+            }
             if (hoaDon.hoa_don_hinh_thuc_code == "M")
             {
-                var base64 = await _hoaDonService.PhatHanhMTTAsync(request, hoaDon);
-                return this.OK(base64);
+                if (hoaDon.is_ky_so_succes != true)
+                {
+                    return this.BadRequest("Chưa ký số người bán. Vui lòng ký số người bán trước khi phát hành.");
+                }
+                var phatHanhMttResult = await _hoaDonService.PhatHanhMTTAsync(request, hoaDon);
+                return phatHanhMttResult.is_success ? this.OK(phatHanhMttResult.data) : this.BadRequest(phatHanhMttResult.message);
             }
             var result = await _hoaDonService.PhatHanhAsync(request);
             if (result.is_success)

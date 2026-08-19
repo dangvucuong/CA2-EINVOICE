@@ -507,6 +507,52 @@ const HoaDonForm = () => {
     }
   };
 
+  const handleGetBase64KySoMttDongThoi = async () => {
+    const isKhacNgay =
+      moment(new Date()).format("YYYY-MM-DD") !==
+      moment(formData.ngay_hoa_don ?? new Date()).format("YYYY-MM-DD");
+    if (isKhacNgay) {
+      if (
+        !(await confirm({
+          content: (
+            <div>
+              <p>
+                Điểm c, khoản 7, Điều 1, Nghị định 70/2025/NĐ-CP (sửa đổi, bổ
+                sung một số điều của Nghị định số 123/2020/NĐ-CP ngày 19 tháng
+                10 năm 2020 của Chính phủ quy định về hóa đơn, chứng từ), quy
+                định: “Trường hợp hóa đơn điện tử đã lập có thời điểm ký số trên
+                hóa đơn khác thời điểm lập hóa đơn thì thời điểm ký số và thời
+                điểm gửi cơ quan thuế cấp mã đối với hóa đơn có mã của cơ quan
+                thuế hoặc thời điểm chuyển dữ liệu hóa đơn điện tử đến cơ quan
+                thuế đối với hóa đơn điện tử không có mã của cơ quan thuế chậm
+                nhất là ngày làm việc tiếp theo kể từ thời điểm lập hóa đơn.”
+              </p>
+              <p>
+                Hóa đơn của bạn đang có ngày ký khác ngày lập, bạn muốn tiếp tục
+                ký gửi Thuế vui lòng click “Xác nhận và tiếp tục
+              </p>
+            </div>
+          ),
+          title: "Lưu ý",
+          cancelButtonContent: "Không ký",
+          confirmButtonContent: "Tiếp tục ký số",
+          confirmButtonType: "danger",
+        }))
+      ) {
+        return;
+      }
+    }
+
+    setIsSaving(true);
+    const res = await hoaDonApi.createBase64KySoMttDongThoi(hoaDonId);
+    setIsSaving(false);
+    if (res.is_success) {
+      openKySoModalFromResponse(res);
+    } else {
+      NotifyHelper.Error(res?.message ?? "Có lỗi không xác định");
+    }
+  };
+
   const handleGetBase64KySo = async () => {
     const isKhacNgay =
       moment(new Date()).format("YYYY-MM-DD") !==
@@ -601,6 +647,52 @@ const HoaDonForm = () => {
     }
   };
 
+  const handleMttPhatHanhRemoteAsync = async () => {
+    const isKhacNgay =
+      moment(new Date()).format("YYYY-MM-DD") !==
+      moment(formData.ngay_hoa_don ?? new Date()).format("YYYY-MM-DD");
+    if (isKhacNgay) {
+      if (
+        !(await confirm({
+          content: (
+            <div>
+              <p>
+                Điểm c, khoản 7, Điều 1, Nghị định 70/2025/NĐ-CP (sửa đổi, bổ
+                sung một số điều của Nghị định số 123/2020/NĐ-CP ngày 19 tháng
+                10 năm 2020 của Chính phủ quy định về hóa đơn, chứng từ), quy
+                định: “Trường hợp hóa đơn điện tử đã lập có thời điểm ký số trên
+                hóa đơn khác thời điểm lập hóa đơn thì thời điểm ký số và thời
+                điểm gửi cơ quan thuế cấp mã đối với hóa đơn có mã của cơ quan
+                thuế hoặc thời điểm chuyển dữ liệu hóa đơn điện tử đến cơ quan
+                thuế đối với hóa đơn điện tử không có mã của cơ quan thuế chậm
+                nhất là ngày làm việc tiếp theo kể từ thời điểm lập hóa đơn.”
+              </p>
+              <p>
+                Hóa đơn của bạn đang có ngày ký khác ngày lập, bạn muốn tiếp tục
+                ký gửi Thuế vui lòng click “Xác nhận và tiếp tục
+              </p>
+            </div>
+          ),
+          title: "Lưu ý",
+          cancelButtonContent: "Không ký",
+          confirmButtonContent: "Tiếp tục ký số",
+          confirmButtonType: "danger",
+        }))
+      ) {
+        return;
+      }
+    }
+    setIsSaving(true);
+    const res = await hoaDonKyLoApi.phatHanhMtt(hoaDonId);
+    setIsSaving(false);
+    if (res.is_success) {
+      handleGetHoaDonViewModel(hoaDonId);
+      NotifyHelper.Success("Phát hành hóa đơn thành công");
+    } else {
+      NotifyHelper.Error(res?.message ?? "Có lỗi không xác định");
+    }
+  };
+
   const handleKySoVaPhatHanhRemoteAsync = async () => {
     const isKhacNgay =
       moment(new Date()).format("YYYY-MM-DD") !==
@@ -660,17 +752,19 @@ const HoaDonForm = () => {
         id: hoaDonId,
       });
       if (res.is_success) {
-        NotifyHelper.Success(
-          CKM === "M" ? "Đã ký số người bán" : "Đã ký số",
-        );
+        if (!(isKySoVaPhatHanh && CKM === "M")) {
+          NotifyHelper.Success(
+            CKM === "M" ? "Đã ký số người bán" : "Đã ký số",
+          );
+        }
         setHoaDonViewModel({
           ...hoaDonViewModel,
           is_ky_so_succes: true,
         });
         handleGetHoaDonViewModel(hoaDonId);
 
-        if (isKySoVaPhatHanh && CKM !== "M") {
-          handlePhatHanhAsync(signedtext, bienBanSignedText);
+        if (isKySoVaPhatHanh) {
+          handlePhatHanhAsync(signedtext, bienBanSignedText, true);
         }
       } else {
         NotifyHelper.Error(res.message ?? "Có lỗi");
@@ -682,16 +776,19 @@ const HoaDonForm = () => {
   const handlePhatHanhAsync = async (
     signedtext: string,
     bienBanSignedText?: string,
+    isKySoVaPhatHanhFlow?: boolean,
   ) => {
     setIsSaving(true);
-    console.log("signedtext",signedtext);
     const res = await hoaDonApi.phatHanh({
       signed_text: signedtext,
       bienBanSignedText: bienBanSignedText,
       id: hoaDonId,
     });
     if (res.is_success) {
-      // NotifyHelper.Success("Success")
+      handleGetHoaDonViewModel(hoaDonId);
+      if (isKySoVaPhatHanhFlow) {
+        NotifyHelper.Success("Ký số và phát hành thành công");
+      }
     } else {
       NotifyHelper.Error(res.message ?? "Có lỗi");
     }
@@ -2345,10 +2442,55 @@ const HoaDonForm = () => {
                             )}
                         </>
                       )}
-                      {(hoaDonViewModel?.hoa_don_trang_thai_id ===
-                        eHoaDonTrangThai.NHAP ||
+                      {hoaDonViewModel?.is_ky_so_succes !== true &&
+                        (hoaDonViewModel?.hoa_don_trang_thai_id ===
+                          eHoaDonTrangThai.NHAP ||
+                          hoaDonViewModel?.hoa_don_trang_thai_id ===
+                            eHoaDonTrangThai.CHUA_GUI_CQT) && (
+                          <>
+                            {user &&
+                              !user.is_hsm_signing &&
+                              !user.is_remote_signing && (
+                                <Button
+                                  text="Ký số và phát hành"
+                                  sx={{ minWidth: "100px" }}
+                                  disabled={!isAllowPhatHanh}
+                                  variant="primary"
+                                  size="large"
+                                  type="button"
+                                  leadingVisual={IssueClosedIcon}
+                                  isLoading={isSaving}
+                                  onClick={() => {
+                                    setIsMttPhatHanh(false);
+                                    setIsKySoVaPhatHanh(true);
+                                    handleGetBase64KySoMttDongThoi();
+                                  }}
+                                />
+                              )}
+                            {user &&
+                              (user.is_hsm_signing ||
+                                user.is_remote_signing) && (
+                                <Button
+                                  text="Ký số và phát hành"
+                                  sx={{ minWidth: "100px" }}
+                                  disabled={!isAllowPhatHanh}
+                                  variant="primary"
+                                  size="large"
+                                  type="button"
+                                  leadingVisual={IssueClosedIcon}
+                                  isLoading={isSaving}
+                                  onClick={() => {
+                                    setIsMttPhatHanh(false);
+                                    setIsKySoVaPhatHanh(true);
+                                    handleKySoVaPhatHanhRemoteAsync();
+                                  }}
+                                />
+                              )}
+                          </>
+                        )}
+                      {hoaDonViewModel?.is_ky_so_succes === true &&
                         hoaDonViewModel?.hoa_don_trang_thai_id ===
-                          eHoaDonTrangThai.CHUA_GUI_CQT) && (
+                          eHoaDonTrangThai.CHUA_GUI_CQT && (
                         <>
                           {user &&
                             !user.is_hsm_signing &&
@@ -2382,7 +2524,7 @@ const HoaDonForm = () => {
                                 isLoading={isSaving}
                                 onClick={() => {
                                   setIsMttPhatHanh(true);
-                                  handleKySoVaPhatHanhRemoteAsync();
+                                  handleMttPhatHanhRemoteAsync();
                                 }}
                               />
                             )}

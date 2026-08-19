@@ -101,7 +101,12 @@ namespace WebApi.Controllers
                     var base64 = "";
                     if (hoaDon.hoa_don_hinh_thuc_code == "M")
                     {
-                        var base64Result = await _hoaDonService.CreateBase64MTTAsync(hoaDon);
+                        if (hoaDon.is_ky_so_succes == true)
+                        {
+                            return this.BadRequest("Hóa đơn đã ký số người bán. Vui lòng dùng Phát hành.");
+                        }
+                        var base64Result = await _hoaDonService.CreateBase64MTTAsync(hoaDon, null, requireSignedHoaDonXml: false);
+                        if (!base64Result.is_success) return this.BadRequest(base64Result.message);
                         base64 = base64Result.data;
                     }
                     else
@@ -157,6 +162,44 @@ namespace WebApi.Controllers
 
             return this.BadRequest("Chỉ áp dụng với tài khoản được phép ký số HSM hoặc Remote Signing");
 
+        }
+
+        /// <summary>
+        /// MTT form B2: đóng thông điệp 206, ký CKSNNT rồi gửi TVAN (sau khi đã ký số người bán).
+        /// </summary>
+        [HttpPost("{id}/phat-hanh-mtt")]
+        [MustAuthorized("[POST]api/hoa-don/phat-hanh")]
+        public async Task<ContentResult> PhatHanhMttAsync([FromRoute] int id, [FromQuery] bool notify = false)
+        {
+            var userId = this.GetUserId();
+            var userSerialInfo = await _serviceWrapper.User.User.SelectByIdAsync(userId);
+            if (!userSerialInfo.is_hsm_signing && userSerialInfo.rs_ma_but_ky.ConvertToString() == "")
+            {
+                return this.BadRequest("Chỉ áp dụng với tài khoản được phép ký số HSM hoặc Remote Signing");
+            }
+
+            var hoaDon = await _hoaDonService.SelectByIdAsync(id);
+            if (hoaDon == null)
+            {
+                return this.BadRequest("Không tìm thấy hóa đơn");
+            }
+            if (hoaDon.hoa_don_hinh_thuc_code != "M")
+            {
+                return this.BadRequest("Chỉ áp dụng với hóa đơn MTT");
+            }
+
+            var donVi = await _serviceWrapper.Category.DonVi.SelectByMaDonViAsync(hoaDon.donvi_ma_dv);
+            if (donVi != null && donVi.total_cks_con_lai <= 0)
+            {
+                return this.BadRequest("Đã hết chữ ký số");
+            }
+
+            var phatHanhResult = await _hoaDonKyLoService.PhatHanhMttFormAsync(
+                hoaDon,
+                userSerialInfo.serial_number,
+                userSerialInfo.is_hsm_signing,
+                notify);
+            return phatHanhResult.is_success ? this.OK(phatHanhResult.data) : this.BadRequest(phatHanhResult.message);
         }
 
 

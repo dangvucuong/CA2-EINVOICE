@@ -57,9 +57,8 @@ import {
   checkChungTuThayTheDieuChinh,
   hasToKhaiChungTuChapNhan,
   layDanhSachToKhaiChungTu,
-  validateDieuChinhChungTu,
-  validateThayTheChungTu,
 } from "../../helpers/toKhaiChungTuHelper";
+import { getChungTuMadonvi } from "../../helpers/chungTuConstants";
 import { axiosClient } from "../../api/axiosClient";
 import Modal from "../../component-ui/modal";
 import XemChungTu from "./XemChungTu";
@@ -353,16 +352,7 @@ const QuanlychungtuPage = () => {
     row: any,
     loaiChungTu: number,
   ) => {
-    const validateMessage =
-      loaiChungTu === 2
-        ? validateDieuChinhChungTu(row)
-        : validateThayTheChungTu(row);
-    if (validateMessage) {
-      NotifyHelper.Error(validateMessage);
-      return;
-    }
-
-    const parseRes = await checkChungTuThayTheDieuChinh(user?.donvi?.ma_dv, {
+    const parseRes = await checkChungTuThayTheDieuChinh(getChungTuMadonvi(user), {
       mau_so: row?.MSChungtu,
       ky_hieu: row?.KHChungtu,
       so_chung_tu_goc: row?.Sochungtu,

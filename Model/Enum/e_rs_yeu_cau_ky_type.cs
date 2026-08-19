@@ -4,6 +4,7 @@ namespace Model.Enum
     {
         DANG_NHAP,
         KY_SO_HOA_DON,
+        PHAT_HANH_MTT_HOA_DON,
         KY_SO_VA_PHAT_HANH_HOA_DON,
         KY_SO_VA_PHAT_HANH_BANG_KE,
     }

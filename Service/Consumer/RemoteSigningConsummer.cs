@@ -146,6 +146,10 @@ namespace Service.Consumer
                                     {
                                         await _serviceWrapper.HoaDon.KyLo.XuLyThongDiepKySoHoaDonAsync(yeuCauKyCached);
                                     }
+                                    if (yeuCauKyCached.type == e_rs_yeu_cau_ky_type.PHAT_HANH_MTT_HOA_DON.ToString())
+                                    {
+                                        await _serviceWrapper.HoaDon.KyLo.XuLyThongDiepPhatHanhMttHoaDonAsync(yeuCauKyCached);
+                                    }
                                     if (yeuCauKyCached.type == e_rs_yeu_cau_ky_type.KY_SO_VA_PHAT_HANH_HOA_DON.ToString())
                                     {
                                         await _serviceWrapper.HoaDon.KyLo.XuLyThongDiepKySoVaPhatHanhHoaDonAsync(yeuCauKyCached);

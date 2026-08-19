@@ -311,6 +311,21 @@ namespace Service.HoaDon
             }
 
         }
+        public async Task<ApiSignResultModel> KySoHSMOnlyAsync(hoa_don hoaDon, string base64, string mst, string serial)
+        {
+            if (base64.ConvertToString() == string.Empty)
+            {
+                return null;
+            }
+
+            var signResultModel = await _serviceWrapper.ApiSignHoaDon.SignAsync(base64, mst, serial);
+            if (signResultModel != null && signResultModel.Macode == 1)
+            {
+                signResultModel.HoadonId = hoaDon.id;
+            }
+
+            return signResultModel;
+        }
         public async Task<ApiSignResultModel> KySoHSMAsync(hoa_don hoaDon, string base64, string mst, string serial, string? bienBanBase64)
         {
             //  var kySoResulit = await _serviceWrapper.ApiSignHoaDon.SignHoaDonAsync(model.id, userSerialInfo.serial_number);
@@ -371,7 +386,7 @@ namespace Service.HoaDon
                         await _serviceWrapper.HoaDon.HoaDon.UpdteKySoSuccessAsync(new Model.Request.ToKhai.HoaDonPhatHanhRequest()
                         {
                             id = hoaDon.id,
-                            signed_text = base64
+                            signed_text = ketQuaKy.data
                         });
                     }
                     return ketQuaKy;
@@ -383,6 +398,111 @@ namespace Service.HoaDon
             {
                 return new ErrorResult<string>(ex.Message);
             }
+        }
+        public async Task<FunctionResult<string>> KySoRemoteSigningOnlyAsync(hoa_don hoaDon, string base64, string mst, string serial)
+        {
+            try
+            {
+                var kySoRequest = new KySoRequest(serial, mst, base64, hoaDon.nguoi_mua_email.ConvertToString());
+                kySoRequest.hoa_don_id = hoaDon.id;
+                kySoRequest.ma_tra_cuu = hoaDon.ma_tra_cuu.ConvertToString();
+                kySoRequest.KHHDon = hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu;
+                kySoRequest.so_hoa_don = hoaDon.ma_so_hoa_don ?? 0;
+
+                var guiYeucauResult = await _serviceWrapper.RemoteSigningSerivce.KySoAsync(kySoRequest);
+                if (guiYeucauResult.is_success)
+                {
+                    var code = guiYeucauResult.data;
+                    var cts = new CancellationTokenSource();
+                    return await _serviceWrapper.RemoteSigningSerivce.TryGetKetQuaKyThenClearAsync(code, "", cts.Token);
+                }
+
+                return new ErrorResult<string>(guiYeucauResult.message);
+            }
+            catch (System.Exception ex)
+            {
+                return new ErrorResult<string>(ex.Message);
+            }
+        }
+        public async Task<FunctionResult<string>> KySoRemoteSigningPhatHanhMttBackgroundAsync(hoa_don hoaDon, string base64, string mst, string serial)
+        {
+            try
+            {
+                var kySoRequest = new KySoRequest(serial, mst, base64, hoaDon.nguoi_mua_email.ConvertToString());
+                kySoRequest.hoa_don_id = hoaDon.id;
+                kySoRequest.ma_tra_cuu = hoaDon.ma_tra_cuu.ConvertToString();
+                kySoRequest.KHHDon = hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu;
+                kySoRequest.so_hoa_don = hoaDon.ma_so_hoa_don ?? 0;
+                var userId = this.GetCurrentUserId();
+                var guiYeucauResult = await _serviceWrapper.RemoteSigningSerivce.KySoAsync(kySoRequest);
+                if (guiYeucauResult.is_success)
+                {
+                    var code = guiYeucauResult.data;
+                    if (code != "-2")
+                    {
+                        await _serviceWrapper.HoaDon.RsYeuCauKy.SaveYeuCauKyAsync(code, userId.ToString(), Model.Enum.e_rs_yeu_cau_ky_type.PHAT_HANH_MTT_HOA_DON, hoaDon.id.ToString());
+                        return new SuccessResult<string>(code);
+                    }
+                }
+
+                return new ErrorResult<string>(guiYeucauResult.message);
+            }
+            catch (System.Exception ex)
+            {
+                return new ErrorResult<string>(ex.Message);
+            }
+        }
+        public async Task<FunctionResult<HoaDonPhatHanhRespone>> PhatHanhMttFormAsync(hoa_don hoaDon, string serial, bool isHsm, bool notifyRs = false)
+        {
+            if (hoaDon.is_ky_so_succes != true)
+            {
+                return new ErrorResult<HoaDonPhatHanhRespone>("Chưa ký số người bán. Vui lòng ký số người bán trước khi phát hành.");
+            }
+
+            var base64Result = await _hoaDonService.CreateBase64MTTAsync(hoaDon, null, requireSignedHoaDonXml: true);
+            if (!base64Result.is_success)
+            {
+                return new ErrorResult<HoaDonPhatHanhRespone>(base64Result.message);
+            }
+
+            var base64 = base64Result.data;
+            if (isHsm)
+            {
+                var signResult = await this.KySoHSMOnlyAsync(hoaDon, base64, hoaDon.donvi_ma_dv, serial);
+                if (signResult == null || signResult.Macode != 1)
+                {
+                    return new ErrorResult<HoaDonPhatHanhRespone>("Ký số thông điệp thất bại");
+                }
+
+                return await _hoaDonService.PhatHanhMTTAsync(new HoaDonPhatHanhRequest()
+                {
+                    id = hoaDon.id,
+                    signed_text = signResult.SignedData
+                }, hoaDon);
+            }
+
+            if (notifyRs)
+            {
+                var bgResult = await this.KySoRemoteSigningPhatHanhMttBackgroundAsync(hoaDon, base64, hoaDon.donvi_ma_dv, serial);
+                if (bgResult.is_success)
+                {
+                    return new SuccessResult<HoaDonPhatHanhRespone>(new HoaDonPhatHanhRespone());
+                }
+
+                return new ErrorResult<HoaDonPhatHanhRespone>(bgResult.message);
+            }
+
+            var kySoResult = await this.KySoRemoteSigningOnlyAsync(hoaDon, base64, hoaDon.donvi_ma_dv, serial);
+            if (!kySoResult.is_success)
+            {
+                return new ErrorResult<HoaDonPhatHanhRespone>(kySoResult.message);
+            }
+
+            return await _hoaDonService.PhatHanhMTTAsync(new HoaDonPhatHanhRequest()
+            {
+                id = hoaDon.id,
+                signed_text = kySoResult.data
+            }, hoaDon);
         }
         private async Task<IEnumerable<HoaDonCreateXmlKySoRespone>> CreateXmlsMTTAsync(List<hoa_don> hoaDons, SemaphoreSlim lockStatus, ProcessChangedModel processChangedModel, List<int> excludeHoaDonIds)
         {
@@ -542,6 +662,48 @@ namespace Service.HoaDon
                 return false;
             }
             catch (System.Exception ex)
+            {
+                return false;
+            }
+        }
+        public async Task<bool> XuLyThongDiepPhatHanhMttHoaDonAsync(rs_yeu_cau_ky yeuCauKy)
+        {
+            try
+            {
+                var hoa_don_id = yeuCauKy.type_key.ConvertToInt();
+                var base64 = yeuCauKy.ket_qua_ky;
+                var user_id_phathanh = yeuCauKy.user_id.ConvertToInt();
+                var hoaDon = await _serviceWrapper.HoaDon.HoaDon.SelectByIdAsync(hoa_don_id);
+                if (hoaDon == null) return false;
+                var phatHanhResult = await _hoaDonService.PhatHanhMTTAsync(new HoaDonPhatHanhRequest()
+                {
+                    id = hoaDon.id,
+                    signed_text = base64
+                }, hoaDon, user_id_phathanh);
+                if (phatHanhResult.is_success)
+                {
+                    await _hoaDonPhatHanhHub.OnNewNotifyCreated(new Model.Request.Hub.HoaDonPhatHanhPushNotifyModel()
+                    {
+                        file_thong_diep_url = "",
+                        hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.DA_GUI_LEN_CQT_CHUA_PHAN_HOI_KIEM_TRA_DU_LIEU,
+                        id = hoa_don_id,
+                        ket_qua_phat_hanh = "Gửi yêu cầu",
+                        user_id = user_id_phathanh.ToString()
+                    });
+                    return true;
+                }
+
+                await _hoaDonPhatHanhHub.OnNewNotifyCreated(new Model.Request.Hub.HoaDonPhatHanhPushNotifyModel()
+                {
+                    file_thong_diep_url = "",
+                    hoa_don_trang_thai_id = hoaDon.hoa_don_trang_thai_id,
+                    id = hoa_don_id,
+                    ket_qua_phat_hanh = phatHanhResult.message,
+                    user_id = user_id_phathanh.ToString()
+                });
+                return false;
+            }
+            catch (System.Exception)
             {
                 return false;
             }

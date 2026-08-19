@@ -916,11 +916,10 @@ namespace Service.HoaDon
             {
                 return await this.CreateBase64MTTAsync(hoaDon);
             }
-
             return new ErrorResult<string>();
         }
 
-        public async Task<FunctionResult<string>> CreateBase64MTTAsync(hoa_don hoaDon, IEnumerable<int> excludeHoaDonIds = null)
+        public async Task<FunctionResult<string>> CreateBase64MTTAsync(hoa_don hoaDon, IEnumerable<int> excludeHoaDonIds = null, bool requireSignedHoaDonXml = false)
         {
             if (hoaDon.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DA_HUY_NOI_BO)
             {
@@ -930,6 +929,11 @@ namespace Service.HoaDon
             var hoaDonXml = await this.TryGetSignedHoaDonXmlAsync(hoaDon.id);
             if (hoaDonXml.ConvertToString() == "")
             {
+                if (requireSignedHoaDonXml)
+                {
+                    return new ErrorResult<string>("Chưa ký số người bán. Vui lòng ký số người bán trước khi phát hành.");
+                }
+
                 var modelResult = await this.CreateXmlObjectKySoAsync(hoaDon, false, excludeHoaDonIds, skipValidateSoNhoHonChuaKySo: true);
                 if (!modelResult.is_success)
                 {
@@ -1237,9 +1241,11 @@ namespace Service.HoaDon
                         ky_hieu_mau_so_hoa_don = obj.hoa_don_dang_ky_phat_hanh_mau_so,
                         ky_hieu_hoa_don = obj.hoa_don_dang_ky_phat_hanh_ky_hieu,
                         don_vi_tien_te = obj.loai_tien,
-                        ty_gia = (obj.loai_tien.ConvertToString() != "VND" && obj.loai_tien.ConvertToString() != "")
-                            ? obj.ty_gia.ConvertToStringAndRemoveZeroPart()
-                            : null,
+                        ty_gia = HoaDonThuongMaiHelper.ResolveTyGiaXml(
+                            obj.hoa_don_dang_ky_phat_hanh_mau_so,
+                            obj.hoa_don_dang_ky_phat_hanh_ky_hieu,
+                            obj.loai_tien,
+                            obj.ty_gia.ConvertToStringAndRemoveZeroPart()),
                         hinh_thuc_thanh_toan = obj.hinh_thuc_tt,
                         ma_so_thue_co_quan_quan_ly = AppSettings.FixedValue.MNNhan,
                         ngay_lap = obj.ngay_hoa_don.ToString("yyyy-MM-dd") ?? "",
@@ -2961,6 +2967,11 @@ namespace Service.HoaDon
                 if (logGui != null)
                 {
                     return new ErrorResult<HoaDonPhatHanhRespone>("Hóa đơn đã gửi thông điệp");
+                }
+
+                if (hoaDon.is_ky_so_succes != true)
+                {
+                    return new ErrorResult<HoaDonPhatHanhRespone>("Chưa ký số người bán. Vui lòng ký số người bán trước khi phát hành.");
                 }
 
                 if (request.signed_text == "")

@@ -176,7 +176,11 @@ namespace Service.HoaDon
                 ky_hieu_hoa_don = hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu,
                 so_hoa_don = hoaDon.ma_so_hoa_don.ConvertToString(),
                 ten_hoa_don = hoaDon.ten_hoa_don,
-                ty_gia = (hoaDon.loai_tien.ConvertToString() != "VND" && hoaDon.loai_tien.ConvertToString() != "") ? hoaDon.ty_gia.ConvertToStringAndRemoveZeroPart() : null,
+                ty_gia = HoaDonThuongMaiHelper.ResolveTyGiaXml(
+                    hoaDon.hoa_don_dang_ky_phat_hanh_mau_so,
+                    hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu,
+                    hoaDon.loai_tien,
+                    hoaDon.ty_gia.ConvertToStringAndRemoveZeroPart()),
             };
             if (hoaDon.giam_thue_ghi_chu.ConvertToString() != "")
             {
@@ -1209,7 +1213,12 @@ namespace Service.HoaDon
                     hinh_thuc_thanh_toan = hoaDon.hinh_thuc_tt,
                     ky_hieu_hoa_don = hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu,
                     so_hoa_don = hoaDon.ma_so_hoa_don.ToString(),
-                    ten_hoa_don = hoaDon.ten_hoa_don
+                    ten_hoa_don = hoaDon.ten_hoa_don,
+                    ty_gia = HoaDonThuongMaiHelper.ResolveTyGiaXml(
+                        hoaDon.hoa_don_dang_ky_phat_hanh_mau_so,
+                        hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu,
+                        hoaDon.loai_tien,
+                        hoaDon.ty_gia.ConvertToStringAndRemoveZeroPart())
                 };
                 if (hoaDon.giam_thue_ghi_chu.ConvertToString() != "")
                 {

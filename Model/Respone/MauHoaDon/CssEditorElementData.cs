@@ -7,9 +7,6 @@ namespace Model.Respone.MauHoaDon
         public bool isDisplay { get; set; }
         public string type { get; set; }
         public CssEditorValue cssValue { get; set; }
-
-
-
     }
     public class CssEditorValue
     {

@@ -15,7 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Repository", "Repository\Re
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Service", "Service\Service.csproj", "{034B3445-C829-4A10-B347-D7A81A3546C1}"
 EndProject
-Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "apichungtu(1)", "apichungtu\", "{6124EF87-B705-4030-A81A-DD858D4343C4}"
+Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "apichungtu", "apichungtu\", "{6124EF87-B705-4030-A81A-DD858D4343C4}"
 	ProjectSection(WebsiteProperties) = preProject
 		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.8"
 		Debug.AspNetCompiler.VirtualPath = "/localhost_56675"
@@ -35,8 +35,6 @@ Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "apichungtu(1)", "apichungtu
 		VWDPort = "56675"
 		SlnRelativePath = "apichungtu\"
 	EndProjectSection
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignTool", "..\..\..\..\..\MOMO\PRODUCTION\PRODUCTION\TOOLKYSO-WORK\Signtool\SignTool.csproj", "{5FA5CE72-DDAD-4995-AA14-4073B5C3BCBA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -72,10 +70,6 @@ Global
 		{6124EF87-B705-4030-A81A-DD858D4343C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6124EF87-B705-4030-A81A-DD858D4343C4}.Release|Any CPU.ActiveCfg = Debug|Any CPU
 		{6124EF87-B705-4030-A81A-DD858D4343C4}.Release|Any CPU.Build.0 = Debug|Any CPU
-		{5FA5CE72-DDAD-4995-AA14-4073B5C3BCBA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5FA5CE72-DDAD-4995-AA14-4073B5C3BCBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5FA5CE72-DDAD-4995-AA14-4073B5C3BCBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5FA5CE72-DDAD-4995-AA14-4073B5C3BCBA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
