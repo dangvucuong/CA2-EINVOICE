@@ -67,6 +67,8 @@ namespace Contracts.Service.HoaDon
 
         Task<FunctionResult<object>> GuiLaiCQTAsync(int id);
 
+        Task<FunctionResult<object>> GuiLaiCQTSignedAsync(int id, string signedBase64);
+
         Task<FunctionResult<object>> CapNhatKetQuaCQTAsync(int id);
 
         Task<FunctionResult<object>> KhoiPhucTrangThaiAsync(int id);

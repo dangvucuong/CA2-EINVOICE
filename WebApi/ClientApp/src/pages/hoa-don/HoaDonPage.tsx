@@ -72,6 +72,7 @@ import {
   canLoadHoaDonList,
   HOADON_LIST_SEARCH_PLACEHOLDER,
 } from "../../utils/hoaDonListFilter";
+import KySoModal from "../../component-data/ky-so-modal";
 
 const hoaDonAction = rootAction.hoaDon.hoaDonAction;
 
@@ -108,6 +109,8 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
 
   const [choPhanHoiCount, setChoPhanHoiCount] = useState(0);
   const [chuaGuiCQTCount, setChuaGuiCQTCount] = useState(0);
+  const [guiLaiCQTKySoBase64, setGuiLaiCQTKySoBase64] = useState("");
+  const [guiLaiCQTHoaDonId, setGuiLaiCQTHoaDonId] = useState(0);
 
   const {
     status,
@@ -1312,10 +1315,25 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
                                               );
 
                                               if (res.is_success) {
+                                                const data = res.data as any;
+                                                const requireSign =
+                                                  data?.require_sign === true ||
+                                                  data?.requireSign === true;
+                                                const base64 = data?.base64;
+                                                if (requireSign) {
+                                                  if (!base64) {
+                                                    NotifyHelper.Error(
+                                                      "Không lấy được XML để ký CKSNNT"
+                                                    );
+                                                    return;
+                                                  }
+                                                  setGuiLaiCQTHoaDonId(row.id);
+                                                  setGuiLaiCQTKySoBase64(base64);
+                                                  return;
+                                                }
                                                 NotifyHelper.Success(
                                                   "Gửi lại CQT thành công"
                                                 );
-
                                                 dispatch(
                                                   hoaDonAction.loadStart({
                                                     ...applyListFilter(filter),
@@ -1661,6 +1679,41 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
             }}
           />
         )}
+      {guiLaiCQTKySoBase64 !== "" && (
+        <KySoModal
+          base64={guiLaiCQTKySoBase64}
+          onClose={() => {
+            setGuiLaiCQTKySoBase64("");
+            setGuiLaiCQTHoaDonId(0);
+          }}
+          onSuccess={async (signedtext) => {
+            setGuiLaiCQTKySoBase64("");
+            setIsSaving(true);
+            try {
+              const res = await hoaDonApi.guiLaiCQTSigned(
+                guiLaiCQTHoaDonId,
+                signedtext
+              );
+              if (res.is_success) {
+                NotifyHelper.Success("Gửi lại CQT thành công");
+                dispatch(
+                  hoaDonAction.loadStart({
+                    ...applyListFilter(filter),
+                    tab,
+                  })
+                );
+              } else {
+                NotifyHelper.Error(
+                  res.message ?? "Gửi lại CQT thất bại"
+                );
+              }
+            } finally {
+              setIsSaving(false);
+              setGuiLaiCQTHoaDonId(0);
+            }
+          }}
+        />
+      )}
     </Box>
   );
 };

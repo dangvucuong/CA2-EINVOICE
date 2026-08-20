@@ -96,11 +96,25 @@ const HoaDonForm = () => {
   const [hoaDonGocId, setHoaDonGocId] = useState(0);
   const [hangHoasGoc, setHangHoasGoc] = useState<IHoaDonHangHoa[]>([]);
   const [tongTienChu, setTongTienChu] = useState("");
+  const [isSavedForKySo, setIsSavedForKySo] = useState(false);
 
   const isAllowPhatHanh = useMemo(() => {
     return checkAccesiableTo(HOA_DON_PHATHANH_API, "POST");
     // return true;
   }, []);
+
+  const viewModelRequestRef = useRef(0);
+  const skipKySoResetRef = useRef(false);
+
+  const resolveFormPath = (id: number) => {
+    const path = location.pathname;
+    if (path.includes("/hoa-don-mtt/form")) return `/hoa-don-mtt/form/${id}`;
+    if (path.includes("/hoa-don-dieu-chinh/form"))
+      return `/hoa-don-dieu-chinh/form/${id}`;
+    if (path.includes("/hoa-don-thay-the/form"))
+      return `/hoa-don-thay-the/form/${id}`;
+    return `/hoa-don/form/${id}`;
+  };
 
   useEffect(() => {
     if (
@@ -254,6 +268,10 @@ const HoaDonForm = () => {
   }, [location.search]);
 
   useEffect(() => {
+    if (!skipKySoResetRef.current) {
+      setIsSavedForKySo(false);
+    }
+    skipKySoResetRef.current = false;
     if (hoaDonId > 0) {
       handleGetHoaDonViewModel(hoaDonId);
     }
@@ -397,12 +415,25 @@ const HoaDonForm = () => {
     }
   };
 
-  const handleGetHoaDonViewModel = async (id: number) => {
+  const handleGetHoaDonViewModel = async (
+    id: number,
+    forceEditMode = false,
+  ) => {
+    const requestId = ++viewModelRequestRef.current;
     const res = await hoaDonApi.getViewModel(id);
+    if (requestId !== viewModelRequestRef.current) {
+      return;
+    }
     if (res.is_success) {
       setIsLoadHoaDonDone(true);
 
-      if (hoaDonId === 0) {
+      const loadAsGocTemplate =
+        !forceEditMode &&
+        hoaDonId === 0 &&
+        hoaDonGocId > 0 &&
+        id === hoaDonGocId;
+
+      if (loadAsGocTemplate) {
         const isCreatingDieuChinh =
           hoaDonGocId > 0 && hinhThucHoaDonId === 3;
         const gocHangHoas = res.data.hang_hoas.map((x: any) => ({
@@ -459,9 +490,14 @@ const HoaDonForm = () => {
         setGiam_thue_ty_le(res.data.giam_thue_ty_le ?? -1);
         setIsOpenHoaDonGocModal(false);
       } else {
+        const effectiveId = forceEditMode
+          ? id
+          : hoaDonId > 0
+            ? hoaDonId
+            : id;
         setHoaDonViewModel({
           ...res.data,
-          id: hoaDonId,
+          id: effectiveId,
           hang_hoas: res.data.hang_hoas.map((x: any) => {
             return {
               ...x,
@@ -1186,7 +1222,14 @@ const HoaDonForm = () => {
 
     setIsSaving(false);
     if (res.is_success) {
-      history.replace("../../hoa-don/form/" + res.data.id);
+      const newId = res.data?.id ?? hoaDonId;
+      if (newId > 0) {
+        skipKySoResetRef.current = true;
+        const formPath = resolveFormPath(newId);
+        history.replace(formPath);
+        await handleGetHoaDonViewModel(newId, true);
+      }
+      setIsSavedForKySo(true);
       NotifyHelper.Success("Success");
     } else {
       NotifyHelper.Error(res.message ?? "Có lỗi không xác định");
@@ -2397,7 +2440,7 @@ const HoaDonForm = () => {
                   disabled={hoaDonViewModel?.is_ky_so_succes ?? false}
                 />
               )}
-              {hoaDonId > 0 && (
+              {hoaDonId > 0 && isSavedForKySo && (
                 <>
                   {CKM === "M" && (
                     <>
@@ -2532,72 +2575,50 @@ const HoaDonForm = () => {
                       )}
                     </>
                   )}
-                  {CKM !== "C" && CKM !== "M" && (
+                  {(CKM === "C" || CKM === "K") && (
                     <>
-                      {user &&
-                        !user.is_hsm_signing &&
-                        !user.is_remote_signing && (
-                          <Button
-                            text="Ký số"
-                            sx={{ minWidth: "100px" }}
-                            variant="primary"
-                            size="large"
-                            type="button"
-                            leadingVisual={IssueClosedIcon}
-                            isLoading={isSaving}
-                            onClick={() => {
-                              setIsMttPhatHanh(false);
-                              handleGetBase64KySo();
-                              setIsKySoVaPhatHanh(false);
-                            }}
-                            disabled={
-                              !isAllowPhatHanh ||
-                              (hoaDonViewModel?.is_ky_so_succes ?? false)
-                            }
-                          />
-                        )}
-                      {user &&
-                        (user.is_hsm_signing || user.is_remote_signing) && (
-                          <Button
-                            text="Ký số"
-                            sx={{ minWidth: "100px" }}
-                            variant="primary"
-                            size="large"
-                            type="button"
-                            leadingVisual={IssueClosedIcon}
-                            isLoading={isSaving}
-                            onClick={() => {
-                              setIsMttPhatHanh(false);
-                              handleKySoRemoteAsync();
-                              setIsKySoVaPhatHanh(false);
-                            }}
-                            disabled={
-                              !isAllowPhatHanh ||
-                              (hoaDonViewModel?.is_ky_so_succes ?? false)
-                            }
-                          />
-                        )}
-                      {hoaDonViewModel?.is_ky_so_succes === true && (
-                        <Button
-                          text="Phát hành"
-                          sx={{ minWidth: "100px" }}
-                          disabled={!isAllowPhatHanh}
-                          variant="primary"
-                          size="large"
-                          type="button"
-                          leadingVisual={IssueClosedIcon}
-                          isLoading={isSaving}
-                          onClick={() => {
-                            handlePhatHanhAsync("");
-                          }}
-                        />
-                      )}
                       {hoaDonViewModel?.is_ky_so_succes !== true &&
-                        (hoaDonViewModel?.hoa_don_trang_thai_id ===
-                          eHoaDonTrangThai.NHAP ||
-                          hoaDonViewModel?.hoa_don_trang_thai_id ===
-                            eHoaDonTrangThai.CHUA_GUI_CQT) && (
+                        hoaDonViewModel?.hoa_don_trang_thai_id ===
+                          eHoaDonTrangThai.NHAP && (
                           <>
+                            {user &&
+                              !user.is_hsm_signing &&
+                              !user.is_remote_signing && (
+                                <Button
+                                  text="Ký số"
+                                  sx={{ minWidth: "100px" }}
+                                  variant="primary"
+                                  size="large"
+                                  type="button"
+                                  leadingVisual={IssueClosedIcon}
+                                  isLoading={isSaving}
+                                  onClick={() => {
+                                    setIsMttPhatHanh(false);
+                                    handleGetBase64KySo();
+                                    setIsKySoVaPhatHanh(false);
+                                  }}
+                                  disabled={!isAllowPhatHanh}
+                                />
+                              )}
+                            {user &&
+                              (user.is_hsm_signing ||
+                                user.is_remote_signing) && (
+                                <Button
+                                  text="Ký số"
+                                  sx={{ minWidth: "100px" }}
+                                  variant="primary"
+                                  size="large"
+                                  type="button"
+                                  leadingVisual={IssueClosedIcon}
+                                  isLoading={isSaving}
+                                  onClick={() => {
+                                    setIsMttPhatHanh(false);
+                                    handleKySoRemoteAsync();
+                                    setIsKySoVaPhatHanh(false);
+                                  }}
+                                  disabled={!isAllowPhatHanh}
+                                />
+                              )}
                             {user &&
                               !user.is_hsm_signing &&
                               !user.is_remote_signing && (
@@ -2638,6 +2659,21 @@ const HoaDonForm = () => {
                               )}
                           </>
                         )}
+                      {hoaDonViewModel?.is_ky_so_succes === true && (
+                        <Button
+                          text="Phát hành"
+                          sx={{ minWidth: "100px" }}
+                          disabled={!isAllowPhatHanh}
+                          variant="primary"
+                          size="large"
+                          type="button"
+                          leadingVisual={IssueClosedIcon}
+                          isLoading={isSaving}
+                          onClick={() => {
+                            handlePhatHanhAsync("");
+                          }}
+                        />
+                      )}
                     </>
                   )}
                 </>

@@ -1215,10 +1215,20 @@ namespace Service.HoaDon
                 {
                     thue_suats = thue_suats
                 };
-                if (thueSuatTuDb.Any())
+
+                var isDieuChinhTienThue = obj.hoa_don_hinh_thuc_id == (int)e_hoa_don_hinh_thuc.HOA_DON_DIEU_CHINH
+                    && obj.tong_tien_thue != 0
+                    && thueSuatTuDb.Sum(x => x.TThue) == 0;
+
+                if (isDieuChinhTienThue)
                 {
-                    thongTinThanhToan.tong_tien_chua_thue = thueSuatTuDb.Sum(x => x.ThTien)
-                        .ConvertToStringAndRemoveZeroPart();
+                    thongTinThanhToan.tong_tien_chua_thue = "0";
+                    thongTinThanhToan.tong_tien_thue = obj.tong_tien_thue.ConvertToStringAndRemoveZeroPart();
+                    thongTinThanhToan.tong_tien_thanh_toan_bang_so = obj.tong_tien_thanh_toan.ConvertToStringAndRemoveZeroPart();
+                }
+                else if (thueSuatTuDb.Any())
+                {
+                    thongTinThanhToan.tong_tien_chua_thue = obj.tong_tien_truong_thue.ConvertToStringAndRemoveZeroPart();
                     thongTinThanhToan.tong_tien_thue = thueSuatTuDb.Sum(x => x.TThue)
                         .ConvertToStringAndRemoveZeroPart();
                 }
@@ -4075,12 +4085,21 @@ namespace Service.HoaDon
                 {
                     return new ErrorResult<object>("Không tìm thấy hóa đơn");
                 }
-                string signedXml = await GetXMLString(id, hoaDon);
-
+                var (signedXml, requireSign) = await GetXMLString(id, hoaDon);
 
                 if (string.IsNullOrEmpty(signedXml))
                 {
                     return new ErrorResult<object>("Không tìm thấy signed xml");
+                }
+
+                if (requireSign)
+                {
+                    var base64ForSign = Convert.ToBase64String(Encoding.UTF8.GetBytes(signedXml));
+                    return new SuccessResult<object>(new GuiLaiCQTRespone
+                    {
+                        require_sign = true,
+                        base64 = base64ForSign
+                    });
                 }
 
                 // GetXMLString có thể đã gán phat_hanh_uuid mới — cần reload và đăng ký cache để Rabbit map được
@@ -4114,6 +4133,78 @@ namespace Service.HoaDon
                         base64,
                         1
                     );
+
+                if (guiThongDiepResult.Guithongdiep2024Result.ConvertToString().Length <= 2)
+                {
+                    return new ErrorResult<object>(
+                        $"Gửi thông điệp lên CQT thất bại: {guiThongDiepResult.Guithongdiep2024Result}"
+                    );
+                }
+
+                return new SuccessResult<object>(guiThongDiepResult.Guithongdiep2024Result);
+            }
+            catch (Exception ex)
+            {
+                return new ErrorResult<object>(ex.Message);
+            }
+        }
+
+        public async Task<FunctionResult<object>> GuiLaiCQTSignedAsync(int id, string signedBase64)
+        {
+            try
+            {
+                var hoaDon = await SelectByIdAsync(id);
+                if (hoaDon == null)
+                {
+                    return new ErrorResult<object>("Không tìm thấy hóa đơn");
+                }
+
+                var signedXml = Encoding.UTF8.GetString(Convert.FromBase64String(signedBase64));
+                if (string.IsNullOrEmpty(signedXml))
+                {
+                    return new ErrorResult<object>("Dữ liệu ký không hợp lệ");
+                }
+
+                await RegisterPhatHanhUuidCacheAsync(hoaDon);
+
+                var fileName = Guid.NewGuid().ToString() + ".xml";
+                var filePath = $"Xml/{DateTime.Now.Year}/{DateTime.Now.Month}/{DateTime.Now.Day}/{fileName}";
+                var directoryPath = Path.GetDirectoryName(filePath);
+                if (!Directory.Exists(directoryPath))
+                {
+                    Directory.CreateDirectory(directoryPath);
+                }
+                await File.WriteAllTextAsync(filePath, signedXml);
+                var log = new hoa_don_log()
+                {
+                    file_thong_diep_url = filePath,
+                    ngay_thuc_hien = DateTime.Now,
+                    nguoi_thuc_hien = "adminNCM",
+                    noi_dung_thuc_hien = "Gửi lại CQT (đã ký CKSNNT)",
+                    hoa_don_id = hoaDon.id,
+                    hoa_don_log_type_id = (int)e_hoa_don_log_type.GUI_THONG_DIEP
+                };
+                log.SetInsertInfo(hoaDon.user_id_phathanh > 0 ? hoaDon.user_id_phathanh : this.GetCurrentUserId());
+                _serviceWrapper.Core.TaskQueue.EnqueueTask(async _ =>
+                {
+                    await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
+                });
+
+                string mngui = GetMNGui(signedXml);
+
+                var client = Helper.WSInterTRCA2Helper.GetClient();
+                await client.OpenAsync();
+
+                var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(signedXml));
+
+                var authHeader = Helper.WSInterTRCA2Helper.GetAuthHeader();
+                if (mngui == "0103930279")
+                {
+                    authHeader.Username = "ntvan";
+                    authHeader.Password = "123456";
+                }
+
+                var guiThongDiepResult = await client.Guithongdiep2024Async(authHeader, base64, 1);
 
                 if (guiThongDiepResult.Guithongdiep2024Result.ConvertToString().Length <= 2)
                 {
@@ -4682,7 +4773,48 @@ namespace Service.HoaDon
             return "";
         }
 
-        private async Task<string> BuildMttGuiLaiThongDiepFromLogsAsync(DataTable dt, hoa_don hoaDon)
+        private static bool HasSignedCksnnt(string xml)
+        {
+            if (xml.ConvertToString() == "")
+            {
+                return false;
+            }
+
+            try
+            {
+                var doc = new XmlDocument();
+                doc.LoadXml(xml);
+                if (doc.DocumentElement?.LocalName != "TDiep")
+                {
+                    return false;
+                }
+
+                var signature = doc.SelectSingleNode("/TDiep/CKSNNT/*[local-name()='Signature']");
+                return signature != null && signature.InnerXml.ConvertToString() != "";
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private void ApplyMttGuiLaiRow(DataRow row, hoa_don hoaDon)
+        {
+            if (row["hoa_don_id"] != DBNull.Value)
+            {
+                hoaDon.id = Convert.ToInt32(row["hoa_don_id"]);
+            }
+
+            var userId = row["created_user_id"] == DBNull.Value
+                ? 0
+                : Convert.ToInt32(row["created_user_id"]);
+            if (userId > 0)
+            {
+                hoaDon.user_id_phathanh = userId;
+            }
+        }
+
+        private async Task<(string xml, bool requireSign)> BuildMttGuiLaiThongDiepFromLogsAsync(DataTable dt, hoa_don hoaDon)
         {
             var rows = dt.Rows.Cast<DataRow>()
                 .OrderBy(r => Convert.ToInt32(r["hoa_don_log_type_id"]) == -7 ? 0 : 1)
@@ -4702,27 +4834,76 @@ namespace Service.HoaDon
                     continue;
                 }
 
-                var thongDiepXml = PrepareMttGuiLaiThongDiep(plainXML, out var uuid);
-                if (thongDiepXml == "" || uuid == "")
+                var logTypeId = Convert.ToInt32(row["hoa_don_log_type_id"]);
+
+                if (logTypeId == -7)
+                {
+                    var thongDiepXml = PrepareMttGuiLaiThongDiep(plainXML, out var uuid);
+                    if (thongDiepXml == "" || uuid == "")
+                    {
+                        continue;
+                    }
+
+                    ApplyMttGuiLaiRow(row, hoaDon);
+                    var saved = await SaveMttGuiLaiThongDiepAsync(hoaDon, thongDiepXml, uuid,
+                        hoaDon.user_id_phathanh);
+                    return (saved, false);
+                }
+
+                if (logTypeId != 3)
                 {
                     continue;
                 }
 
-                if (row["hoa_don_id"] != DBNull.Value)
+                if (HasSignedCksnnt(plainXML))
                 {
-                    hoaDon.id = Convert.ToInt32(row["hoa_don_id"]);
+                    var thongDiepXml = PrepareMttGuiLaiThongDiep(plainXML, out var uuid);
+                    if (thongDiepXml == "" || uuid == "")
+                    {
+                        continue;
+                    }
+
+                    ApplyMttGuiLaiRow(row, hoaDon);
+                    var saved = await SaveMttGuiLaiThongDiepAsync(hoaDon, thongDiepXml, uuid,
+                        hoaDon.user_id_phathanh);
+                    return (saved, false);
                 }
 
-                var userId = row["created_user_id"] == DBNull.Value
-                    ? 0
-                    : Convert.ToInt32(row["created_user_id"]);
-                return await SaveMttGuiLaiThongDiepAsync(hoaDon, thongDiepXml, uuid, userId);
+                var hoaDonXml = this.NormalizeHoaDonXmlForThongDiepWrap(plainXML);
+                if (hoaDonXml.ConvertToString() == "")
+                {
+                    continue;
+                }
+
+                var newUuid = Guid.NewGuid().ToString().Replace("-", "").ToUpper();
+                var thongDiep = new ThongDiep()
+                {
+                    ThongTinChung = new ThongTinChungThongDiep()
+                    {
+                        phien_ban = hoaDon.phien_ban,
+                        ma_noi_gui = AppSettings.FixedValue.MNGui,
+                        ma_noi_nhan = AppSettings.FixedValue.MNNhan,
+                        thong_diep = "206",
+                        ma_noi_gui_uuid = $"{AppSettings.FixedValue.MNGui}{newUuid}".ToUpper(),
+                        ma_thong_diep_tham_chieu = "",
+                        mst = hoaDon.nguoi_ban_mst,
+                        so_luong = 0
+                    },
+                };
+                var tdiepXml = thongDiep.ConvertToXmlAndAppendChild("/TDiep", "DLieu", hoaDonXml, false,
+                    System.Xml.NewLineHandling.None, true, $"_{newUuid}");
+
+                ApplyMttGuiLaiRow(row, hoaDon);
+                hoaDon.phat_hanh_uuid = newUuid;
+                await this.UpdateAsync(hoaDon);
+                await RegisterPhatHanhUuidCacheAsync(hoaDon);
+                return (tdiepXml, true);
             }
 
-            return string.Empty;
+            return (string.Empty, false);
         }
 
-        public async Task<string> GetXMLString(int inhd,hoa_don hoaDon)
+        public async Task<(string xml, bool requireSign)> GetXMLString(int inhd,hoa_don hoaDon)
         {
             try
             {
@@ -4757,6 +4938,7 @@ namespace Service.HoaDon
                     {
                         return await BuildMttGuiLaiThongDiepFromLogsAsync(dt, hoaDon);
                     }
+
 
                     if (dt.Rows.Count == 1) // chi co 1 ban ghi
                     {
@@ -4807,11 +4989,11 @@ namespace Service.HoaDon
                                     await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
                                 });
 
-                                return thongdiep;
+                                return (thongdiep, false);
                             }
                             else
                             {
-                                return string.Empty;
+                                return (string.Empty, false);
                             }
                         }
                         else if ((int)dt.Rows[0]["hoa_don_log_type_id"] == 3)
@@ -4869,17 +5051,17 @@ namespace Service.HoaDon
                                 {
                                     await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
                                 });
-                                return base64thongdiep.ConvertToXmlFromBase64();
+                                return (base64thongdiep.ConvertToXmlFromBase64(), false);
                             }
 
                             else
                             {
-                                return plainXML ?? string.Empty;
+                                return (plainXML ?? string.Empty, false);
                             }
                         }
                         else
                         {
-                            return string.Empty;
+                            return (string.Empty, false);
                         }
                            
                     }
@@ -4933,22 +5115,22 @@ namespace Service.HoaDon
                                     {
                                         await _serviceWrapper.HoaDon.HoaDonLog.InsertAsync(log);
                                     });
-                                    return thongdiep;
+                                    return (thongdiep, false);
                                 }
-                                return string.Empty;
+                                return (string.Empty, false);
                             }
                         }
                        
 
-                        return string.Empty;
+                        return (string.Empty, false);
                     }
                 }
 
-                return string.Empty;
+                return (string.Empty, false);
             }
             catch (Exception ex)
             {
-                return string.Empty;
+                return (string.Empty, false);
             }
         }
 

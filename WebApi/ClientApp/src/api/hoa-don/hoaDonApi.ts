@@ -58,6 +58,11 @@ export const hoaDonApi = {
     apiClient.post(
         `hoa-don/gui-lai-cqt/${id}`
     ),
+    guiLaiCQTSigned: (id: number, signedBase64: string) =>
+    apiClient.post(
+        `hoa-don/gui-lai-cqt-signed/${id}`,
+        { signed_base64: signedBase64 }
+    ),
     capNhatKetQuaCQT: (id: number) =>
         apiClient.post(`hoa-don/cap-nhat-ket-qua-cqt/${id}`),
     khoiPhucTrangThai: (id: number) =>

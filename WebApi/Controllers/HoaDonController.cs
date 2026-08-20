@@ -742,6 +742,14 @@ namespace WebApi.Controllers
             return Ok(result);
         }
 
+        [HttpPost("gui-lai-cqt-signed/{id}")]
+        public async Task<IActionResult> GuiLaiCQTSignedAsync(int id, [FromBody] GuiLaiCQTSignedRequest request)
+        {
+            var result = await _hoaDonService
+                .GuiLaiCQTSignedAsync(id, request?.signed_base64 ?? "");
+            return Ok(result);
+        }
+
         [HttpPost("cap-nhat-ket-qua-cqt/{id}")]
         public async Task<IActionResult> CapNhatKetQuaCQTAsync(int id)
         {
