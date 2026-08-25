@@ -50,7 +50,11 @@ const BangTongHopLoaiHangHoaSelection = (props: IBangTongHopLoaiHangHoaSelection
                 items={filterdData}
                 selected={_selectedData}
                 onSelectedChange={(data: any) => {
-                    props.onValueChanged(data.id)
+                    const selected = Array.isArray(data) ? data[0] : data;
+                    if (!selected?.id) {
+                        return;
+                    }
+                    props.onValueChanged(selected.id);
                 }}
                 onFilterChange={setFilter}
                 showItemDividers={true}

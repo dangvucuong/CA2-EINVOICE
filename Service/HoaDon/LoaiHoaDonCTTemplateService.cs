@@ -53,7 +53,7 @@ namespace Service.HoaDon
             var inputData = await _serviceWrapper.HoaDon.MauHoaDon.CreateSampleData(mauHoaDon);
             var xml = inputData.ConvertToXml();
             var html = "";
-            if (mauHoaDon.id <= 0 || mauHoaDon.xslt_path.ConvertToString() == "")
+            if (mauHoaDon.xslt_path.ConvertToString() == "")
             {
                 html = await this.GenerateHtmlAsync(mauHoaDon.loai_hoa_don_ct_template_id, inputData);
             }

@@ -418,6 +418,7 @@ const HoaDonForm = () => {
   const handleGetHoaDonViewModel = async (
     id: number,
     forceEditMode = false,
+    options?: { asGocTemplate?: boolean },
   ) => {
     const requestId = ++viewModelRequestRef.current;
     const res = await hoaDonApi.getViewModel(id);
@@ -427,15 +428,15 @@ const HoaDonForm = () => {
     if (res.is_success) {
       setIsLoadHoaDonDone(true);
 
+      // Lập HĐ ĐC/TT từ HĐ gốc: luôn reset cờ ký/trạng thái, không mang is_ky_so_succes của gốc
       const loadAsGocTemplate =
         !forceEditMode &&
         hoaDonId === 0 &&
-        hoaDonGocId > 0 &&
-        id === hoaDonGocId;
+        (options?.asGocTemplate === true ||
+          (hoaDonGocId > 0 && id === hoaDonGocId));
 
       if (loadAsGocTemplate) {
-        const isCreatingDieuChinh =
-          hoaDonGocId > 0 && hinhThucHoaDonId === 3;
+        const isCreatingDieuChinh = hinhThucHoaDonId === 3;
         const gocHangHoas = res.data.hang_hoas.map((x: any) => ({
           ...x,
           id: 0,
@@ -2713,10 +2714,18 @@ const HoaDonForm = () => {
         <HoaDonGocInfoModal
           value={thongTinHoaDonGoc}
           onSubmit={(data, hoaDon) => {
+            const gocId = data.hoaDonGocId || hoaDon?.id || 0;
             setThongTinHoaDonGoc(data);
             setIsOpenHoaDonGocModal(false);
-            if (hoaDon) {
-              handleGetHoaDonViewModel(hoaDon.id);
+            if (gocId > 0) {
+              // Đồng bộ hoaDonGocId → effect [hoaDonId, hoaDonGocId] load template gốc
+              // (reset is_ky_so_succes), tránh mang cờ ký của HĐ gốc làm ẩn nút Lưu
+              if (gocId !== hoaDonGocId) {
+                setHoaDonGocId(gocId);
+              } else if (hoaDonId === 0) {
+                // Cùng HĐ gốc nhưng cần load lại (vd. mở modal lần 2)
+                handleGetHoaDonViewModel(gocId, false, { asGocTemplate: true });
+              }
             }
           }}
         />

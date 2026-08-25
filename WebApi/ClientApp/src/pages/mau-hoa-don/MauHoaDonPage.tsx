@@ -63,6 +63,7 @@ const MauHoDonPage = () => {
   );
   const contentRef = useRef<HTMLDivElement>(null); // ✅ Thêm type cho ref
   const [isExporting, setIsExporting] = useState(false);
+  const [uploadedXsltPath, setUploadedXsltPath] = useState("");
 
   const [basicSetings, setBasicSetings] = useState<IIBasicSettingsData>({
     isShowLogoOrWatermark: "logo",
@@ -266,6 +267,9 @@ const MauHoDonPage = () => {
       history.push("../../../mau-hoa-don");
     }
   }, [status]);
+  const getCurrentXsltPath = () =>
+    uploadedXsltPath || mauHoaDonEditing?.xslt_path || "";
+
   const onSubmit = (data: any) => {
     dispatch(
       rootAction.hoaDon.mauHoaDonAction.saveStart({
@@ -275,6 +279,7 @@ const MauHoDonPage = () => {
         loai_hoa_don_ct_template_id:
           loaiHoaDonCTTemplate?.id ??
           mauHoaDonEditing?.loai_hoa_don_ct_template_id,
+        xslt_path: getCurrentXsltPath(),
         logo_path: basicSetings.logoFile?.url ?? "",
         vien_path: basicSetings.vienFile?.url ?? "",
         watermark_path: basicSetings.waterMarkFile?.url ?? "",
@@ -285,7 +290,7 @@ const MauHoDonPage = () => {
       })
     );
   };
-  const handleCreatePreviewDataAsync = async () => {
+  const handleCreatePreviewDataAsync = async (xsltPathOverride?: string) => {
     setIsLoading(true);
     const res = await loaiHoaDonCTTemplateApi.createPreviewData({
       donvi_ma_dv: "",
@@ -303,7 +308,7 @@ const MauHoDonPage = () => {
       is_show_wattermark_inner_table: basicSetings.isShowWatterMarkInnerTable,
       watermark_opacity: basicSetings.opacity,
       is_active: true,
-      xslt_path: mauHoaDonEditing?.xslt_path ?? "",
+      xslt_path: xsltPathOverride ?? getCurrentXsltPath(),
     });
     if (res.is_success) {
       setPreviewData(res.data);
@@ -312,11 +317,12 @@ const MauHoDonPage = () => {
     }
     setIsLoading(false);
   };
+
   useEffect(() => {
     if (mauHoaDonId <= 0 && loaiHoaDonCTTemplate) {
       handleCreatePreviewDataAsync();
     }
-  }, [mauHoaDonId, loaiHoaDonCTTemplate]);
+  }, [mauHoaDonId, loaiHoaDonCTTemplate, uploadedXsltPath]);
   return (
     <Box>
       <Box sx={{ mb: 3 }}>
@@ -332,7 +338,12 @@ const MauHoDonPage = () => {
       {!loaiHoaDonCTTemplate && !mauHoaDonEditing && mauHoaDonId === 0 && (
         <MauHoaDonSelectTemplate
           onSelectionChanged={(data) => {
+            setUploadedXsltPath("");
             setLoaiHoaDonCTTemplate(data);
+          }}
+          onUploadXsltContinue={(data) => {
+            setUploadedXsltPath(data.xslt_path);
+            setLoaiHoaDonCTTemplate(data.template);
           }}
         />
       )}

@@ -120,11 +120,22 @@ const BangTongHopForm = () => {
         }
     }
     const handleGetHoaDonAsync = async () => {
+        if (!tuNgay || !denNgay) {
+            NotifyHelper.Error("Vui lòng chọn từ ngày và đến ngày trước khi tổng hợp")
+            return
+        }
+        if (moment(tuNgay).isAfter(moment(denNgay), "day")) {
+            NotifyHelper.Error("Từ ngày không được lớn hơn đến ngày")
+            return
+        }
         setIsLoading(true)
         const res = await bangTongHopApi.selectHoaDonForTongHop(tuNgay, denNgay)
         if (res.is_success) {
             setHoaDons(res.data ?? [])
             setHoaDonSelectedIds([])
+            if (!res.data || res.data.length === 0) {
+                NotifyHelper.Error("Không tìm thấy hóa đơn phù hợp trong khoảng ngày đã chọn")
+            }
         } else {
             NotifyHelper.Error(res.message ?? "Không thể tổng hợp hóa đơn")
         }
@@ -160,28 +171,27 @@ const BangTongHopForm = () => {
                             gap: 2,
                         }}
                     >
-                        <RadioGroup name="" onChange={(e: any) => {
-                            // console.log({
-                            //     x: e
-                            // });
-                            setloaiKyTongHop(e)
-                        }}>
-                            <RadioGroup.Label>Loại kỳ tổng hợp</RadioGroup.Label>
-                            <FormControl>
-                                <Radio value="ngay" checked={loaiKyTongHop === "ngay"} />
-                                <FormControl.Label>Theo ngày</FormControl.Label>
-                            </FormControl>
-                            <FormControl>
-                                <Radio value="thang" checked={loaiKyTongHop === "thang"} />
-                                <FormControl.Label>Theo tháng</FormControl.Label>
-                            </FormControl>
-                            <FormControl>
-                                <Radio value="quy" checked={loaiKyTongHop === "quy"} />
-                                <FormControl.Label>Theo quý</FormControl.Label>
-                            </FormControl>
-                        </RadioGroup>
+                        <Box>
+                            <Text text="Loại kỳ tổng hợp" sx={{ fontWeight: 600, mb: 2, display: "block" }} />
+                            <RadioGroup name="loaiKyTongHop" onChange={(e: any) => {
+                                setloaiKyTongHop(e)
+                            }}>
+                                <FormControl>
+                                    <Radio value="ngay" checked={loaiKyTongHop === "ngay"} />
+                                    <FormControl.Label>Theo ngày</FormControl.Label>
+                                </FormControl>
+                                <FormControl>
+                                    <Radio value="thang" checked={loaiKyTongHop === "thang"} />
+                                    <FormControl.Label>Theo tháng</FormControl.Label>
+                                </FormControl>
+                                <FormControl>
+                                    <Radio value="quy" checked={loaiKyTongHop === "quy"} />
+                                    <FormControl.Label>Theo quý</FormControl.Label>
+                                </FormControl>
+                            </RadioGroup>
+                        </Box>
                         <Box display={"grid"} gridTemplateColumns={"1fr 1fr"}>
-                            {loaiKyTongHop !== "ngay" &&
+                            {loaiKyTongHop !== "ngay" ? (
                                 <FormControl>
                                     <TextInput type="number" min={0} value={nam} onChange={(e) => {
                                         setNam(parseInt(e.target.value))
@@ -190,53 +200,47 @@ const BangTongHopForm = () => {
                                     />
                                     <FormControl.Label>Năm</FormControl.Label>
                                 </FormControl>
-                            }
+                            ) : null}
                             <FormControl>
-                                {loaiKyTongHop === "ngay" &&
+                                <FormControl.Label>Kỳ tính thuế</FormControl.Label>
+                                {loaiKyTongHop === "ngay" ? (
                                     <TextInput type="date" value={ngay}
                                         onChange={(e) => {
                                             setNgay(e.target.value)
                                         }}
                                     />
-                                }
-                                {loaiKyTongHop === "thang" &&
+                                ) : loaiKyTongHop === "thang" ? (
                                     <ThangSelection value={thang}
                                         onValueChanged={(id) => {
                                             setThang(id)
                                         }}
                                     />
-                                }
-
-                                {loaiKyTongHop === "quy" &&
+                                ) : (
                                     <QuySelection value={quy}
                                         onValueChanged={(id) => {
                                             setQuy(id)
                                         }}
                                     />
-                                }
-
-                                <FormControl.Label>Kỳ tính thuế</FormControl.Label>
+                                )}
                             </FormControl>
                         </Box>
 
 
-                        <RadioGroup name="" sx={{ mt: 3 }} onChange={(value: any) => {
-                            setLanNop(value)
-                        }}>
-                            <RadioGroup.Label>Lần nộp</RadioGroup.Label>
-                            <FormControl>
+                        <Box sx={{ mt: 3 }}>
+                            <Text text="Lần nộp" sx={{ fontWeight: 600, mb: 2, display: "block" }} />
+                            <RadioGroup name="lanNop" onChange={(value: any) => {
+                                setLanNop(value)
+                            }}>
                                 <FormControl>
                                     <Radio value="lan_dau" checked={lanNop === "lan_dau"} />
                                     <FormControl.Label>Nộp lần đầu</FormControl.Label>
                                 </FormControl>
-                            </FormControl>
-                            <FormControl>
                                 <FormControl>
                                     <Radio value="bo_sung" checked={lanNop === "bo_sung"} />
                                     <FormControl.Label>Nộp bổ sung</FormControl.Label>
                                 </FormControl>
-                            </FormControl>
-                        </RadioGroup>
+                            </RadioGroup>
+                        </Box>
 
                         <FormControl>
                             <TextInput type="number" min={1} width={80}

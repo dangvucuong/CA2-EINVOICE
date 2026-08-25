@@ -1,34 +1,81 @@
 import { VideoIcon } from '@primer/octicons-react';
 import { Box, Link } from '@primer/react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { appInfo } from '../../AppInfo';
+import { mauHoaDonApi } from '../../api/hoa-don/mauHoaDonApi';
 import SelectBoxLoaiHoaDonCT from '../../component-data/selectbox-loai-hoa-don-ct';
 import Button from '../../component-ui/button';
 import FormGroupInline from '../../component-ui/form-group-inline';
 import Heading from '../../component-ui/heading';
 import PlaceHolder from '../../component-ui/place-holder';
 import Text from '../../component-ui/text';
+import { NotifyHelper } from '../../helpers/toast';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { ILoaiHoaDonCTTemplate } from '../../models/responses/hoa-don/ILoaiHoaDonCTTemplate';
 import { rootAction } from '../../state/actions/rootAction';
 import { eReducerStatusBase } from '../../state/reducer-models/eReducerStatusBase';
+
+export interface IMauHoaDonUploadXsltResult {
+    template: ILoaiHoaDonCTTemplate;
+    xslt_path: string;
+    file_name: string;
+}
+
 interface IMauHoaDonSelectTemplateProps {
-    onSelectionChanged: (data: ILoaiHoaDonCTTemplate) => void
+    onSelectionChanged: (data: ILoaiHoaDonCTTemplate) => void;
+    onUploadXsltContinue: (data: IMauHoaDonUploadXsltResult) => void;
 }
 
 const MauHoaDonSelectTemplate = (props: IMauHoaDonSelectTemplateProps) => {
     const [loaiHoaDonCTId, setLoaiHoaDonCTId] = useState(0);
+    const [isUploadingXslt, setIsUploadingXslt] = useState(false);
+    const xsltFileInputRef = useRef<HTMLInputElement>(null);
     const { loaiHoaDonCTTemplates, status } = useAppSelector(x => x.hoaDon.loaiHoaDonCTTemplateReducer)
     const dispatch = useAppDispatch();
     const loaiHoaDonCTTemplatesFiltered = useMemo(() => {
         return loaiHoaDonCTTemplates.filter(x => x.loai_hoa_don_ct_id === loaiHoaDonCTId || loaiHoaDonCTId === 0)
     }, [loaiHoaDonCTId, loaiHoaDonCTTemplates])
+
+    const defaultTemplateForLoai = useMemo(() => {
+        return loaiHoaDonCTTemplates.find(x => x.loai_hoa_don_ct_id === loaiHoaDonCTId);
+    }, [loaiHoaDonCTId, loaiHoaDonCTTemplates])
+
     useEffect(() => {
         if (status === eReducerStatusBase.is_not_initialization) {
             dispatch(rootAction.hoaDon.loaiHoaDonCTTemplateAction.loadStart())
         }
     }, [status])
+
+    const handleUploadXslt = async (file?: File) => {
+        if (!file) return;
+
+        if (loaiHoaDonCTId <= 0) {
+            NotifyHelper.Error("Vui lòng chọn loại hóa đơn trước khi upload XSLT");
+            return;
+        }
+
+        const template = defaultTemplateForLoai;
+        if (!template) {
+            NotifyHelper.Error("Không tìm thấy template cho loại hóa đơn đã chọn");
+            return;
+        }
+
+        setIsUploadingXslt(true);
+        const res = await mauHoaDonApi.uploadXslt(file);
+        setIsUploadingXslt(false);
+
+        if (res.is_success) {
+            NotifyHelper.Success("Upload file XSLT thành công");
+            props.onUploadXsltContinue({
+                template,
+                xslt_path: res.data.xslt_path,
+                file_name: res.data.file_name,
+            });
+        } else {
+            NotifyHelper.Error(res.message ?? "Upload file XSLT thất bại");
+        }
+    };
 
     return (
         <Box>
@@ -51,7 +98,13 @@ const MauHoaDonSelectTemplate = (props: IMauHoaDonSelectTemplateProps) => {
                     />
                 </Box>
             </Box>
-            <Box sx={{ mb: 3 }}>
+            <Box sx={{
+                mb: 3,
+                display: "flex",
+                alignItems: "flex-end",
+                gap: 3,
+                flexWrap: "wrap",
+            }}>
                 <FormGroupInline label='Chọn loại hóa đơn phù hợp'>
                     <SelectBoxLoaiHoaDonCT
                         value={loaiHoaDonCTId}
@@ -60,6 +113,32 @@ const MauHoaDonSelectTemplate = (props: IMauHoaDonSelectTemplateProps) => {
                         }}
                     />
                 </FormGroupInline>
+                <Box>
+                    <input
+                        ref={xsltFileInputRef}
+                        type="file"
+                        accept=".xslt"
+                        style={{ display: "none" }}
+                        onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                                handleUploadXslt(file);
+                            }
+                            e.target.value = "";
+                        }}
+                    />
+                    <Button
+                        text="Upload XSLT"
+                        variant="primary"
+                        size="large"
+                        type="button"
+                        disabled={loaiHoaDonCTId <= 0}
+                        isLoading={isUploadingXslt}
+                        onClick={() => {
+                            xsltFileInputRef.current?.click();
+                        }}
+                    />
+                </Box>
             </Box>
             <Box>
                 {status === eReducerStatusBase.is_loading && <PlaceHolder line_number={10} />}

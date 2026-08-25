@@ -7,7 +7,9 @@ using Common;
 using Contract.Service;
 using Contracts.Service.HoaDon;
 using Contracts.Service.Pdf;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Model.Static;
 using Model.Request.HoaDon;
 using Model.Respone.MauHoaDon;
 using Model.Table;
@@ -145,6 +147,47 @@ namespace WebApi.Controllers
         }
 
         /// <summary>
+        /// Upload file XSLT cho mẫu hóa đơn
+        /// </summary>
+        [HttpPost]
+        [Route("upload-xslt")]
+        [MustAuthorized]
+        public async Task<ContentResult> UploadXsltAsync(IFormFile form_file)
+        {
+            var user = this.GetUserInfo();
+            if (form_file == null || form_file.Length == 0)
+                return this.BadRequest("Vui lòng chọn file XSLT");
+
+            var extension = Path.GetExtension(form_file.FileName);
+            if (!string.Equals(extension, ".xslt", StringComparison.OrdinalIgnoreCase))
+                return this.BadRequest("File phải có định dạng .xslt");
+
+            var fileName = Path.GetFileName(form_file.FileName);
+            if (string.IsNullOrWhiteSpace(fileName))
+                return this.BadRequest("Tên file không hợp lệ");
+
+            var templateFolder = string.IsNullOrWhiteSpace(AppSettings.ContentRootPath)
+                ? Path.Combine("Template", user.donvi_ma_dv)
+                : Path.Combine(AppSettings.ContentRootPath, "Template", user.donvi_ma_dv);
+
+            if (!Directory.Exists(templateFolder))
+                Directory.CreateDirectory(templateFolder);
+
+            var destFile = Path.Combine(templateFolder, fileName);
+            using (var stream = new FileStream(destFile, FileMode.Create))
+            {
+                await form_file.CopyToAsync(stream);
+            }
+
+            var xsltPath = MauHoaDonService.ToRelativeContentPath(destFile);
+            return this.OK(new
+            {
+                xslt_path = xsltPath,
+                file_name = fileName
+            });
+        }
+
+        /// <summary>
         /// Thêm mẫu hóa đơn
         /// </summary>
         /// <remarks>
@@ -162,21 +205,31 @@ namespace WebApi.Controllers
             model.donvi_ma_dv = user.donvi_ma_dv;
             model.is_active = false;
             //
-            var mauHoaDonTemplate = await _serviceWrapper.HoaDon.LoaiHoaDonCTTemplate.SelectVmByIdAsync(model.loai_hoa_don_ct_template_id);
-            if (mauHoaDonTemplate != null)
+            var uploadedXsltPath = model.xslt_path.ConvertToString().Trim();
+            if (uploadedXsltPath != "")
             {
-                var sourceFile = MauHoaDonService.ResolveContentPath(mauHoaDonTemplate.path);
-                if (!System.IO.File.Exists(sourceFile))
-                    return this.BadRequest("Không tìm thấy file template XSLT");
-
-                var destFile = MauHoaDonService.BuildTemplateDestPath(model.donvi_ma_dv);
-                var destinationDirectory = Path.GetDirectoryName(destFile);
-                if (!Directory.Exists(destinationDirectory))
+                var uploadedFile = MauHoaDonService.ResolveContentPath(uploadedXsltPath);
+                if (!System.IO.File.Exists(uploadedFile))
+                    return this.BadRequest("Không tìm thấy file XSLT đã upload");
+            }
+            else
+            {
+                var mauHoaDonTemplate = await _serviceWrapper.HoaDon.LoaiHoaDonCTTemplate.SelectVmByIdAsync(model.loai_hoa_don_ct_template_id);
+                if (mauHoaDonTemplate != null)
                 {
-                    Directory.CreateDirectory(destinationDirectory);
+                    var sourceFile = MauHoaDonService.ResolveContentPath(mauHoaDonTemplate.path);
+                    if (!System.IO.File.Exists(sourceFile))
+                        return this.BadRequest("Không tìm thấy file template XSLT");
+
+                    var destFile = MauHoaDonService.BuildTemplateDestPath(model.donvi_ma_dv);
+                    var destinationDirectory = Path.GetDirectoryName(destFile);
+                    if (!Directory.Exists(destinationDirectory))
+                    {
+                        Directory.CreateDirectory(destinationDirectory);
+                    }
+                    System.IO.File.Copy(sourceFile, destFile, true);
+                    model.xslt_path = MauHoaDonService.ToRelativeContentPath(destFile);
                 }
-                System.IO.File.Copy(sourceFile, destFile, true);
-                model.xslt_path = MauHoaDonService.ToRelativeContentPath(destFile);
             }
             //
             model.id = await _mauHoaDonService.InsertAsync(model);
@@ -237,6 +290,16 @@ namespace WebApi.Controllers
                 obj.xslt_path = MauHoaDonService.ToRelativeContentPath(destFile);
             }
             //
+
+            var modelXsltPath = model.xslt_path.ConvertToString().Trim();
+            if (modelXsltPath != "")
+            {
+                var uploadedFile = MauHoaDonService.ResolveContentPath(modelXsltPath);
+                if (!System.IO.File.Exists(uploadedFile))
+                    return this.BadRequest("Không tìm thấy file XSLT đã upload");
+
+                obj.xslt_path = modelXsltPath;
+            }
 
             obj.name = model.name;
             obj.so_qd = model.so_qd;

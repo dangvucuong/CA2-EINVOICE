@@ -70,6 +70,11 @@ namespace Repository.Base
             return SqlMapper.QueryFirstOrDefaultAsync<T>(GetConnection(), sql, param, commandType: System.Data.CommandType.Text);
         }
 
+        public Task<IEnumerable<T>> SelectByQueryAsync<T>(string sql, DynamicParameters param)
+        {
+            return SqlMapper.QueryAsync<T>(GetConnection(), sql, param, commandType: CommandType.Text);
+        }
+
     }
 }
 
