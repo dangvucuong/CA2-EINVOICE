@@ -65,7 +65,8 @@ namespace Service.HoaDon
                 xsltContent = xsltContent.Replace("paramSign", "display:none");
             }
             xsltContent = xsltContent.Replace("{paramtiengiam}", hoaDon.giam_thue_ghi_chu.ConvertToString());
-            xsltContent = xsltContent.Replace("paramLogo", mauHoaDon.logo_path.ConvertToString());
+            xsltContent = xsltContent.Replace("paramLogo", ResolveLogoSrc(mauHoaDon.logo_path));
+            xsltContent = NormalizeEmptyLogoImages(xsltContent);
             xsltContent = xsltContent.Replace("paramMau", "display:none");
             xsltContent = xsltContent.Replace("paramNguoiCD", "display:none");
             xsltContent = xsltContent.Replace("paramChuyendoi", "display:none");
@@ -548,11 +549,11 @@ namespace Service.HoaDon
 
             if (mauHoaDon.is_show_wattermark_inner_table == true)
             {
-                html = ApplyWatermarkToHtml(html, mauHoaDon, mauHoaDon.logo_path.ConvertToString().Replace('\\', '/') ?? "");
+                html = ApplyWatermarkToHtml(html, mauHoaDon, mauHoaDon.logo_path);
             }
             else
             {
-                html = ApplyWatermarkToHtml(html, mauHoaDon, mauHoaDon.logo_path?.ConvertToString().Replace('\\', '/') ?? "");
+                html = ApplyWatermarkToHtml(html, mauHoaDon, mauHoaDon.logo_path);
             }
             if (mauHoaDon.vien_path.ConvertToString() != "")
             {
@@ -729,7 +730,8 @@ namespace Service.HoaDon
                 xsltContent = xsltContent.Replace("paramSign", "display:none");
             }
             xsltContent = xsltContent.Replace("{paramtiengiam}", hoaDon.giam_thue_ghi_chu.ConvertToString());
-            xsltContent = xsltContent.Replace("paramLogo", mauHoaDon.logo_path.ConvertToString());
+            xsltContent = xsltContent.Replace("paramLogo", ResolveLogoSrc(mauHoaDon.logo_path));
+            xsltContent = NormalizeEmptyLogoImages(xsltContent);
             // .Replace("paramChuyendoi", chuyenDoiParam != null ? "display:normal" : "display:none")
 
             //    .Replace("paramNguoiCD", chuyenDoiParam != null ? "width:100%;text-align:center;display:normal" : "width:100%;text-align:center;display:none")
@@ -1396,11 +1398,7 @@ namespace Service.HoaDon
            .Replace("paramqrcode", $"https://api.qrserver.com/v1/create-qr-code/?size=100x100&amp;data={hoaDon.CreateQRCode()}");
 
 
-            string transparentImg = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-
-            string logoSrc = !string.IsNullOrEmpty(mauHoaDon.logo_path?.ToString())
-             ? mauHoaDon.logo_path.ConvertToString().Replace('\\', '/')
-             : transparentImg; // <-- Nếu rỗng thì dùng ảnh trong suốt
+            string logoSrc = ResolveLogoSrc(mauHoaDon.logo_path);
 
             if (mauHoaDon.is_show_wattermark_inner_table == true)
             {
@@ -1543,11 +1541,7 @@ namespace Service.HoaDon
                .Replace("paramqrcode", $"https://api.qrserver.com/v1/create-qr-code/?size=100x100&amp;data={hoaDon.CreateQRCode()}");
 
 
-                string transparentImg = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-
-                string logoSrc = !string.IsNullOrEmpty(mauHoaDon.logo_path?.ToString())
-                 ? mauHoaDon.logo_path.ConvertToString().Replace('\\', '/')
-                 : transparentImg; // <-- Nếu rỗng thì dùng ảnh trong suốt
+                string logoSrc = ResolveLogoSrc(mauHoaDon.logo_path);
 
                 html = ApplyWatermarkToHtml(html, mauHoaDon, logoSrc);
                 if (mauHoaDon.vien_path.ConvertToString() != "")
@@ -1591,7 +1585,8 @@ namespace Service.HoaDon
                 xsltContent = xsltContent.Replace("paramSign", "display:none");
             }
             xsltContent = xsltContent.Replace("{paramtiengiam}", hoaDon.giam_thue_ghi_chu.ConvertToString());
-            xsltContent = xsltContent.Replace("paramLogo", mauHoaDon.logo_path.ConvertToString());
+            xsltContent = xsltContent.Replace("paramLogo", ResolveLogoSrc(mauHoaDon.logo_path));
+            xsltContent = NormalizeEmptyLogoImages(xsltContent);
             xsltContent = xsltContent.Replace("paramMau", "display:none");
             xsltContent = xsltContent.Replace("paramNguoiCD", "display:none");
             xsltContent = xsltContent.Replace("paramChuyendoi", "display:none");
@@ -1836,7 +1831,7 @@ namespace Service.HoaDon
 
         private static string ApplyMauHoaDonSettingsToXsltContent(string xsltContent, mau_hoa_don mauHoaDon)
         {
-            var logoSrc = mauHoaDon.logo_path.ConvertToString().Replace('\\', '/');
+            var logoSrc = ResolveLogoSrc(mauHoaDon.logo_path);
             var watermarkSrc = mauHoaDon.watermark_path.ConvertToString().Replace('\\', '/');
             var vienSrc = mauHoaDon.vien_path.ConvertToString().Replace('\\', '/');
             var watermarkOpacity = mauHoaDon.watermark_opacity ?? 50;
@@ -1846,6 +1841,7 @@ namespace Service.HoaDon
                 .Replace(",", ".");
 
             xsltContent = xsltContent.Replace("paramLogo", logoSrc);
+            xsltContent = NormalizeEmptyLogoImages(xsltContent);
             xsltContent = xsltContent.Replace("paramVien", vienSrc);
             xsltContent = xsltContent.Replace("paramOpacity;", paramOpacity);
             xsltContent = xsltContent
@@ -1868,6 +1864,41 @@ namespace Service.HoaDon
             xsltContent = MauHoaDonAdvancedSettingsHelper.ApplyToContent(xsltContent, mauHoaDon);
 
             return xsltContent;
+        }
+
+        /// <summary>
+        /// Ảnh GIF 1x1 trong suốt — dùng khi mẫu không có logo để tránh khung broken-image trên PDF.
+        /// </summary>
+        public const string TransparentLogoDataUri =
+            "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
+        public static string ResolveLogoSrc(string logoPath)
+        {
+            var logo = logoPath.ConvertToString().Replace('\\', '/').Trim();
+            return string.IsNullOrEmpty(logo) ? TransparentLogoDataUri : logo;
+        }
+
+        /// <summary>
+        /// Sửa thẻ img logo đã bị ghi src rỗng / còn placeholder paramLogo (mẫu cũ).
+        /// </summary>
+        public static string NormalizeEmptyLogoImages(string html)
+        {
+            if (string.IsNullOrEmpty(html))
+                return html;
+
+            html = Regex.Replace(
+                html,
+                @"(id\s*=\s*[""']imgSample[""'][^>]*?\bsrc\s*=\s*[""'])(?:paramLogo)?([""'])",
+                $"$1{TransparentLogoDataUri}$2",
+                RegexOptions.IgnoreCase);
+
+            html = Regex.Replace(
+                html,
+                @"(\bsrc\s*=\s*[""'])(?:paramLogo)?([""'][^>]*?\bid\s*=\s*[""']imgSample[""'])",
+                $"$1{TransparentLogoDataUri}$2",
+                RegexOptions.IgnoreCase);
+
+            return html;
         }
 
         /// <summary>
@@ -1952,11 +1983,12 @@ namespace Service.HoaDon
         private static string ApplyWatermarkToHtml(string html, mau_hoa_don mauHoaDon, string logoSrc)
         {
             var watermarkUrl = mauHoaDon.watermark_path?.ConvertToString().Replace('\\', '/') ?? "";
-            var logo = logoSrc ?? mauHoaDon.logo_path?.ConvertToString().Replace('\\', '/') ?? "";
+            var logo = ResolveLogoSrc(logoSrc ?? mauHoaDon.logo_path);
 
             if (mauHoaDon.is_show_wattermark_inner_table == true)
             {
                 html = html.Replace("{paramLogo}", logo);
+                html = html.Replace("paramLogo", logo);
                 html = html.Replace("{paramWaterMark}", "");
                 if (!string.IsNullOrEmpty(watermarkUrl))
                 {
@@ -1974,12 +2006,13 @@ namespace Service.HoaDon
             else
             {
                 html = html.Replace("{paramLogo}", logo);
+                html = html.Replace("paramLogo", logo);
                 html = html.Replace("{paramWaterMark}", watermarkUrl);
                 html = html.Replace("paramWaterMarkTable;", "");
                 html = html.Replace("paramTableBG", "");
             }
 
-            return html;
+            return NormalizeEmptyLogoImages(html);
         }
 
         private static void ApplyInnerTableWatermarkToXslt(

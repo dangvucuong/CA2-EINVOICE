@@ -1,3 +1,23 @@
+const TRANSPARENT_LOGO_DATA_URI =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
+const resolveLogoUrl = (logoUrl?: string) => {
+  const url = logoUrl?.replace(/\\/g, "/")?.trim() ?? "";
+  return url || TRANSPARENT_LOGO_DATA_URI;
+};
+
+const normalizeEmptyLogoImages = (html: string) => {
+  return html
+    .replace(
+      /(id\s*=\s*["']imgSample["'][^>]*?\bsrc\s*=\s*["'])(?:paramLogo)?(["'])/gi,
+      `$1${TRANSPARENT_LOGO_DATA_URI}$2`,
+    )
+    .replace(
+      /(\bsrc\s*=\s*["'])(?:paramLogo)?(["'][^>]*?\bid\s*=\s*["']imgSample["'])/gi,
+      `$1${TRANSPARENT_LOGO_DATA_URI}$2`,
+    );
+};
+
 export const applyMauHoaDonWatermarkToHtml = (
   html: string,
   options: {
@@ -9,10 +29,11 @@ export const applyMauHoaDonWatermarkToHtml = (
 ) => {
   let result = html;
   const watermarkUrl = options.watermarkUrl?.replace(/\\/g, "/") ?? "";
-  const logoUrl = options.logoUrl?.replace(/\\/g, "/") ?? "";
+  const logoUrl = resolveLogoUrl(options.logoUrl);
   const paramOpacity = `${1 - options.opacity / 100}`;
 
   result = result.replace(/\{paramLogo\}/g, logoUrl);
+  result = result.replace(/paramLogo/g, logoUrl);
 
   if (options.isShowWatterMarkInnerTable) {
     result = result.replace(/\{paramWaterMark\}/g, "");
@@ -46,5 +67,5 @@ export const applyMauHoaDonWatermarkToHtml = (
     );
   }
 
-  return result;
+  return normalizeEmptyLogoImages(result);
 };

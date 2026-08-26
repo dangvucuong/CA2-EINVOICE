@@ -113,14 +113,15 @@ namespace WebApi.Controllers
 
             if (mauHoaDon.is_show_wattermark_inner_table == true)
             {
-                html = html.Replace("{paramLogo}", mauHoaDon.logo_path.ConvertToString().Replace('\\', '/') ?? "")
+                html = html.Replace("{paramLogo}", MauHoaDonService.ResolveLogoSrc(mauHoaDon.logo_path))
                                 .Replace("paramWaterMarkTable;", mauHoaDon.watermark_path.ConvertToString().Replace('\\', '/') ?? "");
             }
             else
             {
-                html = html.Replace("{paramLogo}", mauHoaDon.logo_path?.ConvertToString().Replace('\\', '/') ?? "")
+                html = html.Replace("{paramLogo}", MauHoaDonService.ResolveLogoSrc(mauHoaDon.logo_path))
                                 .Replace("{paramWaterMark}", mauHoaDon.watermark_path?.ConvertToString().Replace('\\', '/') ?? "");
             }
+            html = MauHoaDonService.NormalizeEmptyLogoImages(html);
             if (mauHoaDon.vien_path.ConvertToString() != "")
             {
                 html = html.Replace("{paramVien}", mauHoaDon.vien_path?.ConvertToString().Replace('\\', '/') ?? "");
