@@ -1,4 +1,4 @@
-import { HubConnectionBuilder } from "@microsoft/signalr";
+import { HubConnectionBuilder, HubConnectionState } from "@microsoft/signalr";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { appInfo } from "../AppInfo";
 import { useAuth } from "../hooks/useAuth";
@@ -24,14 +24,10 @@ const HubProvider = ({ children }: HubContextType) => {
     _connectionServer: connectionServer,
   };
   useEffect(() => {
-    if (user) {
+    if (user?.user_id) {
       const domain = appInfo.baseApiURL.includes("http")
         ? appInfo.baseApiURL.replace("/api", "")
         : window.location.origin;
-      //   console.log({
-      //     hubDomainServer: domain,
-      //     user,
-      //   });
 
       const newConnection = new HubConnectionBuilder()
         .withUrl(domain + "/hubs/process?userId=" + user.user_id.toString())
@@ -39,36 +35,54 @@ const HubProvider = ({ children }: HubContextType) => {
         .build();
 
       setConnectionServer(newConnection);
+    } else {
+      setConnectionServer(null);
     }
-  }, [user]);
+  }, [user?.user_id]);
 
   useEffect(() => {
-    if (connectionServer) {
-      connectionServer
-        .start()
-        .then((result: any) => {
-          setIsConnected(true);
-        })
-        .catch((e: any) => {
-          //  console.log("connectionServer failed: ", e);
-          const intervalId = setInterval(() => {
-            //  console.log("Try reconnect connectionServer");
-            if (connectionServer) {
-              try {
-                connectionServer.start().done(function () {
-                  setIsConnected(true);
-                  clearInterval(intervalId);
-                });
-              } catch (error) {}
-            }
-          }, reConnectTime);
-        });
-    }
-    return () => {
-      if (connectionServer) {
-        connectionServer.stop();
-        setIsConnected(false);
+    if (!connectionServer) return;
+
+    let cancelled = false;
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+
+    const tryStart = async () => {
+      if (cancelled || !connectionServer) return false;
+
+      if (connectionServer.state === HubConnectionState.Connected) {
+        setIsConnected(true);
+        return true;
       }
+
+      // Chỉ start khi Disconnected — tránh lỗi "Cannot start a HubConnection..."
+      if (connectionServer.state !== HubConnectionState.Disconnected) {
+        return false;
+      }
+
+      try {
+        await connectionServer.start();
+        if (!cancelled) setIsConnected(true);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    };
+
+    tryStart().then((ok) => {
+      if (ok || cancelled) return;
+      intervalId = setInterval(async () => {
+        const success = await tryStart();
+        if (success && intervalId) clearInterval(intervalId);
+      }, reConnectTime);
+    });
+
+    return () => {
+      cancelled = true;
+      if (intervalId) clearInterval(intervalId);
+      if (connectionServer) {
+        connectionServer.stop().catch(() => {});
+      }
+      setIsConnected(false);
     };
   }, [connectionServer]);
 

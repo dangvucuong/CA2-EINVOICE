@@ -6,5 +6,6 @@ namespace Contracts.Repository.Category
     public interface IDonViMuaChuKySoRepository : ICRUDRepository<donvi_mua_chukyso>
     {
         Task<IEnumerable<donvi_mua_chukyso>> SelectByDonViAsync(string donvi_ma_dv);
+        Task<donvi_mua_chukyso> SelectByMstAndTransactionIdAsync(string donvi_mst, string transaction_id);
     }
 }

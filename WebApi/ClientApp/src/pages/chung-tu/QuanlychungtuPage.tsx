@@ -266,7 +266,7 @@ const QuanlychungtuPage = () => {
       <kyhieu>${payload?.ky_hieu}</kyhieu>
       <tungay>${payload?.tu_ngay}</tungay>
       <denngay>${payload?.den_ngay}</denngay>
-      <soct></soct>
+      <sochungtu></sochungtu>
       <matracuu></matracuu>
       <madonvi>${user?.donvi?.ma_dv}</madonvi>
     </${apiName}>
@@ -901,9 +901,13 @@ const QuanlychungtuPage = () => {
                 fileName={`Danh_sach_chung_tu`}
                 formatDataFunction={(data) => {
                   return data.map((x) => {
+                    // Backend trả cột NgaylapCT từ bảng ChungtuthueTNCN
+                    const ngayLap = x?.NgaylapCT ?? x?.NgayLapCT ?? x?.ngaylapCT;
                     return {
                       "Mã chứng từ": x?.MaCT,
-                      "Ngày lập": moment(x?.NgayLapCT).format("DD/MM/YYYY"),
+                      "Ngày lập": ngayLap
+                        ? moment(ngayLap).format("DD/MM/YYYY")
+                        : "",
                       "Số chứng từ": x?.Sochungtu,
                       "Mã số thuế": x?.MasothueNNT,
                       "Tên người nộp thuế": x?.TenNNT,

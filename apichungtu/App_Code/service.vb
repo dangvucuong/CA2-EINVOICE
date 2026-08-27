@@ -6129,21 +6129,28 @@ Public Class service
             Dim khchungtu As String = String.Empty
             Dim sochungtu As String = String.Empty
             Dim base64xml As String = String.Empty
+            Dim masothueTc As String = String.Empty
             Dim Ghichu As String = String.Empty
+            Dim found As Boolean = False
             '====Load thong tin hoa don====
             Dim conn As New SqlConnection(connectionString)
             conn.Open()
             Dim comm As New SqlCommand()
             comm.Connection = conn
-            comm.CommandText = "Select MasothueTC, TinhtrangCT, MSChungtu,KHChungtu,Sochungtu, XMLChungtu from ChungtuthueTNCN where MaCT = '" & machungtu & "'"
+            comm.CommandText = "Select MasothueTC, TinhtrangCT, MSChungtu,KHChungtu,Sochungtu, XMLChungtu from ChungtuthueTNCN where MaCT = @MaCT"
+            comm.Parameters.Add("@MaCT", SqlDbType.Int).Value = Convert.ToInt32(machungtu)
             Dim reader As SqlDataReader = comm.ExecuteReader
             If reader.HasRows Then
                 While reader.Read
-                    trangthaihd = reader("TinhtrangCT")
-                    mschungtu = reader("MSChungtu")
-                    khchungtu = reader("KHChungtu")
-                    sochungtu = reader("Sochungtu")
-                    base64xml = reader("XMLChungtu")
+                    found = True
+                    masothueTc = reader("MasothueTC").ToString()
+                    trangthaihd = reader("TinhtrangCT").ToString()
+                    mschungtu = reader("MSChungtu").ToString()
+                    khchungtu = reader("KHChungtu").ToString()
+                    sochungtu = reader("Sochungtu").ToString()
+                    If Not IsDBNull(reader("XMLChungtu")) Then
+                        base64xml = reader("XMLChungtu").ToString()
+                    End If
                 End While
             End If
             reader.Close()
@@ -6152,7 +6159,84 @@ Public Class service
             conn.Dispose()
             SqlConnection.ClearAllPools()
 
-            Dim content = loadcontent(madonvi, base64xml, trangthaihd, mschungtu, machungtu, khchungtu, sochungtu)
+            If Not found Then
+                response("status") = "error"
+                response("message") = "Không tìm thấy chứng từ"
+                Return JsonConvert.SerializeObject(response)
+            End If
+
+            ' Ưu tiên MST từ DB theo MaCT; cho phép madonvi rỗng (tra cứu public)
+            Dim mstLoad As String = If(String.IsNullOrEmpty(madonvi), masothueTc, madonvi)
+            Dim content = loadcontent(mstLoad, base64xml, trangthaihd, mschungtu, machungtu, khchungtu, sochungtu)
+
+            response("status") = "success"
+            response("data") = content
+        Catch ex As Exception
+            response("status") = "error"
+            response("message") = ex.Message
+        End Try
+
+        Return JsonConvert.SerializeObject(response)
+
+    End Function
+
+    ''' <summary>
+    ''' Tra cứu chứng từ public theo Matracuu (không cần đăng nhập / madonvi).
+    ''' </summary>
+    <WebMethod()>
+    Public Function XemChungTuTheoMaTraCuu(matracuu As String) As String
+        Dim response As New Dictionary(Of String, Object)()
+
+        Try
+            If String.IsNullOrWhiteSpace(matracuu) Then
+                response("status") = "error"
+                response("message") = "Vui lòng nhập mã tra cứu"
+                Return JsonConvert.SerializeObject(response)
+            End If
+
+            Dim trangthaihd As String = String.Empty
+            Dim mschungtu As String = String.Empty
+            Dim khchungtu As String = String.Empty
+            Dim sochungtu As String = String.Empty
+            Dim base64xml As String = String.Empty
+            Dim masothueTc As String = String.Empty
+            Dim machungtu As String = String.Empty
+            Dim found As Boolean = False
+
+            Dim conn As New SqlConnection(connectionString)
+            conn.Open()
+            Dim comm As New SqlCommand()
+            comm.Connection = conn
+            comm.CommandText = "Select MaCT, MasothueTC, TinhtrangCT, MSChungtu, KHChungtu, Sochungtu, XMLChungtu from ChungtuthueTNCN where Matracuu = @Matracuu"
+            comm.Parameters.Add("@Matracuu", SqlDbType.NVarChar, 100).Value = matracuu.Trim()
+            Dim reader As SqlDataReader = comm.ExecuteReader
+            If reader.HasRows Then
+                While reader.Read
+                    found = True
+                    machungtu = reader("MaCT").ToString()
+                    masothueTc = reader("MasothueTC").ToString()
+                    trangthaihd = reader("TinhtrangCT").ToString()
+                    mschungtu = reader("MSChungtu").ToString()
+                    khchungtu = reader("KHChungtu").ToString()
+                    sochungtu = reader("Sochungtu").ToString()
+                    If Not IsDBNull(reader("XMLChungtu")) Then
+                        base64xml = reader("XMLChungtu").ToString()
+                    End If
+                End While
+            End If
+            reader.Close()
+            conn.Close()
+            comm.Dispose()
+            conn.Dispose()
+            SqlConnection.ClearAllPools()
+
+            If Not found Then
+                response("status") = "error"
+                response("message") = "Không tìm thấy chứng từ"
+                Return JsonConvert.SerializeObject(response)
+            End If
+
+            Dim content = loadcontent(masothueTc, base64xml, trangthaihd, mschungtu, machungtu, khchungtu, sochungtu)
 
             response("status") = "success"
             response("data") = content

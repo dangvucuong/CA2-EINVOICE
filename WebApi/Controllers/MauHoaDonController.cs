@@ -152,7 +152,7 @@ namespace WebApi.Controllers
         /// </summary>
         [HttpPost]
         [Route("upload-xslt")]
-        [MustAuthorized]
+        [MustAuthorized("[POST]api/mau-hoa-don")]
         public async Task<ContentResult> UploadXsltAsync(IFormFile form_file)
         {
             var user = this.GetUserInfo();

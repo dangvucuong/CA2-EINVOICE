@@ -1,15 +1,13 @@
 import { Box } from "@primer/react";
 
 import { UnderlineNav } from "@primer/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Helmet } from "react-helmet";
-import { Link, useHistory, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Heading from "../../component-ui/heading";
 import LoginMST from "./LoginMST";
 import LoginPW from "./LoginPW";
 import LoginRS from "./LoginRS";
-import Text from "../../component-ui/text";
-import Button from "../../component-ui/button";
 
 const cardStyle = {
   flex: 1,
@@ -35,20 +33,7 @@ const cardStyle = {
 
 const LoginPage = () => {
   const [loginMode, setLoginMode] = useState<"mst" | "pw" | "rs">("pw");
-  const location = useLocation<any>();
-  const [showLoginForm, setShowLoginForm] = useState(
-    // () => !!location.state?.showLoginForm
-    true
-  );
-
-  const history = useHistory();
-
-  // Clear state sau khi khởi tạo state trong component
-  // useEffect(() => {
-  //   if (location.state?.showLoginForm) {
-  //     history.replace({ ...location, state: {} });
-  //   }
-  // }, [location, history]);
+  const [showLoginForm, setShowLoginForm] = useState(true);
 
   return (
     <>
@@ -178,56 +163,42 @@ const LoginPage = () => {
           </Box>
         )}
 
-        <Box>
-          <UnderlineNav
-            aria-label="Others"
-            sx={{
-              width: "100%",
-              alignItems: "center",
-              justifyContent: "center",
-              borderBottom: "none",
-            }}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 3,
+            mt: 2,
+            flexWrap: "wrap",
+          }}
+        >
+          <a
+            href="https://hsdt.nacencomm.vn/downloads/setup.msi"
+            target="_blank"
+            rel="noreferrer"
+            style={{ textDecoration: "none", color: "#0969da", fontWeight: 600 }}
           >
-            <UnderlineNav.Item
-              href="https://hsdt.nacencomm.vn/downloads/setup.msi"
-              target="_blank"
-              sx={{
-                flex: 1,
-              }}
-            >
-              Bộ cài ký số
-            </UnderlineNav.Item>
-            <Link
-              to={"../../tra-cuu"}
-              style={{
-                textDecoration: "none",
-              }}
-            >
-              <UnderlineNav.Item
-                href="#"
-                sx={{
-                  flex: 1,
-                }}
-              >
-                Tra cứu
-              </UnderlineNav.Item>
-            </Link>
-            <Link
-              to={"../../register"}
-              style={{
-                textDecoration: "none",
-              }}
-            >
-              <UnderlineNav.Item
-                href="#"
-                sx={{
-                  flex: 1,
-                }}
-              >
-                Đăng ký
-              </UnderlineNav.Item>
-            </Link>
-          </UnderlineNav>
+            Bộ cài ký số
+          </a>
+          <Link
+            to="/tra-cuu"
+            style={{ textDecoration: "none", color: "#0969da", fontWeight: 600 }}
+          >
+            Tra cứu
+          </Link>
+          <Link
+            to="/tra-cuu-chung-tu"
+            style={{ textDecoration: "none", color: "#0969da", fontWeight: 600 }}
+          >
+            Tra cứu chứng từ
+          </Link>
+          <Link
+            to="/register"
+            style={{ textDecoration: "none", color: "#0969da", fontWeight: 600 }}
+          >
+            Đăng ký
+          </Link>
         </Box>
       </Box>
     </>

@@ -98,10 +98,12 @@ function App() {
                 <AuthorizedContent />
               </HubProvider>
             </>}
-            {!user && status &&
+            {/* status có thể undefined lúc khởi tạo; enum is_getting_profile = 0 (falsy) đã được chặn bằng Loader ở trên */}
+            {!user && (
               <HubPublicProvider>
                 <PublicContent />
-              </HubPublicProvider>}
+              </HubPublicProvider>
+            )}
           </BaseStyles>
         </CommonProvider>
       </ThemeProvider>

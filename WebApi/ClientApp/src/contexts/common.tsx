@@ -1,4 +1,4 @@
-import { HubConnectionBuilder } from "@microsoft/signalr";
+import { HubConnectionBuilder, HubConnectionState } from "@microsoft/signalr";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
 import { ToastContainer } from "react-toastify";
@@ -62,7 +62,7 @@ const CommonProvider = ({ children }: CommonContextType) => {
 
   const [connectionServer, setConnectionServer] = useState<any>(null);
   useEffect(() => {
-    if (user) {
+    if (user?.user_id) {
       const domain = appInfo.baseApiURL.includes("http")
         ? appInfo.baseApiURL.replace("/api", "")
         : window.location.origin;
@@ -74,7 +74,7 @@ const CommonProvider = ({ children }: CommonContextType) => {
         .withUrl(
           domain +
           "/hubs/hoa-don?userId=" +
-          user?.user_id.toString() +
+          user.user_id.toString() +
           "&donVi=" +
           user?.donvi_ma_dv
         )
@@ -82,32 +82,54 @@ const CommonProvider = ({ children }: CommonContextType) => {
         .build();
 
       setConnectionServer(newConnection);
+    } else {
+      setConnectionServer(null);
     }
-  }, [user]);
+  }, [user?.user_id, user?.donvi_ma_dv]);
   useEffect(() => {
-    if (connectionServer) {
-      connectionServer
-        .start()
-        .then((result: any) => {
-          console.log("ConnectionServer Connected!");
+    if (!connectionServer) return;
 
-        })
-        .catch((e: any) => {
-          console.log("connectionServer failed: ", e);
-          const intervalId = setInterval(() => {
-            console.log("Try reconnect connectionServer");
-            if (connectionServer) {
-              try {
-                connectionServer.start().done(function () {
-                  clearInterval(intervalId);
-                });
-              } catch (error) { }
-            }
-          }, reConnectTime);
-        });
-    }
+    let cancelled = false;
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+
+    const tryStart = async () => {
+      if (cancelled || !connectionServer) return false;
+
+      if (connectionServer.state === HubConnectionState.Connected) {
+        console.log("ConnectionServer Connected!");
+        return true;
+      }
+
+      // Chỉ start khi Disconnected — tránh lỗi "Cannot start a HubConnection..."
+      if (connectionServer.state !== HubConnectionState.Disconnected) {
+        return false;
+      }
+
+      try {
+        await connectionServer.start();
+        if (!cancelled) console.log("ConnectionServer Connected!");
+        return true;
+      } catch (e) {
+        console.log("connectionServer failed: ", e);
+        return false;
+      }
+    };
+
+    tryStart().then((ok) => {
+      if (ok || cancelled) return;
+      intervalId = setInterval(async () => {
+        console.log("Try reconnect connectionServer");
+        const success = await tryStart();
+        if (success && intervalId) clearInterval(intervalId);
+      }, reConnectTime);
+    });
+
     return () => {
-      if (connectionServer) connectionServer.stop();
+      cancelled = true;
+      if (intervalId) clearInterval(intervalId);
+      if (connectionServer) {
+        connectionServer.stop().catch(() => {});
+      }
     };
   }, [connectionServer]);
   useEffect(() => {
