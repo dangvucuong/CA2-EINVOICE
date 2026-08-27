@@ -1,16 +1,15 @@
 import { IssueClosedIcon } from "@primer/octicons-react";
 import { Box, Label, ProgressBar, Spinner, useConfirm } from "@primer/react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { hoaDonApi } from "../../api/hoa-don/hoaDonApi";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Button from "../../component-ui/button";
 import Modal from "../../component-ui/modal";
 import ModalActions from "../../component-ui/modal/ModalActions";
 import { useCommonContext } from "../../contexts/common";
 import { NotifyHelper } from "../../helpers/toast";
-import { useAuth } from "../../hooks/useAuth";
 import { eHoaDonTrangThai } from "../../models/commons/eHoaDonTrangThai";
 import { IHoaDonPhatHanhPushNotifyModel } from "../../models/responses/hub/IHoaDonPhatHanhPushNotifyModel";
 import { hoaDonKyLoApi } from "../../api/hoa-don/hoaDonKyLoApi";
+
 interface IHoaDonKySoPhatHanhMultipleRSProps {
   ids: number[];
   onClose: () => void;
@@ -18,32 +17,88 @@ interface IHoaDonKySoPhatHanhMultipleRSProps {
   title?: string;
   isHoaDonCungNgay?: boolean;
 }
+
+interface IHoaDonKySoTrackItem {
+  id: number;
+  status_id: number;
+  code?: string;
+  xml_base64?: string;
+}
+
+const mapTrangThaiToStatusId = (trangThaiId: number): number => {
+  if (trangThaiId === eHoaDonTrangThai.CHUA_GUI_CQT) return 2;
+  if (
+    trangThaiId ===
+    eHoaDonTrangThai.DA_GUI_LEN_CQT_CHUA_PHAN_HOI_KIEM_TRA_DU_LIEU
+  )
+    return 3;
+  if (trangThaiId === eHoaDonTrangThai.DA_PHAT_HANH) return 4;
+  if (
+    trangThaiId === eHoaDonTrangThai.KHONG_HOP_LE ||
+    trangThaiId === eHoaDonTrangThai.LOI_THONG_DIEP
+  )
+    return 5;
+  return 0;
+};
+
 const HoaDonKySoPhatHanhMultipleRS = (
   props: IHoaDonKySoPhatHanhMultipleRSProps
 ) => {
   const { title = "Ký số và gửi cấp mã", isHoaDonCungNgay = true } = props;
   const [isCreatingXml, setIsCreatingXml] = useState(false);
   const [isShowProgess, setIsShowProgess] = useState(false);
-  const {
-    _signalrHubProxy,
-    _signalrConnected,
-    createUUID,
-    signalRConnectionServer,
-  } = useCommonContext();
-  const { user } = useAuth();
+  const { createUUID, signalRConnectionServer } = useCommonContext();
   const [reRenderKey, setReRenderkey] = useState("");
 
-  const _refHoaDon = useRef<any[]>([]);
+  const _refHoaDon = useRef<IHoaDonKySoTrackItem[]>([]);
+  const _signedBatchNotifiedRef = useRef(false);
+  const _finalBatchNotifiedRef = useRef(false);
+
+  const initTrackingList = useCallback(() => {
+    _refHoaDon.current = props.ids.map((x) => ({
+      id: x,
+      status_id: 0,
+    }));
+    _signedBatchNotifiedRef.current = false;
+    _finalBatchNotifiedRef.current = false;
+    setReRenderkey(createUUID());
+  }, [props.ids, createUUID]);
 
   useEffect(() => {
-    _refHoaDon.current = props.ids.map((x) => {
-      return {
-        id: x,
-        status_id: 0,
-      };
-    });
-    setReRenderkey(createUUID());
-  }, [props.ids]);
+    initTrackingList();
+  }, [initTrackingList]);
+
+  const notifyBatchProgress = useCallback(() => {
+    const items = _refHoaDon.current;
+    const total = items.length;
+    if (total === 0) return;
+
+    const signedCount = items.filter((x) => x.status_id >= 2).length;
+    const publishedCount = items.filter((x) => x.status_id === 4).length;
+    const errorCount = items.filter((x) => x.status_id === 5).length;
+    const allSigned = items.every((x) => x.status_id >= 2);
+    const allTerminal = items.every(
+      (x) => x.status_id === 4 || x.status_id === 5
+    );
+
+    if (allSigned && !_signedBatchNotifiedRef.current) {
+      _signedBatchNotifiedRef.current = true;
+      NotifyHelper.Success(`Đã ký số ${signedCount}/${total} hóa đơn.`);
+    }
+
+    if (allTerminal && !_finalBatchNotifiedRef.current) {
+      _finalBatchNotifiedRef.current = true;
+      if (errorCount > 0) {
+        NotifyHelper.Error(
+          `Hoàn tất: ${publishedCount} phát hành thành công, ${errorCount} hóa đơn lỗi.`
+        );
+      } else {
+        NotifyHelper.Success(
+          `Phát hành thành công ${publishedCount}/${total} hóa đơn.`
+        );
+      }
+    }
+  }, []);
 
   const confirm = useConfirm();
 
@@ -53,50 +108,55 @@ const HoaDonKySoPhatHanhMultipleRS = (
       return;
     }
 
-    // if (props.isKhacNgay) {
-    //     if (!await confirm({
-    //         content: "Tồn tại hóa đơn có ngày hóa đơn khác ngày ký, Anh/Chị có chắc chắn muốn ký số hóa đơn này?",
-    //         title: "Lưu ý",
-    //         cancelButtonContent: "Không ký",
-    //         confirmButtonContent: "Tiếp tục ký số",
-    //         confirmButtonType: "danger"
-    //     })) {
-    //         return;
-    //     }
-    // }
     setIsShowProgess(true);
     setIsCreatingXml(true);
-    const res = await hoaDonKyLoApi.createXmlKySos({
-      ids: props.ids,
-      progress_id: "",
-    });
-    // setIsCreatingXml(false)
-    if (res.is_success) {
-      const errRes = (res.data ?? []).filter((x: any) => x.is_success === false);
-      if (errRes.length > 0) {
-        NotifyHelper.Error(errRes[0]?.message ?? "Có hóa đơn không tạo được XML ký số");
-      }
-      _refHoaDon.current = (res.data ?? [])
-        .filter((x: any) => x.is_success !== false && x.xml_base64)
-        .map((x: any) => {
-        return {
-          ...x,
-          status_id: 1,
-          code: createUUID().replace(/-/g, ""),
-        };
+    try {
+      const res = await hoaDonKyLoApi.createXmlKySos({
+        ids: props.ids,
+        progress_id: "",
       });
-      setReRenderkey(createUUID());
-      // SendToToolKySo()
-    } else {
-      NotifyHelper.Error(res.message ?? "Ký số phát hành thất bại");
+
+      if (res.is_success) {
+        const errRes = (res.data ?? []).filter(
+          (x: any) => x.is_success === false
+        );
+        if (errRes.length > 0) {
+          NotifyHelper.Error(
+            errRes[0]?.message ?? "Có hóa đơn không tạo được XML ký số"
+          );
+        }
+
+        const successItems = (res.data ?? []).filter(
+          (x: any) => x.is_success !== false && x.xml_base64
+        );
+
+        if (successItems.length > 0) {
+          _refHoaDon.current = successItems.map((x: any) => ({
+            ...x,
+            status_id: 1,
+            code: createUUID().replace(/-/g, ""),
+          }));
+        } else {
+          // RS nền / MTT bảng kê: API trả data rỗng — giữ danh sách theo dõi
+          _refHoaDon.current = props.ids.map((id) => ({
+            id,
+            status_id: 1,
+          }));
+          NotifyHelper.Success(
+            "Đã gửi yêu cầu ký số. Vui lòng xác nhận trên ứng dụng Remote Signing."
+          );
+        }
+        setReRenderkey(createUUID());
+      } else {
+        NotifyHelper.Error(res.message ?? "Ký số phát hành thất bại");
+      }
+    } finally {
+      setIsCreatingXml(false);
     }
   };
 
   const progressSource = useMemo(() => {
-    console.log({
-      xxxx: _refHoaDon.current,
-    });
-
+    const total = _refHoaDon.current.length || 1;
     const result = [
       {
         id: 2,
@@ -129,69 +189,40 @@ const HoaDonKySoPhatHanhMultipleRS = (
     ];
     return result
       .filter((x) => x.id > 0 || x.count > 0)
-      .map((x) => {
-        return {
-          ...x,
-          per: (x.count * 100) / _refHoaDon.current.length,
-        };
-      });
+      .map((x) => ({
+        ...x,
+        per: (x.count * 100) / total,
+      }));
   }, [_refHoaDon.current, reRenderKey]);
 
   useEffect(() => {
-    if (signalRConnectionServer) {
-      signalRConnectionServer.on(
-        "THONG_DIEP_HAS_RESULT",
-        (message: IHoaDonPhatHanhPushNotifyModel) => {
-          console.log({
-            THONG_DIEP_HAS_RESULT: message,
-          });
-          if (_refHoaDon.current.find((y: any) => y.id === message.id)) {
-            // const random:number = Math.floor(Math.random() * 10) + 1;
-            // setTimeout (()=>{
-            _refHoaDon.current = _refHoaDon.current.map((x: any) => {
-              if (x.id === message.id) {
-                let status_id = 0;
-                if (
-                  message.hoa_don_trang_thai_id ===
-                  eHoaDonTrangThai.CHUA_GUI_CQT
-                )
-                  status_id = 2;
-                if (
-                  message.hoa_don_trang_thai_id ===
-                  eHoaDonTrangThai.DA_GUI_LEN_CQT_CHUA_PHAN_HOI_KIEM_TRA_DU_LIEU
-                )
-                  status_id = 3;
-                if (
-                  message.hoa_don_trang_thai_id ===
-                  eHoaDonTrangThai.DA_PHAT_HANH
-                )
-                  status_id = 4;
-                if (
-                  message.hoa_don_trang_thai_id ===
-                  eHoaDonTrangThai.KHONG_HOP_LE
-                )
-                  status_id = 5;
-                if (
-                  message.hoa_don_trang_thai_id ===
-                  eHoaDonTrangThai.LOI_THONG_DIEP
-                )
-                  status_id = 5;
-                return {
-                  ...x,
-                  status_id: status_id,
-                };
-              }
-              return {
-                ...x,
-              };
-            });
-            setReRenderkey(createUUID());
-            // },random*1000)
-          }
-        }
-      );
-    }
-  }, [signalRConnectionServer]);
+    if (!signalRConnectionServer) return;
+
+    const handler = (message: IHoaDonPhatHanhPushNotifyModel) => {
+      if (!_refHoaDon.current.find((y) => y.id === message.id)) return;
+
+      const status_id = mapTrangThaiToStatusId(message.hoa_don_trang_thai_id);
+      _refHoaDon.current = _refHoaDon.current.map((x) => {
+        if (x.id !== message.id) return x;
+        return { ...x, status_id };
+      });
+
+      if (status_id === 5 && message.ket_qua_phat_hanh) {
+        NotifyHelper.Error(
+          message.ket_qua_phat_hanh || "Phát hành hóa đơn thất bại"
+        );
+      }
+
+      setReRenderkey(createUUID());
+      notifyBatchProgress();
+    };
+
+    signalRConnectionServer.on("THONG_DIEP_HAS_RESULT", handler);
+    return () => {
+      signalRConnectionServer.off("THONG_DIEP_HAS_RESULT", handler);
+    };
+  }, [signalRConnectionServer, notifyBatchProgress]);
+
   return (
     <Box>
       <Button
@@ -269,7 +300,6 @@ const HoaDonKySoPhatHanhMultipleRS = (
                     flex: 1,
                     display: "grid",
                     gap: 2,
-                    // justifyContent: "space-between"
                   }}
                 >
                   {progressSource
