@@ -124,11 +124,15 @@ namespace Service.HoaDon
                 userSerialInfo = await _serviceWrapper.User.User.SelectByIdAsync(userId);
 
             }
+            if (userSerialInfo == null)
+            {
+                throw new InvalidOperationException("Không tìm thấy thông tin tài khoản ký số. Vui lòng đăng nhập lại.");
+            }
             var processStatusModel = request.progress_id.ConvertToString() != "" ? new ProcessStatusRespone<ProcessStepDataBase>() : null;
             var processChangedModel = request.progress_id.ConvertToString() != "" ? new ProcessChangedModel() : null;
             if (processStatusModel != null)
             {
-                processChangedModel = await CreateXmlStatusIniAsync(request.progress_id, processStatusModel, userId.ToString(), request.ids.Count);
+                processChangedModel = await CreateXmlStatusIniAsync(request.progress_id, processStatusModel, userId.ToString(), request.ids?.Count ?? 0);
             }
             var lockStatus = new SemaphoreSlim(1, 1);
 
@@ -212,7 +216,7 @@ namespace Service.HoaDon
                 await _processHub.OnProcessChangedAsync(processChangedModel);
                 if (lockStatus != null) lockStatus.Release();
             }
-            if (kySoRemoteSigningResult.is_success)
+            if (kySoRemoteSigningResult != null && kySoRemoteSigningResult.is_success)
             {
                 //phát hành
                 FunctionResult<HoaDonPhatHanhRespone> phatHanhResult = null;
@@ -790,15 +794,23 @@ namespace Service.HoaDon
                 userSerialInfo = await _serviceWrapper.User.User.SelectByIdAsync(userId);
 
             }
+            if (userSerialInfo == null)
+            {
+                throw new InvalidOperationException("Không tìm thấy thông tin tài khoản ký số. Vui lòng đăng nhập lại.");
+            }
 
             var processStatusModel = request.progress_id.ConvertToString() != "" ? new ProcessStatusRespone<ProcessStepDataBase>() : null;
             var processChangedModel = request.progress_id.ConvertToString() != "" ? new ProcessChangedModel() : null;
             if (processStatusModel != null)
             {
-                processChangedModel = await CreateXmlStatusIniAsync(request.progress_id, processStatusModel, userId.ToString(), request.ids.Count);
+                processChangedModel = await CreateXmlStatusIniAsync(request.progress_id, processStatusModel, userId.ToString(), request.ids?.Count ?? 0);
             }
             var lockStatus = new SemaphoreSlim(1, 1);
             var base64BangKe = await this.CreateXmlsMTTBangKeAsync(hoaDonsMTT, lockStatus, processChangedModel);
+            if (base64BangKe.ConvertToString() == string.Empty)
+            {
+                throw new InvalidOperationException("Không tạo được XML bảng kê MTT để ký số. Vui lòng kiểm tra dữ liệu hóa đơn.");
+            }
 
             ProcessStatusRespone<ProcessStepDataBase> processStatus = null;
             if (processChangedModel != null)
@@ -814,7 +826,7 @@ namespace Service.HoaDon
                 await KySoRemoteSigningThenPhatHanhBackgroundListBangKeAsync(hoaDonsMTT, base64BangKe, userSerialInfo.serial_number, lockStatus, processChangedModel);
                 return result;
             }
-            else
+            else if (userSerialInfo.is_hsm_signing)
             {
 
                 if (base64BangKe.ConvertToString() != string.Empty)

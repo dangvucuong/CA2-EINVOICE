@@ -182,6 +182,10 @@ namespace Model.Static
         public string DocSoWebserviceEndpoint { get; set; }
         public bool LogThongDiep { get; set; }
         public bool DisableConsummer { get; set; }
+        /// <summary>
+        /// Số lượng hóa đơn import song song tối đa (importType = 0). Mặc định 10 nếu không cấu hình.
+        /// </summary>
+        public int ImportMaxConcurrency { get; set; }
 
 
     }

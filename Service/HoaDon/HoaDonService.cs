@@ -3622,8 +3622,21 @@ namespace Service.HoaDon
             var excludeIds = hoaDons.Select(x => x.id).ToList();
             var tasks = hoaDons.Select(hoaDon => { return this.CreateXmlObjectKySoAsync(hoaDon, false, excludeIds, skipValidateSoNhoHonChuaKySo: true); }).ToList();
             await this.ExcuteDbTasks<FunctionResult<Model.Request.Xml.HoaDon>>(tasks, 10);
-            var listHoaDonXmlModel = tasks.Where(x => x.Result.is_success).Select(x => x.Result.data).ToList();
-            var hoaDonXmls = listHoaDonXmlModel.Select(hoaDonXmlModel => { return hoaDonXmlModel.ConvertToXml(); })
+            var listHoaDonXmlModel = tasks
+                .Where(x => x.Result != null && x.Result.is_success && x.Result.data != null)
+                .Select(x => x.Result.data)
+                .ToList();
+            if (listHoaDonXmlModel.Count == 0)
+            {
+                var firstError = tasks
+                    .Where(x => x.Result != null && !x.Result.is_success)
+                    .Select(x => x.Result.message)
+                    .FirstOrDefault();
+                return new ErrorResult<string>(firstError.ConvertToString() != ""
+                    ? firstError
+                    : "Không tạo được XML hóa đơn MTT cho bảng kê.");
+            }
+            var hoaDonXmls = listHoaDonXmlModel.Select(hoaDonXmlModel => hoaDonXmlModel.ConvertToXml())
                 .ToList();
             var userId = this.GetCurrentUserId();
             var uuid = Guid.NewGuid().ToString().Replace("-", "").ToUpper();

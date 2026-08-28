@@ -6,6 +6,7 @@ using Model.Request.HoaDon;
 using Model.Request.ToKhai;
 using Model.Request.Upload;
 using Model.Respone.Upload;
+using Model.Static;
 using Model.Table;
 using Service.Base;
 
@@ -21,6 +22,48 @@ namespace Service.HoaDon
     {
         public HoaDonImportService(IServiceProvider serviceProvider) : base(serviceProvider)
         {
+        }
+
+        private static int ResolveImportMaxConcurrency(string? importType)
+        {
+            if (importType == "1")
+                return 1;
+
+            var configured = AppSettings.FixedValue.ImportMaxConcurrency;
+            return configured > 0 ? configured : 10;
+        }
+
+        private static async Task RunImportTasksWithConcurrencyAsync(
+            IEnumerable<Func<Task>> taskFactories,
+            string? importType)
+        {
+            var factories = taskFactories.ToList();
+            if (factories.Count == 0)
+                return;
+
+            var maxConcurrency = ResolveImportMaxConcurrency(importType);
+            if (maxConcurrency <= 1)
+            {
+                foreach (var factory in factories)
+                    await factory();
+                return;
+            }
+
+            using var semaphore = new SemaphoreSlim(maxConcurrency, maxConcurrency);
+            var tasks = factories.Select(async factory =>
+            {
+                await semaphore.WaitAsync();
+                try
+                {
+                    await factory();
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            });
+
+            await Task.WhenAll(tasks);
         }
 
         public async Task<FunctionResult<string>> ImportDataAsync(HoaDonImportRequest request)
@@ -72,34 +115,19 @@ namespace Service.HoaDon
                     }
                 }
             }
-            var tasks = new List<Task>();
             var CKM = this.GetHoaDonType(request.hoa_don_dang_ky_phat_hanh_ky_hieu);
             var daiLyHaveEmails = (await _serviceWrapper.Category.DaiLy.SelectByDonViHaveEmailAsync(user.donvi_ma_dv)).ToList();
 
-
-
+            var importActions = new List<Func<Task>>();
             foreach (var row in hoaDonImportRows)
             {
-                if (CKM == "M")
-                {
-                    await ImportHoaDonTask(request, row, dt, user.donvi_ma_dv, daiLyHaveEmails);
-                }
-                else
-                {
-                    // await ImportHoaDonTask(request, row, dt, user.donvi_ma_dv);
-                    // O là đa luồng, 1 là đơn luồng
-                    if (request.importType == "0")
-                    {
-                        tasks.Add(ImportHoaDonTask(request, row, dt, user.donvi_ma_dv, daiLyHaveEmails));
-                    }
-                    else
-                    {
-                        await ImportHoaDonTask(request, row, dt, user.donvi_ma_dv, daiLyHaveEmails);
-                    }
-                }
+                var importRow = row;
+                importActions.Add(() =>
+                    ImportHoaDonTask(request, importRow, dt, user.donvi_ma_dv, daiLyHaveEmails));
             }
 
-            await Task.WhenAll(tasks);
+            var importMode = CKM == "M" ? "1" : request.importType;
+            await RunImportTasksWithConcurrencyAsync(importActions, importMode);
             return new SuccessResult<string>();
         }
         private async Task ImportHoaDonTask(HoaDonImportRequest request, HoaDonImportRow rows, DataTable dt, string donvi_ma_dv, List<dai_ly> daiLys)
@@ -453,30 +481,17 @@ namespace Service.HoaDon
             }
             if (dt == null) return new ErrorResult<string>("Không tải được dữ liệu");
 
-            var tasks = new List<Task>();
             var CKM = this.GetHoaDonType(upload.hoa_don_dang_ky_phat_hanh_ky_hieu);
+            var importActions = new List<Func<Task>>();
             foreach (DataRow row in dt.Rows)
             {
-                if (CKM == "M")
-                {
-                    await ImportHoaDonHocPhiTask(upload, row, dt, user.donvi_ma_dv);
-                }
-                else
-                {
-                    // tasks.Add(ImportHoaDonHocPhiTask(upload, row, dt, user.donvi_ma_dv));
-                    // O là đa luồng, 1 là đơn luồng
-                    if (upload.importType == "0")
-                    {
-                        tasks.Add(ImportHoaDonHocPhiTask(upload, row, dt, user.donvi_ma_dv));
-                    }
-                    else
-                    {
-                        await ImportHoaDonHocPhiTask(upload, row, dt, user.donvi_ma_dv);
-                    }
-                }
+                var importRow = row;
+                importActions.Add(() =>
+                    ImportHoaDonHocPhiTask(upload, importRow, dt, user.donvi_ma_dv));
             }
 
-            await Task.WhenAll(tasks);
+            var importMode = CKM == "M" ? "1" : upload.importType;
+            await RunImportTasksWithConcurrencyAsync(importActions, importMode);
             return new SuccessResult<string>();
         }
         private Task ImportHoaDonHocPhiTask(HoaDonImportRequest request, DataRow firstRow, DataTable dt, string donvi_ma_dv)
@@ -603,30 +618,17 @@ namespace Service.HoaDon
             }
             if (dt == null) return new ErrorResult<string>("Không tải được dữ liệu");
 
-            var tasks = new List<Task>();
             var CKM = this.GetHoaDonType(upload.hoa_don_dang_ky_phat_hanh_ky_hieu);
+            var importActions = new List<Func<Task>>();
             foreach (DataRow row in dt.Rows)
             {
-                if (CKM == "M")
-                {
-                    await ImportHoaDonNuocTask(upload, row, dt, user.donvi_ma_dv);
-                }
-                else
-                {
-                    // O là đa luồng, 1 là đơn luồng
-                    if (upload.importType == "0")
-                    {
-                        tasks.Add(ImportHoaDonNuocTask(upload, row, dt, user.donvi_ma_dv));
-                    }
-                    else
-                    {
-                        await ImportHoaDonNuocTask(upload, row, dt, user.donvi_ma_dv);
-                    }
-
-                }
+                var importRow = row;
+                importActions.Add(() =>
+                    ImportHoaDonNuocTask(upload, importRow, dt, user.donvi_ma_dv));
             }
 
-            await Task.WhenAll(tasks);
+            var importMode = CKM == "M" ? "1" : upload.importType;
+            await RunImportTasksWithConcurrencyAsync(importActions, importMode);
             return new SuccessResult<string>();
         }
         private Task ImportHoaDonNuocTask(HoaDonImportRequest request, DataRow firstRow, DataTable dt, string donvi_ma_dv)

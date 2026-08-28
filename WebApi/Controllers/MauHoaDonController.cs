@@ -150,10 +150,22 @@ namespace WebApi.Controllers
         /// <summary>
         /// Upload file XSLT cho mẫu hóa đơn
         /// </summary>
+        /// <remarks>
+        /// Upload file .xslt vào thư mục Template/{mã đơn vị}.
+        ///
+        /// **Phân quyền:** dùng chung quyền POST api/mau-hoa-don (thêm/sửa mẫu).
+        ///
+        /// **Content-Type:** multipart/form-data, field name: form_file
+        ///
+        /// **Response thành công:**
+        /// ```
+        /// { "is_success": true, "data": { "xslt_path": "Template/...", "file_name": "mau.xslt" } }
+        /// ```
+        /// </remarks>
         [HttpPost]
         [Route("upload-xslt")]
         [MustAuthorized("[POST]api/mau-hoa-don")]
-        public async Task<ContentResult> UploadXsltAsync(IFormFile form_file)
+        public async Task<ContentResult> UploadXsltAsync([FromForm] IFormFile form_file)
         {
             var user = this.GetUserInfo();
             if (form_file == null || form_file.Length == 0)

@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Common;
 using Contract.Service;
 using Contracts.Service.HoaDon;
 using Microsoft.AspNetCore.Mvc;
@@ -27,8 +28,20 @@ namespace WebApi.Controllers
         [ApiExplorerSettings(IgnoreApi = true)]
         public async Task<ContentResult> XmlKySoAsync([FromBody] HoaDonKyLoRequest request, [FromQuery] bool notify = true)
         {
-            var result = await _hoaDonKyLoService.CreateXmlVaPhatHanhsAsync(request, notify);
-            return this.OK(result);
+            try
+            {
+                if (request?.ids == null || request.ids.Count == 0)
+                    return this.BadRequest("Vui lòng chọn hóa đơn để ký số");
+
+                var result = await _hoaDonKyLoService.CreateXmlVaPhatHanhsAsync(request, notify);
+                return this.OK(result);
+            }
+            catch (System.Exception ex)
+            {
+                return this.BadRequest(ex.Message.ConvertToString() != ""
+                    ? ex.Message
+                    : "Ký số phát hành thất bại");
+            }
         }
     }
 }

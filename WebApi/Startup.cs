@@ -94,10 +94,44 @@ namespace portal
             {
                 services.AddSwaggerGen(c =>
                 {
-                    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Ca EInvoice API", Version = "v1" });
+                    c.SwaggerDoc("v1", new OpenApiInfo
+                    {
+                        Title = "Ca EInvoice API",
+                        Version = "v1",
+                        Description = "API hóa đơn điện tử CA2. Hệ thống HSDT gọi các API chữ ký số sau khi đăng nhập lấy Bearer token."
+                    });
                     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-                    c.IncludeXmlComments(xmlPath);
+                    if (File.Exists(xmlPath))
+                        c.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
+
+                    var modelXmlPath = Path.Combine(AppContext.BaseDirectory, "Model.xml");
+                    if (File.Exists(modelXmlPath))
+                        c.IncludeXmlComments(modelXmlPath);
+
+                    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                    {
+                        Name = "Authorization",
+                        Type = SecuritySchemeType.Http,
+                        Scheme = "bearer",
+                        BearerFormat = "JWT",
+                        In = ParameterLocation.Header,
+                        Description = "Nhập access_token sau khi gọi POST /api/account/login. Ví dụ: {access_token}"
+                    });
+                    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                    {
+                        {
+                            new OpenApiSecurityScheme
+                            {
+                                Reference = new OpenApiReference
+                                {
+                                    Type = ReferenceType.SecurityScheme,
+                                    Id = "Bearer"
+                                }
+                            },
+                            Array.Empty<string>()
+                        }
+                    });
 
                     // Cấu hình để đọc các thuộc tính [Display] hoặc [Description]
                     c.UseAllOfToExtendReferenceSchemas();

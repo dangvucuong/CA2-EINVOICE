@@ -16,17 +16,18 @@ namespace Repository.Base
         {
             this._connectionName = connectionName;
         }
-        private IDbConnection GetConnection()
+
+        private SqlConnection CreateConnection()
         {
             var connectionString = AppSettings.DbConnections[_connectionName];
-            IDbConnection _db = new SqlConnection(connectionString);
-            return _db;
+            return new SqlConnection(connectionString);
         }
 
 
         public async Task<bool> ExcuteQuerryAsync(string Querry)
         {
-            await GetConnection().ExecuteAsync(Querry, null, commandType: CommandType.Text);
+            using var connection = CreateConnection();
+            await connection.ExecuteAsync(Querry, null, commandType: CommandType.Text);
             return true;
 
         }
@@ -34,45 +35,52 @@ namespace Repository.Base
 
         public async Task<int> ExcuteScalarAsync(string StoreProcedureName, DynamicParameters param, string returnValueParamName)
         {
-            await GetConnection().ExecuteScalarAsync(StoreProcedureName, param, commandType: CommandType.StoredProcedure);
+            using var connection = CreateConnection();
+            await connection.ExecuteScalarAsync(StoreProcedureName, param, commandType: CommandType.StoredProcedure);
             return param.Get<int>(returnValueParamName);
         }
 
         public async Task<bool> ExecuteAsync(string StoreProcedureName, DynamicParameters param)
         {
-            await GetConnection().ExecuteAsync(StoreProcedureName, param, commandType: CommandType.StoredProcedure);
+            using var connection = CreateConnection();
+            await connection.ExecuteAsync(StoreProcedureName, param, commandType: CommandType.StoredProcedure);
             return true;
         }
 
-        public Task<IEnumerable<T>> SelectAsync<T>(string StoreProcedueName)
+        public async Task<IEnumerable<T>> SelectAsync<T>(string StoreProcedueName)
         {
-            return SqlMapper.QueryAsync<T>(GetConnection(), StoreProcedueName, null, commandType: System.Data.CommandType.StoredProcedure);
+            using var connection = CreateConnection();
+            return await SqlMapper.QueryAsync<T>(connection, StoreProcedueName, null, commandType: CommandType.StoredProcedure);
         }
 
-        public Task<IEnumerable<T>> SelectAsync<T>(string StoreProcedueName, DynamicParameters param)
+        public async Task<IEnumerable<T>> SelectAsync<T>(string StoreProcedueName, DynamicParameters param)
         {
-            var result = SqlMapper.QueryAsync<T>(GetConnection(), StoreProcedueName, param, commandType: System.Data.CommandType.StoredProcedure);
-            return result;
+            using var connection = CreateConnection();
+            return await SqlMapper.QueryAsync<T>(connection, StoreProcedueName, param, commandType: CommandType.StoredProcedure);
         }
 
-        public Task<T> SelectFirstOrDefaultAsync<T>(string StoreProcedueName)
+        public async Task<T> SelectFirstOrDefaultAsync<T>(string StoreProcedueName)
         {
-            return SqlMapper.QueryFirstOrDefaultAsync<T>(GetConnection(), StoreProcedueName, null, commandType: System.Data.CommandType.StoredProcedure);
+            using var connection = CreateConnection();
+            return await SqlMapper.QueryFirstOrDefaultAsync<T>(connection, StoreProcedueName, null, commandType: CommandType.StoredProcedure);
         }
 
-        public Task<T> SelectFirstOrDefaultAsync<T>(string StoreProcedueName, DynamicParameters param)
+        public async Task<T> SelectFirstOrDefaultAsync<T>(string StoreProcedueName, DynamicParameters param)
         {
-            return SqlMapper.QueryFirstOrDefaultAsync<T>(GetConnection(), StoreProcedueName, param, commandType: System.Data.CommandType.StoredProcedure);
+            using var connection = CreateConnection();
+            return await SqlMapper.QueryFirstOrDefaultAsync<T>(connection, StoreProcedueName, param, commandType: CommandType.StoredProcedure);
         }
 
-        public Task<T> QueryFirstOrDefaultAsync<T>(string sql, DynamicParameters param)
+        public async Task<T> QueryFirstOrDefaultAsync<T>(string sql, DynamicParameters param)
         {
-            return SqlMapper.QueryFirstOrDefaultAsync<T>(GetConnection(), sql, param, commandType: System.Data.CommandType.Text);
+            using var connection = CreateConnection();
+            return await SqlMapper.QueryFirstOrDefaultAsync<T>(connection, sql, param, commandType: CommandType.Text);
         }
 
-        public Task<IEnumerable<T>> SelectByQueryAsync<T>(string sql, DynamicParameters param)
+        public async Task<IEnumerable<T>> SelectByQueryAsync<T>(string sql, DynamicParameters param)
         {
-            return SqlMapper.QueryAsync<T>(GetConnection(), sql, param, commandType: CommandType.Text);
+            using var connection = CreateConnection();
+            return await SqlMapper.QueryAsync<T>(connection, sql, param, commandType: CommandType.Text);
         }
 
     }

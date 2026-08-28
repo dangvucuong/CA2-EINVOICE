@@ -28,7 +28,6 @@ import {
   Box,
   IconButton,
   Label,
-  Link as LinkHref,
   UnderlineNav,
   useConfirm,
 } from "@primer/react";
@@ -83,6 +82,9 @@ export interface IHoaDonPageProps {
 const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
   const isMtt = variant === "mtt";
   const routeSlug = isMtt ? "hoa-don-mtt" : "hoa-don";
+  const listTabPath = (tabName: string) => `/${routeSlug}/${tabName}`;
+  const formPath = (id: number | string, search = "") =>
+    `/${routeSlug}/form/${id}${search}`;
   const applyListFilter = useCallback(
     <T extends object>(f: T): T =>
       isMtt ? { ...f, hoa_don_hinh_thuc_code: "M" } : f,
@@ -408,7 +410,7 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
                 }}
               />
               <Box sx={{ display: "flex", gap: 1 }}>
-                <Link to={`../../${routeSlug}/form/0`}>
+                <Link to={formPath(0)}>
                   <Button
                     text="Lập hóa đơn mới"
                     leadingVisual={PlusIcon}
@@ -434,7 +436,7 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
             <UnderlineNav aria-label="Repository">
               <UnderlineNav.Item
                 as={Link}
-                to={`../${routeSlug}/nhap`}
+                to={listTabPath("nhap")}
                 aria-current={tab === "nhap" ? "page" : undefined}
                 icon={ShieldIcon}
               >
@@ -442,7 +444,7 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
               </UnderlineNav.Item>
               <UnderlineNav.Item
                 as={Link}
-                to={`../${routeSlug}/da-phat-hanh`}
+                to={listTabPath("da-phat-hanh")}
                 aria-current={
                   !tab || tab === "da-phat-hanh" ? "page" : undefined
                 }
@@ -453,7 +455,7 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
 
               <UnderlineNav.Item
                 as={Link}
-                to={`../${routeSlug}/cho-phat-hanh`}
+                to={listTabPath("cho-phat-hanh")}
                 aria-current={tab === "cho-phat-hanh" ? "page" : undefined}
                 icon={ShieldIcon}
               >
@@ -468,7 +470,7 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
 
               <UnderlineNav.Item
                 as={Link}
-                to={`../${routeSlug}/chua-gui-cqt`}
+                to={listTabPath("chua-gui-cqt")}
                 aria-current={tab === "chua-gui-cqt" ? "page" : undefined}
                 icon={ShieldIcon}
               >
@@ -484,7 +486,7 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
 
               <UnderlineNav.Item
                 as={Link}
-                to={`../${routeSlug}/phat-hanh-loi`}
+                to={listTabPath("phat-hanh-loi")}
                 aria-current={tab === "phat-hanh-loi" ? "page" : undefined}
                 icon={ShieldSlashIcon}
               >
@@ -492,7 +494,7 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
               </UnderlineNav.Item>
               <UnderlineNav.Item
                 as={Link}
-                to={`../${routeSlug}/da-huy`}
+                to={listTabPath("da-huy")}
                 aria-current={tab === "da-huy" ? "page" : undefined}
                 icon={ShieldXIcon}
               >
@@ -951,8 +953,8 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
                       <>
                         {tab === "nhap" ? (
                           <IconButton
-                            as={LinkHref}
-                            href={`../../${routeSlug}/form/${row.id}`}
+                            as={Link}
+                            to={formPath(row.id)}
                             icon={PencilIcon}
                             aria-label="Edit"
                             variant="invisible"
@@ -1048,9 +1050,7 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
                                 {tab === "nhap" && (
                                   <ActionList.Item
                                     onSelect={() => {
-                                      history.push(
-                                        `../../${routeSlug}/form/${row.id}`
-                                      );
+                                      history.push(formPath(row.id));
                                     }}
                                   >
                                     <ActionList.LeadingVisual>
@@ -1086,7 +1086,7 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
                                 <ActionList.Item
                                   onSelect={() => {
                                     history.push(
-                                      `../../${routeSlug}/form/0?copy_id=${row.id}`
+                                      formPath(0, `?copy_id=${row.id}`)
                                     );
                                   }}
                                 >
@@ -1111,7 +1111,10 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
                                       // variant="danger"
                                       onSelect={() => {
                                         history.push(
-                                          `../../${routeSlug}/form/0?hinh_thuc_id=3&hoa_don_goc_id=${row.id}`
+                                          formPath(
+                                            0,
+                                            `?hinh_thuc_id=3&hoa_don_goc_id=${row.id}`
+                                          )
                                         );
                                       }}
                                     >
@@ -1128,7 +1131,10 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
                                       }
                                       onSelect={() => {
                                         history.push(
-                                          `../../${routeSlug}/form/0?hinh_thuc_id=2&hoa_don_goc_id=${row.id}`
+                                          formPath(
+                                            0,
+                                            `?hinh_thuc_id=2&hoa_don_goc_id=${row.id}`
+                                          )
                                         );
                                       }}
                                     >
@@ -1144,7 +1150,7 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
                                         row.phat_hanh_ma_ketqua_cqt
                                       }
                                       onSelect={() => {
-                                        history.push(`../../tbss/0`, {
+                                        history.push("/tbss/0", {
                                           hoa_don: {
                                             hoa_don_dang_ky_phat_hanh_mau_so:
                                               row.hoa_don_dang_ky_phat_hanh_mau_so,
@@ -1442,7 +1448,7 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
                   width: "100px",
                   renderCell: (data: IHoaDon) => {
                     return (
-                      <Link to={`../../${routeSlug}/form/${data.id}`}>
+                      <Link to={formPath(data.id)}>
                         {data.hoa_don_dang_ky_phat_hanh_ky_hieu}
                       </Link>
                     );
@@ -1585,7 +1591,7 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
                             {_hoaDonThayTheDieuChinhs.map((x) => {
                               return (
                                 <Box>
-                                  <LinkHref href={`../../${routeSlug}/form/${x.id}`}>
+                                  <Link to={formPath(x.id)}>
                                     <Box>
                                       {x.hoa_don_hinh_thuc_id === 2
                                         ? "Thay thế bởi"
@@ -1598,7 +1604,7 @@ const HoaDonPage = ({ variant = "default" }: IHoaDonPageProps) => {
                                       {x.hoa_don_dang_ky_phat_hanh_ky_hieu}_
                                       {x.ma_so_hoa_don}
                                     </Box>
-                                  </LinkHref>
+                                  </Link>
                                 </Box>
                               );
                             })}

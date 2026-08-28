@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Model.Request.Account;
 using Model.Static;
 using Service.Google;
+using Swashbuckle.AspNetCore.Annotations;
 using WebApi.Filters;
 
 namespace WebApi.Controllers
@@ -24,13 +25,21 @@ namespace WebApi.Controllers
         /// Đăng nhập
         /// </summary>
         /// <remarks>
-        ///Sau khi đăng nhập thành công, hệ thống trả về access_token và refresh_token.
-        ///Sử dụng acces_token để xác thực khi gọi các api khác.
-        ///acces_token là JWT Token, sẽ hết hạn sau 1 thời gian chỉ định. Cần kiểm tra token còn hạn hay không để đăng nhập lại hoặc sử dụng refresh_token để cấp phát access_token mới.
-        ///refresh token mới bằng api [POST]token/refresh.
+        /// Sau khi đăng nhập thành công, hệ thống trả về access_token và refresh_token.
+        ///
+        /// Sử dụng access_token để xác thực khi gọi các API khác (header Authorization: Bearer {access_token}).
+        ///
+        /// Hệ thống HSDT dùng API này trước khi gọi:
+        /// - POST /api/don-vi/chu-ky-so (thêm gói CKS)
+        /// - POST /api/don-vi/chu-ky-so/thu-hoi-goi-dv (thu hồi gói CKS)
+        ///
+        /// access_token là JWT, sẽ hết hạn sau thời gian chỉ định. Khi hết hạn dùng POST /api/account/token/refresh.
+        ///
+        /// Trên Swagger UI: bấm Authorize, dán access_token (không cần chữ Bearer nếu scheme đã là bearer).
         /// </remarks>
         [HttpPost]
         [Route("login")]
+        [SwaggerOperation(Tags = new[] { "Account", "HSDT - Chữ ký số" })]
         public async Task<ContentResult> LoginAsync([FromBody] LoginRequest request)
         {
 
@@ -193,10 +202,16 @@ namespace WebApi.Controllers
         /// Refresh token mới
         /// </summary>
         /// <remarks>
+        /// Cấp access_token mới từ refresh_token khi access_token hết hạn.
         ///
+        /// Request:
+        /// ```
+        /// { "access_token": "...", "refresh_token": "..." }
+        /// ```
         /// </remarks>
         [HttpPost]
         [Route("token/refresh")]
+        [SwaggerOperation(Tags = new[] { "Account", "HSDT - Chữ ký số" })]
         public async Task<ContentResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
             var tokenInfo = await _serviceWrapper.Core.Account.RefreshTokenAsync(request);
