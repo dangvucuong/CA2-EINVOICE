@@ -381,17 +381,31 @@ const HoaDonForm = () => {
     if (res.is_success) {
       setIsLoadHoaDonDone(true);
       if (hoaDonId === 0) {
+        // Sao chép thành HĐ mới (gốc): giữ ten_hoa_don / loại / mẫu / ký hiệu,
+        // reset trạng thái phát hành và thông tin HĐ gốc liên quan.
         setHoaDonViewModel({
           ...res.data,
           id: 0,
+          ten_hoa_don: res.data.ten_hoa_don ?? "",
           ngay_hoa_don: moment(new Date()).format("YYYY-MM-DD"),
           is_ky_so_succes: false,
           hoa_don_trang_thai_id: 0,
+          hoa_don_hinh_thuc_id: 1,
+          hoa_don_id_goc: 0,
+          hoa_don_dang_ky_phat_hanh_mau_so_goc: "",
+          hoa_don_dang_ky_phat_hanh_ky_hieu_goc: "",
+          ma_so_hoa_don_goc: undefined,
+          ngay_hoa_don_goc: undefined,
+          hoa_don_ly_do_dieu_chinh_id: 0,
+          ly_do_dieu_chinh: "",
           phat_hanh_ma_ketqua_cqt: "",
           ket_qua_phat_hanh: "",
           phat_hanh_uuid: "",
           user_id_phathanh: 0,
           invoice_id: undefined,
+          ma_so_hoa_don: undefined as any,
+          ma_so_hoa_don_mtt: undefined,
+          so_hoa_don: "",
           nguoi_mua_mst: res.data.nguoi_mua_mst?.toString() ?? "",
           nguoi_mua_cccd: res.data.nguoi_mua_cccd?.toString() ?? "",
           hang_hoas: res.data.hang_hoas.map((x: any) => {
@@ -405,7 +419,9 @@ const HoaDonForm = () => {
             id: 0,
           })),
         });
-        setGiam_thue_ty_le(res.data.giam_thue_thanh_tien ?? -1);
+        setHinhThucHoaDonId(1);
+        setThongTinHoaDonGoc(undefined);
+        setGiam_thue_ty_le(res.data.giam_thue_ty_le ?? -1);
 
         setIsOpenHoaDonGocModal(false);
       }
@@ -936,11 +952,17 @@ const HoaDonForm = () => {
     const so_tien_tang_giam_tien_hang = data.so_tien_tang_giam_tien_hang ?? 0;
     const so_tien_tang_giam_tien_thue = data.so_tien_tang_giam_tien_thue ?? 0;
 
+    const tenHoaDon =
+      loaiHoaDonCT?.name ||
+      formData?.ten_hoa_don ||
+      data?.ten_hoa_don ||
+      "";
+
     return {
       ...data,
       ...thongTinHoaDonGoc,
       hoa_don_id_goc: thongTinHoaDonGoc ? thongTinHoaDonGoc.hoaDonGocId : 0,
-      ten_hoa_don: loaiHoaDonCT?.name,
+      ten_hoa_don: tenHoaDon,
       donvi_ma_dv: user?.donvi_ma_dv,
       loai_tien: loaiTien,
       loai_hoa_don_ct_id: formData?.loai_hoa_don_ct_id,
@@ -1419,13 +1441,14 @@ const HoaDonForm = () => {
                     <FormControl.Label>Loại hóa đơn</FormControl.Label>
                     <SelectBoxLoaiHoaDonCTPhatHanh
                       value={formData?.loai_hoa_don_ct_id ?? 0}
-                      onValueChanged={(id) => {
+                      onValueChanged={(id, tenHoaDon) => {
                         clearErrors("loai_hoa_don_ct_id");
 
                         setFormData({
                           ...formData,
                           loai_hoa_don_ct_id: id,
                           hoa_don_dang_ky_phat_hanh_mau_so: "",
+                          ten_hoa_don: tenHoaDon ?? formData?.ten_hoa_don ?? "",
                         });
                       }}
                     />
@@ -1529,7 +1552,11 @@ const HoaDonForm = () => {
               }}
             >
               <Heading
-                text={loaiHoaDonCT?.name.toUpperCase() ?? ""}
+                text={(
+                  loaiHoaDonCT?.name ||
+                  formData?.ten_hoa_don ||
+                  ""
+                ).toUpperCase()}
                 size={window.innerWidth >= 768 ? eSize.large : eSize.medium}
               />
               {/* <Text text={ngayThangNam} sx={{ color: 'fg.muted' }} /> */}

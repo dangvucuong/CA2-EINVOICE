@@ -7,5 +7,6 @@ namespace Contracts.Repository.Category
     {
         Task<IEnumerable<donvi_mua_chukyso>> SelectByDonViAsync(string donvi_ma_dv);
         Task<donvi_mua_chukyso> SelectByMstAndTransactionIdAsync(string donvi_mst, string transaction_id);
+        Task<int> ThuHoiGoiDvAsync(string donvi_mst, string transaction_id, int last_modified_user_id);
     }
 }

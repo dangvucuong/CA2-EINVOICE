@@ -7,7 +7,7 @@ import { isDangKyPhatHanhMtt } from "../../utils/hoaDonKyHieu";
 import { isDangKyPhatHanhInCurrentYear } from "../../utils/dangKyPhatHanhFilter";
 
 interface ISelectBoxLoaiHoaDonCTPhatHanhProps {
-  onValueChanged: (id: number) => void;
+  onValueChanged: (id: number, tenHoaDon?: string) => void;
   value: number;
   maxWidth?: any;
   isShowClearBtn?: boolean;
@@ -51,8 +51,22 @@ const SelectBoxLoaiHoaDonCTPhatHanh = (
     );
   }, [dataSource, filter]);
   const _selectedData = useMemo(() => {
-    return dataSource.find((item) => item.id === props.value);
-  }, [props.value, dataSource]);
+    const selected = dataSource.find((item) => item.id === props.value);
+    if (selected) {
+      return selected;
+    }
+    // Khi sao chép HĐ năm cũ: value có loai_hoa_don_ct_id nhưng bị lọc khỏi dataSource năm hiện tại.
+    // Vẫn hiển thị đúng tên từ toàn bộ ĐKPH để không mất tên hóa đơn trên form.
+    if (props.value > 0) {
+      const match = hoaDonDangKyPhatHanhs.find(
+        (x) => x.loai_hoa_don_ct_id === props.value
+      );
+      if (match) {
+        return { id: match.loai_hoa_don_ct_id, text: match.ten_hoa_don };
+      }
+    }
+    return undefined;
+  }, [props.value, dataSource, hoaDonDangKyPhatHanhs]);
 
   const placeholderText = isLoading
     ? "Đang tải..."
@@ -100,7 +114,7 @@ const SelectBoxLoaiHoaDonCTPhatHanh = (
                     color: "danger.emphasis",
                   }}
                   onClick={() => {
-                    props.onValueChanged(0);
+                    props.onValueChanged(0, "");
                   }}
                 >
                   Bỏ chọn
@@ -116,7 +130,7 @@ const SelectBoxLoaiHoaDonCTPhatHanh = (
         selected={_selectedData}
         onSelectedChange={(data: any) => {
           if (data) {
-            props.onValueChanged(data.id);
+            props.onValueChanged(data.id, data.text);
           }
         }}
         onFilterChange={setFilter}

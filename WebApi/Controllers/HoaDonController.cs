@@ -108,7 +108,16 @@ namespace WebApi.Controllers
 
             model.hoa_don_nghi_dinh_id = 123;
             model.ma_so_hoa_don = null;
-            model.ten_hoa_don = hoaDonDangKyPhatHanh.ten_hoa_don;
+            // Ưu tiên tên từ ĐKPH; fallback payload FE (copy HĐ) nếu chưa khớp ĐKPH.
+            var tenHoaDon = hoaDonDangKyPhatHanh?.ten_hoa_don.ConvertToString() ?? "";
+            if (tenHoaDon == "")
+                tenHoaDon = model.ten_hoa_don.ConvertToString();
+            if (tenHoaDon == "" && model.loai_hoa_don_ct_id > 0)
+            {
+                var loaiHoaDonCT = await _serviceWrapper.HoaDon.LoaiHoaDonCT.SelectByIdAsync(model.loai_hoa_don_ct_id);
+                tenHoaDon = loaiHoaDonCT?.name.ConvertToString() ?? "";
+            }
+            model.ten_hoa_don = tenHoaDon;
             var result = await _hoaDonService.SaveHoaDonAsync(model);
             if (result.is_success)
             {

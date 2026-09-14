@@ -1,6 +1,9 @@
 /*
     Phân quyền API Thu hồi gói dịch vụ (HSDT gọi từ bên ngoài)
 
+    Trước khi chạy script này, chạy: TaiLieu/donvi_mua_chukyso_thu_hoi.sql
+    (tạo SP donvi_mua_chukyso_thu_hoi — set is_deleted=1, trang_thai_hd_id=0).
+
     Cơ chế hiện tại trên code:
     - Endpoint: POST api/don-vi/chu-ky-so/thu-hoi-goi-dv
     - Attribute: [MustAuthorized("[POST]api/don-vi/chu-ky-so")]

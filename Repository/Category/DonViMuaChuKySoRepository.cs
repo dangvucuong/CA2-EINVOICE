@@ -1,3 +1,4 @@
+using System.Data;
 using Contracts.Repository.Base;
 using Contracts.Repository.Category;
 using Dapper;
@@ -27,6 +28,16 @@ namespace Repository.Category
             var sql = @"SELECT * FROM donvi_mua_chukyso
                 WHERE donvi_mst = @donvi_mst AND transaction_id = @transaction_id";
             return _dbConnection.QueryFirstOrDefaultAsync<donvi_mua_chukyso>(sql, param);
+        }
+
+        public Task<int> ThuHoiGoiDvAsync(string donvi_mst, string transaction_id, int last_modified_user_id)
+        {
+            var param = new DynamicParameters();
+            param.Add("@donvi_mst", donvi_mst);
+            param.Add("@transaction_id", transaction_id);
+            param.Add("@last_modified_user_id", last_modified_user_id);
+            param.Add("result", dbType: DbType.Int32, direction: ParameterDirection.ReturnValue);
+            return _dbConnection.ExcuteScalarAsync("donvi_mua_chukyso_thu_hoi", param, "result");
         }
     }
 }

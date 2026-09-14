@@ -38,12 +38,10 @@ namespace Service.Category
             if (existing.is_deleted)
                 return new FunctionResult<object>(false, "Gói dịch vụ đã được thu hồi trước đó");
 
-            existing.is_deleted = true;
-            existing.trang_thai_hd_id = 0;
-            existing.SetUpdateInfo(userId);
+            var rowsAffected = await _repositoryWrapper.Category.DonViMuaChuKySo
+                .ThuHoiGoiDvAsync(ma_so_thue, idHSDT, userId);
 
-            var isUpdated = await this.UpdateAsync(existing);
-            if (!isUpdated)
+            if (rowsAffected <= 0)
                 return new FunctionResult<object>(false, "Cập nhật dữ liệu thất bại");
 
             return new FunctionResult<object>(true, "Thu hồi gói dịch vụ thành công", new

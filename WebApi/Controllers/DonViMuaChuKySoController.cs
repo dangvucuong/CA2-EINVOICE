@@ -68,9 +68,8 @@ namespace WebApi.Controllers
         ///
         /// **Xác thực:** Header Authorization: Bearer {access_token}
         ///
-        /// **Xử lý SQL tương đương:**
-        /// UPDATE donvi_mua_chukyso SET is_deleted=1, trang_thai_hd_id=0
-        /// WHERE donvi_mst = ma_so_thue AND transaction_id = idHSDT
+        /// **Xử lý:** Gọi SP donvi_mua_chukyso_thu_hoi
+        /// (SET is_deleted=1, trang_thai_hd_id=0 WHERE donvi_mst + transaction_id).
         ///
         /// **Request mẫu:**
         /// ```
