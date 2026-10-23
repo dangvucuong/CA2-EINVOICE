@@ -51,6 +51,8 @@ import {
 import { useAuth } from "../../hooks/useAuth";
 import { useLoaiHoaDonCT } from "../../hooks/useLoaiHoaDonCT";
 import { useHoaDonDangKyPhatHanhLoader } from "../../hooks/useHoaDonDangKyPhatHanhLoader";
+import { isDangKyPhatHanhInCurrentYear } from "../../utils/dangKyPhatHanhFilter";
+import { eReducerStatusBase } from "../../state/reducer-models/eReducerStatusBase";
 import { useWindowSize } from "../../hooks/useWindowSize";
 import { eHoaDonTrangThai } from "../../models/commons/eHoaDonTrangThai";
 import { eLyDoDieuChinh } from "../../models/commons/eLyDoDieuChinh";
@@ -156,7 +158,17 @@ const HoaDonForm = () => {
       ? true
       : false;
   const { loaiHoaDonCT } = useLoaiHoaDonCT(formData.loai_hoa_don_ct_id);
-  useHoaDonDangKyPhatHanhLoader();
+  const {
+    hoaDonDangKyPhatHanhs,
+    isLoading: isDkphLoading,
+    status: dkphStatus,
+  } = useHoaDonDangKyPhatHanhLoader();
+  // Sau copy: kiểm tra loại/mẫu/ký hiệu có thuộc ĐKPH năm hiện tại không.
+  const pendingCopyDkphCheckRef = useRef<{
+    loai_hoa_don_ct_id: number;
+    mau_so: string;
+    ky_hieu: string;
+  } | null>(null);
 
   // const { text: ngayThangNam } = useNgayThangNam();
   // const [hangHoas, setHangHoas] = useState<any[]>([{}]);
@@ -277,10 +289,12 @@ const HoaDonForm = () => {
     }
   }, [hoaDonId]);
   useEffect(() => {
-    if (hoaDonId === 0 && hoaDonGocId > 0) {
-      handleGetHoaDonViewModel(hoaDonGocId);
+    // Chờ hinhThuc từ URL (effect location.search) để tránh load khi hinhThuc còn mặc định = 1
+    // khiến bỏ qua setHangHoasGoc khi lập HĐ điều chỉnh.
+    if (hoaDonId === 0 && hoaDonGocId > 0 && hinhThucHoaDonId !== 1) {
+      handleGetHoaDonViewModel(hoaDonGocId, false, { asGocTemplate: true });
     }
-  }, [hoaDonId, hoaDonGocId]);
+  }, [hoaDonId, hoaDonGocId, hinhThucHoaDonId]);
 
   useEffect(() => {
     if (hoaDonViewModel) {
@@ -351,6 +365,83 @@ const HoaDonForm = () => {
       });
     }
   }, [hoaDonViewModel, hoaDonId]);
+
+  // Copy HĐ mới: loại/mẫu/ký hiệu phải thuộc ĐKPH năm hiện tại.
+  useEffect(() => {
+    const pending = pendingCopyDkphCheckRef.current;
+    if (!pending) return;
+    if (hoaDonId !== 0) {
+      pendingCopyDkphCheckRef.current = null;
+      return;
+    }
+    if (isDkphLoading || dkphStatus !== eReducerStatusBase.is_loaded) {
+      return;
+    }
+
+    pendingCopyDkphCheckRef.current = null;
+
+    const currentYearDkph = hoaDonDangKyPhatHanhs.filter((x) =>
+      isDangKyPhatHanhInCurrentYear(x?.ngay_su_dung),
+    );
+    const loaiOk =
+      pending.loai_hoa_don_ct_id > 0 &&
+      currentYearDkph.some(
+        (x) => x.loai_hoa_don_ct_id === pending.loai_hoa_don_ct_id,
+      );
+    const fullOk =
+      loaiOk &&
+      currentYearDkph.some(
+        (x) =>
+          x.loai_hoa_don_ct_id === pending.loai_hoa_don_ct_id &&
+          x.mau_so === pending.mau_so &&
+          x.ky_hieu === pending.ky_hieu,
+      );
+
+    if (!loaiOk) {
+      setFormData((prev) => ({
+        ...prev,
+        loai_hoa_don_ct_id: 0,
+        hoa_don_dang_ky_phat_hanh_mau_so: "",
+        hoa_don_dang_ky_phat_hanh_ky_hieu: "",
+        ten_hoa_don: "",
+      }));
+      setHoaDonViewModel((prev) =>
+        prev
+          ? {
+              ...prev,
+              loai_hoa_don_ct_id: 0,
+              hoa_don_dang_ky_phat_hanh_mau_so: "",
+              hoa_don_dang_ky_phat_hanh_ky_hieu: "",
+              ten_hoa_don: "",
+            }
+          : prev,
+      );
+      NotifyHelper.Warning(
+        "Loại hóa đơn của hóa đơn gốc không còn đăng ký phát hành năm hiện tại. Vui lòng chọn lại.",
+      );
+      return;
+    }
+
+    if (!fullOk) {
+      setFormData((prev) => ({
+        ...prev,
+        hoa_don_dang_ky_phat_hanh_mau_so: "",
+        hoa_don_dang_ky_phat_hanh_ky_hieu: "",
+      }));
+      setHoaDonViewModel((prev) =>
+        prev
+          ? {
+              ...prev,
+              hoa_don_dang_ky_phat_hanh_mau_so: "",
+              hoa_don_dang_ky_phat_hanh_ky_hieu: "",
+            }
+          : prev,
+      );
+      NotifyHelper.Warning(
+        "Mẫu số/ký hiệu của hóa đơn gốc không thuộc đăng ký phát hành năm hiện tại. Vui lòng chọn lại.",
+      );
+    }
+  }, [hoaDonDangKyPhatHanhs, isDkphLoading, dkphStatus, hoaDonId]);
 
   const {
     watch,
@@ -423,6 +514,12 @@ const HoaDonForm = () => {
         setThongTinHoaDonGoc(undefined);
         setGiam_thue_ty_le(res.data.giam_thue_ty_le ?? -1);
 
+        pendingCopyDkphCheckRef.current = {
+          loai_hoa_don_ct_id: res.data.loai_hoa_don_ct_id ?? 0,
+          mau_so: res.data.hoa_don_dang_ky_phat_hanh_mau_so ?? "",
+          ky_hieu: res.data.hoa_don_dang_ky_phat_hanh_ky_hieu ?? "",
+        };
+
         setIsOpenHoaDonGocModal(false);
       }
     } else {
@@ -452,13 +549,22 @@ const HoaDonForm = () => {
           (hoaDonGocId > 0 && id === hoaDonGocId));
 
       if (loadAsGocTemplate) {
-        const isCreatingDieuChinh = hinhThucHoaDonId === 3;
-        const gocHangHoas = res.data.hang_hoas.map((x: any) => ({
+        // Ưu tiên hinh_thuc_id trên URL để tránh stale state (mặc định hinhThucHoaDonId = 1)
+        const hinhThucFromUrl = parseInt(
+          new URLSearchParams(location.search).get("hinh_thuc_id") ?? "0",
+          10,
+        );
+        const isCreatingDieuChinh =
+          hinhThucHoaDonId === 3 || hinhThucFromUrl === 3;
+        const gocHangHoas = (res.data.hang_hoas ?? []).map((x: any) => ({
           ...x,
           id: 0,
         }));
+        // Điều chỉnh: giữ hangHoasGoc để chọn/tính chênh lệch, đồng thời bind vào form
         if (isCreatingDieuChinh) {
           setHangHoasGoc(gocHangHoas);
+        } else {
+          setHangHoasGoc([]);
         }
         setHoaDonViewModel({
           ...res.data,
@@ -472,22 +578,23 @@ const HoaDonForm = () => {
           invoice_id: undefined,
           xuat_kho_dia_chi: res?.data?.xuat_kho_dia_chi?.split("|")[1] ?? "",
           ngay_hoa_don: moment(new Date()).format("YYYY-MM-DD"),
-          hang_hoas: isCreatingDieuChinh
-            ? [
-                {
-                  hang_hoa_tinh_chat_id: 1,
-                  ma_hang: "",
-                  ten_hang: "",
-                  dvt: "",
-                  so_luong: 0,
-                  don_gia: 0,
-                  thanh_tien: 0,
-                  ty_le_chiet_khau: 0,
-                  thue_vat: "10%",
-                },
-              ]
-            : gocHangHoas,
-          loai_phis: res.data.loai_phis.map((x: any) => ({
+          hang_hoas:
+            gocHangHoas.length > 0
+              ? gocHangHoas
+              : [
+                  {
+                    hang_hoa_tinh_chat_id: 1,
+                    ma_hang: "",
+                    ten_hang: "",
+                    dvt: "",
+                    so_luong: 0,
+                    don_gia: 0,
+                    thanh_tien: 0,
+                    ty_le_chiet_khau: 0,
+                    thue_vat: "10%",
+                  },
+                ],
+          loai_phis: (res.data.loai_phis ?? []).map((x: any) => ({
             ...x,
             id: 0,
           })),
@@ -1063,6 +1170,35 @@ const HoaDonForm = () => {
           behavior: "smooth",
           block: "center",
         });
+      }
+    }
+
+    // Lập HĐ mới: bắt buộc loại + mẫu + ký hiệu thuộc ĐKPH năm hiện tại.
+    if (
+      hoaDonId === 0 &&
+      (formData?.loai_hoa_don_ct_id ?? 0) > 0 &&
+      (formData?.hoa_don_dang_ky_phat_hanh_mau_so ?? "") !== "" &&
+      (formData?.hoa_don_dang_ky_phat_hanh_ky_hieu ?? "") !== ""
+    ) {
+      const dkphOk = hoaDonDangKyPhatHanhs.some(
+        (x) =>
+          isDangKyPhatHanhInCurrentYear(x?.ngay_su_dung) &&
+          x.loai_hoa_don_ct_id === formData.loai_hoa_don_ct_id &&
+          x.mau_so === formData.hoa_don_dang_ky_phat_hanh_mau_so &&
+          x.ky_hieu === formData.hoa_don_dang_ky_phat_hanh_ky_hieu,
+      );
+      if (!dkphOk) {
+        isValid = false;
+        setError("hoa_don_dang_ky_phat_hanh_ky_hieu", {});
+        NotifyHelper.Error(
+          "Loại hóa đơn/mẫu số/ký hiệu phải thuộc đăng ký phát hành năm hiện tại.",
+        );
+        if (loaiHoaDonPhatHanhRef.current) {
+          loaiHoaDonPhatHanhRef.current.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        }
       }
     }
 

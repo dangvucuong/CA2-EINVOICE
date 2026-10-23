@@ -21,7 +21,7 @@ type SelectPanelItem = {
 
 const toSelectPanelItem = (x: ICoQuanThue): SelectPanelItem => ({
     id: x.id,
-    text: `[${x.ma_cqt}] - ${x.dia_chi}`,
+    text: `[${x.ma_cqt}] - ${x.ten}`,
     data: x,
 });
 

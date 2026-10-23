@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Text.RegularExpressions;
 using Common;
 using Contracts.Service.HoaDon;
@@ -22,6 +23,37 @@ namespace Service.HoaDon.XuLyThongDiep
 
         public async Task<FunctionResult<HoaDonPhatHanhRespone>> XuLyThongDiepAsync(hoa_don hoaDon, Model.Respone.Xml.KetQuaThongDiepRespone thongDiepRespone, string xmlKetQua)
         {
+            var mltdiep = ThongDiepHoaDonHelper.GetMLTDiep(thongDiepRespone, xmlKetQua);
+            var existingLogs = (await _hoaDonLogService.SelectByHoaDonAsync(hoaDon.id)).ToList();
+            var hasLog202 = existingLogs.Any(x => x.mltdiep?.Trim() == "202");
+
+            // Đã có log 202: thông điệp khác chỉ ghi log, không cập nhật trạng thái hóa đơn
+            if (hasLog202 && mltdiep != "202")
+            {
+                var hoaDonDb = await _hoaDonService.SelectByIdAsync(hoaDon.id);
+                var logOnlyResult = await _hoaDonLogService.SaveFromPhatHanhAsync(
+                    hoaDon.id,
+                    string.Empty,
+                    xmlKetQua,
+                    hoaDonDb.hoa_don_trang_thai_id == (int)e_hoa_don_trang_thai.DA_PHAT_HANH);
+
+                var response = new HoaDonPhatHanhRespone()
+                {
+                    id = hoaDonDb.id,
+                    hoa_don_trang_thai_id = hoaDonDb.hoa_don_trang_thai_id,
+                    file_thong_diep_url = logOnlyResult.data,
+                    ket_qua_phat_hanh = hoaDonDb.ket_qua_phat_hanh,
+                    KetQuaThongDiep = thongDiepRespone
+                };
+
+                if (hoaDonDb.hoa_don_trang_thai_id == (int)e_hoa_don_trang_thai.DA_PHAT_HANH)
+                {
+                    return new SuccessResult<HoaDonPhatHanhRespone>(hoaDonDb.ket_qua_phat_hanh, response);
+                }
+
+                return new ErrorResult<HoaDonPhatHanhRespone>(hoaDonDb.ket_qua_phat_hanh, response);
+            }
+
             var isHopLe = false;
             if (thongDiepRespone.TTChung.MLTDiep == "204")
             {
@@ -56,7 +88,6 @@ namespace Service.HoaDon.XuLyThongDiep
                     hoaDon.ket_qua_phat_hanh = $"{MTLoi}";
                 }
             }
-            var mltdiep = ThongDiepHoaDonHelper.GetMLTDiep(thongDiepRespone, xmlKetQua);
             if (ThongDiepHoaDonHelper.IsLoiThongDiep(thongDiepRespone, xmlKetQua))
             {
                 hoaDon.hoa_don_trang_thai_id = (int)e_hoa_don_trang_thai.LOI_THONG_DIEP;

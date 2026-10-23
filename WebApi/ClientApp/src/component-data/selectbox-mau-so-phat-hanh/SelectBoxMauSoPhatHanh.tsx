@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { TriangleDownIcon, XCircleFillIcon } from "@primer/octicons-react";
 import { useHoaDonDangKyPhatHanhLoader } from "../../hooks/useHoaDonDangKyPhatHanhLoader";
 import { isDangKyPhatHanhMtt } from "../../utils/hoaDonKyHieu";
+import { isDangKyPhatHanhInCurrentYear } from "../../utils/dangKyPhatHanhFilter";
 
 interface ISelectBoxMauSoPhatHanhProps {
   onValueChanged: (id: string) => void;
@@ -23,6 +24,9 @@ const SelectBoxMauSoPhatHanh = (props: ISelectBoxMauSoPhatHanhProps) => {
     hoaDonDangKyPhatHanhs
       .sort((a, b) => b.id - a.id)
       .filter((x) => {
+        if (!isDangKyPhatHanhInCurrentYear(x?.ngay_su_dung)) {
+          return false;
+        }
         if (x.loai_hoa_don_ct_id !== props.loai_hoa_don_ct_id) {
           return false;
         }

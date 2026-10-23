@@ -340,8 +340,22 @@ namespace Service.HoaDon
                 ten_thue_suat = x
             }).ToList();
             var isApDungDieuChinh5DongVaoThueSuat = thue_suats.Count == 1;
-            foreach (var thue_suat in thue_suats)
+            var isVnd = hoaDon.loai_tien == "VND";
+            var tienThueVnds = isVnd
+                ? HoaDonTienThueHelper.PhanBoTienThueVnd(thue_suats.Select(ts =>
+                {
+                    var tienHang = hangHoas
+                        .Where(x => (x.hang_hoa_tinh_chat_id == 1 || x.hang_hoa_tinh_chat_id == 5) && x.thue_vat == ts.ten_thue_suat)
+                        .Sum(x => Math.Round(x.thanh_tien, 0, MidpointRounding.AwayFromZero));
+                    var tienChietKhau = hangHoas
+                        .Where(x => x.hang_hoa_tinh_chat_id == 3 && x.thue_vat == ts.ten_thue_suat)
+                        .Sum(x => Math.Round(x.thanh_tien, 0, MidpointRounding.AwayFromZero));
+                    return new TienThueTheoMuc(tienHang - tienChietKhau, HoaDonTienThueHelper.GetPhanTramThue(ts.ten_thue_suat));
+                }).ToList())
+                : null;
+            for (var i = 0; i < thue_suats.Count; i++)
             {
+                var thue_suat = thue_suats[i];
                 var phanTramThue = thue_suat.ten_thue_suat.Replace("%", "").ConvertToInt();
                 var thanh_tien = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat).Select(x => x.thanh_tien).Sum();
                 if (isAllChietKhau)
@@ -349,7 +363,9 @@ namespace Service.HoaDon
                     thanh_tien = -1 * thanh_tien;
                 }
                 thue_suat.thanh_tien = thanh_tien.ConvertToStringAndRemoveZeroPart();
-                thue_suat.tien_thue = (thanh_tien * phanTramThue / 100).ConvertToStringAndRemoveZeroPart();
+                thue_suat.tien_thue = isVnd
+                    ? tienThueVnds[i].ConvertToStringAndRemoveZeroPart()
+                    : (thanh_tien * phanTramThue / 100).ConvertToStringAndRemoveZeroPart();
                 // thue_suat.tien_thue = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat)
                 // .Select(x => Math.Round(x.thanh_tien * phanTramThue / 100, 0, MidpointRounding.AwayFromZero))
                 // .Sum().ConvertToStringAndRemoveZeroPart();
@@ -1288,12 +1304,18 @@ namespace Service.HoaDon
                 {
                     ten_thue_suat = x
                 }).ToList();
+                var thueSuatTuDb = HoaDonTienThueHelper.IsVnd(hoaDon.loai_tien)
+                    ? (await _repositoryWrapper.HoaDon.HoaDon.SelectThueSuatHoaDonByHoaDonIdAsync(hoaDon.id)).ToList()
+                    : new List<ThueSuatModel>();
                 foreach (var thue_suat in thue_suats)
                 {
                     var phanTramThue = thue_suat.ten_thue_suat.Replace("KHAC:", "").Replace("%", "").Trim().ConvertToDouble(2);
                     var thanh_tien = hangHoas.Where(x => x.thue_vat == thue_suat.ten_thue_suat).Select(x => x.thanh_tien).Sum();
                     thue_suat.thanh_tien = thanh_tien.ConvertToStringAndRemoveZeroPart();
-                    thue_suat.tien_thue = ((double)thanh_tien * phanTramThue / 100).ConvertToDouble(0).ConvertToDecimal().ConvertToStringAndRemoveZeroPart();
+                    var thueSuatDaLuu = thueSuatTuDb.FirstOrDefault(x => x.TSuat == thue_suat.ten_thue_suat);
+                    thue_suat.tien_thue = thueSuatDaLuu != null
+                        ? thueSuatDaLuu.TThue.ConvertToStringAndRemoveZeroPart()
+                        : ((double)thanh_tien * phanTramThue / 100).ConvertToDouble(0).ConvertToDecimal().ConvertToStringAndRemoveZeroPart();
                 }
                 hoaDonData.hoa_don.du_lieu_hoa_don.noi_dung_hoa_don.thong_tin_thanh_toan = isHoaDonThuongMai
                     ? new ThongTinThanhToan()

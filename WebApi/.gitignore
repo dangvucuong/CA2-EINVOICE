@@ -231,5 +231,11 @@ _Pvt_Extensions
 # FAKE - F# Make
 .fake/
 
-# File upload
+# File upload (storage folders only — keep ClientApp source tracked)
 [Uu]pload/
+!ClientApp/src/component-data/[Uu]pload/
+!ClientApp/src/component-data/[Uu]pload/**
+!ClientApp/src/models/responses/[Uu]pload/
+!ClientApp/src/models/responses/[Uu]pload/**
+!ClientApp/src/models/requests/[Uu]pload/
+!ClientApp/src/models/requests/[Uu]pload/**

@@ -11,6 +11,7 @@ import moment from "moment";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useHistory, useParams } from "react-router-dom";
+import { coQuanThueApi } from "../../api/category/coQuanThueApi";
 import { TO_KHAI_API_PHAT_HANH, toKhaiApi } from "../../api/to-khai/toKhaiApi";
 import KySoModal from "../../component-data/ky-so-modal";
 import PrintToKhaiButton from "../../component-data/print-to-khai-button";
@@ -377,7 +378,7 @@ export const ToKhaiForm = () => {
       cks_user_full_name: "",
       donvi_ma_dv: "",
       co_quan_thue_id: coQuanThue?.id ?? data.co_quan_thue_id,
-      co_quan_thue: coQuanThue?.dia_chi ?? data.co_quan_thue,
+      co_quan_thue: coQuanThue?.ten?.trim() || data.co_quan_thue || "",
       ma_cqt: coQuanThue?.ma_cqt ?? data.ma_cqt,
       phat_hanh_uuid: "",
       noi_lap: noi_lap,
@@ -472,17 +473,20 @@ export const ToKhaiForm = () => {
     if (tokhaimoinhat) {
       await handleGetDetailByIdAsync(tokhaimoinhat.id);
 
-      setCoQuanThueId(tokhaimoinhat?.co_quan_thue_id);
-      setCoQuanThue({
-        ten: tokhaimoinhat?.co_quan_thue,
-        ma_cqt_ql: tokhaimoinhat?.ma_cqt,
-        ma_cqt: tokhaimoinhat?.ma_cqt,
-        id: tokhaimoinhat?.co_quan_thue_id,
-        dia_chi: tokhaimoinhat?.co_quan_thue,
-        ten_viet_tat: "",
-        tinh: "",
-        co_quan_thue_trang_thai_id: 0,
-      });
+      const cqtId = tokhaimoinhat?.co_quan_thue_id ?? 0;
+      setCoQuanThueId(cqtId);
+      let cqtData: ICoQuanThue | undefined;
+      if (cqtId > 0) {
+        const cqtRes = await coQuanThueApi.selectById(cqtId);
+        if (cqtRes.is_success && cqtRes.data) {
+          cqtData = cqtRes.data;
+          setCoQuanThue(cqtData);
+        } else {
+          setCoQuanThue(undefined);
+        }
+      } else {
+        setCoQuanThue(undefined);
+      }
 
       reset({
         loai_to_khai_id: eLoaiToKhai.THAY_DOI_THONG_TIN,
@@ -545,7 +549,7 @@ export const ToKhaiForm = () => {
         is_sd_hoadon_khac: tokhaimoinhat?.is_sd_hoadon_khac ?? false,
 
         //Nơi lập
-        noi_lap: tokhaimoinhat?.noi_lap,
+        noi_lap: cqtData?.tinh || tokhaimoinhat?.noi_lap,
         ngay_co_hieu_luc: moment(tokhaimoinhat?.ngay_co_hieu_luc).format(
           "YYYY-MM-DD"
         ),

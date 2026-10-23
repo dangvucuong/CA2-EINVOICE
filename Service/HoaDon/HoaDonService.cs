@@ -430,7 +430,17 @@ namespace Service.HoaDon
 
             await SaveHoaDonThongTinBoSung(model, user.id);
 
-            await SaveThueSuatHoaDon(model, user.id);
+            try
+            {
+                var savedThue = await SaveThueSuatHoaDon(model, user.id);
+                if (!savedThue)
+                    return new ErrorResult<int>("Không lưu được dữ liệu thuế suất");
+            }
+            catch (Exception ex)
+            {
+                return new ErrorResult<int>("Không lưu được dữ liệu thuế suất. " + ex.Message);
+            }
+
             await this.SaveHangHoas(model, user.id, !insert);
             await this.SaveLoaiPhis(model, user.id, !insert);
 
@@ -787,6 +797,8 @@ namespace Service.HoaDon
 
             var isAllChietKhau = !model.hoang_hoas.Where(x => x.hang_hoa_tinh_chat_id != 4)
                                                   .Any(x => x.hang_hoa_tinh_chat_id != 3);
+            var isVnd = HoaDonTienThueHelper.IsVnd(model.loai_tien);
+            var tienThueTheoMucs = new List<TienThueTheoMuc>();
 
             var dsThue = model.hoang_hoas
                 .Where(x => x.hang_hoa_tinh_chat_id != 4)
@@ -800,7 +812,7 @@ namespace Service.HoaDon
 
                     var thanh_tien = g.Where(x => x.hang_hoa_tinh_chat_id == 1 || x.hang_hoa_tinh_chat_id == 5).Sum(x => x.thanh_tien);
                     var thanh_tien_ck = g.Where(x => x.hang_hoa_tinh_chat_id == 3).Sum(x => x.thanh_tien);
-                    if (model.loai_tien != null && model.loai_tien.ToUpper() == "VND")
+                    if (isVnd)
                     {
                         thanh_tien = Math.Round(thanh_tien, 0, MidpointRounding.AwayFromZero);
                         thanh_tien_ck = Math.Round(thanh_tien_ck, 0, MidpointRounding.AwayFromZero);
@@ -820,11 +832,12 @@ namespace Service.HoaDon
                         tThueFinal = ((decimal)thanh_tien - (decimal)thanh_tien_ck) * (decimal)phanTram / 100;
                     }
 
-                    // Làm tròn nếu là VND
-                    if (model.loai_tien != null && model.loai_tien.ToUpper() == "VND")
+                    if (isVnd)
                     {
                         thTienFinal = Math.Round(thTienFinal, 0, MidpointRounding.AwayFromZero);
-                        tThueFinal = Math.Round(tThueFinal, 0, MidpointRounding.AwayFromZero);
+                        tienThueTheoMucs.Add(new TienThueTheoMuc(
+                            phanTram == 0 ? thanh_tien : thanh_tien - thanh_tien_ck,
+                            (decimal)phanTram));
                     }
 
                     return new ThueSuatModel
@@ -835,12 +848,21 @@ namespace Service.HoaDon
                     };
                 }).ToList();
 
+            if (isVnd)
+            {
+                var tienThues = HoaDonTienThueHelper.PhanBoTienThueVnd(tienThueTheoMucs);
+                for (var i = 0; i < dsThue.Count; i++)
+                {
+                    dsThue[i].TThue = tienThues[i];
+                }
+            }
+
             // Logic 5 đồng tăng giảm (Chỉ áp dụng nếu có 1 mức thuế duy nhất)
             if (dsThue.Count == 1 && model.so_tien_tang_giam_tien_thue != 0)
             {
                 dsThue[0].TThue += model.so_tien_tang_giam_tien_thue;
                 // Nếu là VND thì làm tròn lại lần nữa
-                if (model.loai_tien != null && model.loai_tien.ToUpper() == "VND")
+                if (isVnd)
                 {
                     dsThue[0].TThue = Math.Round(dsThue[0].TThue, 0, MidpointRounding.AwayFromZero);
                 }
@@ -3349,6 +3371,8 @@ namespace Service.HoaDon
                     .Select(x => new LTSuat() { ten_thue_suat = x })
                     .ToList();
 
+                var isVnd = HoaDonTienThueHelper.IsVnd(model.loai_tien);
+                var tienThueTheoMucs = new List<TienThueTheoMuc>();
                 foreach (var thue_suat in thue_suats)
                 {
                     var phanTramThue = thue_suat.ten_thue_suat
@@ -3370,7 +3394,7 @@ namespace Service.HoaDon
                         .Sum();
 
                     var thanh_tien_tinh_thue = thanh_tien_hang_hoa - thanh_tien_chiet_khau;
-                    if (model.loai_tien == "VND")
+                    if (isVnd)
                     {
                         thanh_tien_tinh_thue = Math.Round(thanh_tien_tinh_thue, 0, MidpointRounding.AwayFromZero);
                     }
@@ -3378,11 +3402,19 @@ namespace Service.HoaDon
                     {
                         phanTramThue = 0;
                     }
-                    var tien_thue = model.loai_tien == "VND"
-                        ? ((double)thanh_tien_tinh_thue * phanTramThue / 100).ConvertToDouble(0).ConvertToDecimal()
-                        : ((double)thanh_tien_tinh_thue * phanTramThue / 100).ConvertToDouble().ConvertToDecimal();
+                    if (isVnd)
+                    {
+                        tienThueTheoMucs.Add(new TienThueTheoMuc(thanh_tien_tinh_thue, (decimal)phanTramThue));
+                        continue;
+                    }
+                    var tien_thue = ((double)thanh_tien_tinh_thue * phanTramThue / 100).ConvertToDouble().ConvertToDecimal();
 
                     tong_vat += tien_thue;
+                }
+
+                if (isVnd)
+                {
+                    tong_vat = HoaDonTienThueHelper.PhanBoTienThueVnd(tienThueTheoMucs).Sum();
                 }
             }
 
@@ -3942,7 +3974,7 @@ namespace Service.HoaDon
                 hoaDon.hoa_don_dang_ky_phat_hanh_mau_so,
                 hoaDon.hoa_don_dang_ky_phat_hanh_ky_hieu,
                 hoaDon.ngay_hoa_don,
-                hoaDon.id);
+                hoaDon.id); 
             if (error != null)
                 return new ErrorResult<bool>(error.message);
             return new SuccessResult<bool>(true);
@@ -4280,7 +4312,7 @@ namespace Service.HoaDon
                     var mltdiep = ExtractXmlTagValue(xmlTvan, "MLTDiep");
                     if (mltdiep != "202")
                     {
-                        return new ErrorResult<object>($"TVAN chưa trả về thông điệp 202 (MLTDiep={mltdiep})");
+                        return new ErrorResult<object>("Chưa có kết quả cấp mã hóa đơn từ CQT");
                     }
 
                     var maCqtTvan = ExtractMccqtFromXml(xmlTvan);

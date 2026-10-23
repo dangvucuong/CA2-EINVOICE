@@ -3,6 +3,7 @@ import { TriangleDownIcon, XCircleFillIcon } from "@primer/octicons-react";
 import { Box, Button, SelectPanel } from "@primer/react";
 import { useMemo, useState } from "react";
 import { useHoaDonDangKyPhatHanhLoader } from "../../hooks/useHoaDonDangKyPhatHanhLoader";
+import { useLoaiHoaDonCTs } from "../../hooks/useLoaiHoaDonCT";
 import { isDangKyPhatHanhMtt } from "../../utils/hoaDonKyHieu";
 import { isDangKyPhatHanhInCurrentYear } from "../../utils/dangKyPhatHanhFilter";
 
@@ -21,9 +22,19 @@ const SelectBoxLoaiHoaDonCTPhatHanh = (
   const [open, setOpen] = useState(false);
   const { hoaDonDangKyPhatHanhs, isLoading, isLoadError } =
     useHoaDonDangKyPhatHanhLoader();
+  const { loaiHoaDonCTs } = useLoaiHoaDonCTs();
   const [filter, setFilter] = useState("");
+
+  const resolveTenHoaDon = (loaiHoaDonCtId: number, tenHoaDon?: string) => {
+    const fromDkph = (tenHoaDon ?? "").trim();
+    if (fromDkph) return fromDkph;
+    return (
+      loaiHoaDonCTs.find((x) => x.id === loaiHoaDonCtId)?.name?.trim() || ""
+    );
+  };
+
   const dataSource = useMemo(() => {
-    var uniqueData = new Set();
+    const byId = new Map<number, { id: number; text: string }>();
     hoaDonDangKyPhatHanhs
       .filter((x) => {
         if (!isDangKyPhatHanhInCurrentYear(x?.ngay_su_dung)) {
@@ -34,39 +45,32 @@ const SelectBoxLoaiHoaDonCTPhatHanh = (
         }
         return true;
       })
-      .map((x) => ({
-        id: x.loai_hoa_don_ct_id,
-        text: x.ten_hoa_don,
-      }))
-      .sort((a, b) => a.id - b.id)
-      .forEach((item) => {
-        uniqueData.add(JSON.stringify(item));
+      .forEach((x) => {
+        const text = resolveTenHoaDon(x.loai_hoa_don_ct_id, x.ten_hoa_don);
+        const existing = byId.get(x.loai_hoa_don_ct_id);
+        // Ưu tiên bản ghi đã có tên (tránh giữ item text rỗng)
+        if (!existing || (!existing.text && text)) {
+          byId.set(x.loai_hoa_don_ct_id, {
+            id: x.loai_hoa_don_ct_id,
+            text,
+          });
+        }
       });
-    var result = Array.from(uniqueData).map((item: any) => JSON.parse(item));
-    return result;
-  }, [hoaDonDangKyPhatHanhs, props.onlyMtt]);
+    return Array.from(byId.values()).sort((a, b) => a.id - b.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hoaDonDangKyPhatHanhs, props.onlyMtt, loaiHoaDonCTs]);
+
   const filterdData = useMemo(() => {
     return dataSource.filter((item) =>
       item.text.toLowerCase().includes(filter.toLowerCase())
     );
   }, [dataSource, filter]);
+
+  // Chỉ chọn được loại HĐ có ĐKPH năm hiện tại — không fallback năm cũ.
   const _selectedData = useMemo(() => {
-    const selected = dataSource.find((item) => item.id === props.value);
-    if (selected) {
-      return selected;
-    }
-    // Khi sao chép HĐ năm cũ: value có loai_hoa_don_ct_id nhưng bị lọc khỏi dataSource năm hiện tại.
-    // Vẫn hiển thị đúng tên từ toàn bộ ĐKPH để không mất tên hóa đơn trên form.
-    if (props.value > 0) {
-      const match = hoaDonDangKyPhatHanhs.find(
-        (x) => x.loai_hoa_don_ct_id === props.value
-      );
-      if (match) {
-        return { id: match.loai_hoa_don_ct_id, text: match.ten_hoa_don };
-      }
-    }
-    return undefined;
-  }, [props.value, dataSource, hoaDonDangKyPhatHanhs]);
+    if (props.value <= 0) return undefined;
+    return dataSource.find((item) => item.id === props.value);
+  }, [props.value, dataSource]);
 
   const placeholderText = isLoading
     ? "Đang tải..."
@@ -98,7 +102,7 @@ const SelectBoxLoaiHoaDonCTPhatHanh = (
                 textOverflow: "ellipsis",
               }}
             >
-              {children || placeholderText}
+              {_selectedData?.text || placeholderText}
             </p>
           </Button>
         )}

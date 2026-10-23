@@ -1,0 +1,67 @@
+[
+  {
+    "name": "Hóa đơn 5%, 10%, KKKNT lệch 1 đồng",
+    "items": [
+      { "thanh_tien_tinh_thue": 518546, "phan_tram": 10 },
+      { "thanh_tien_tinh_thue": 110435, "phan_tram": 5 },
+      { "thanh_tien_tinh_thue": 11043, "phan_tram": 0 }
+    ],
+    "expected": [51854, 5522, 0]
+  },
+  {
+    "name": "Một mức thuế",
+    "items": [{ "thanh_tien_tinh_thue": 518546, "phan_tram": 10 }],
+    "expected": [51855]
+  },
+  {
+    "name": "Hai mức cùng phần lẻ 0,5",
+    "items": [
+      { "thanh_tien_tinh_thue": 10, "phan_tram": 5 },
+      { "thanh_tien_tinh_thue": 5, "phan_tram": 10 }
+    ],
+    "expected": [0, 1]
+  },
+  {
+    "name": "Toàn số âm",
+    "items": [
+      { "thanh_tien_tinh_thue": -518546, "phan_tram": 10 },
+      { "thanh_tien_tinh_thue": -110435, "phan_tram": 5 }
+    ],
+    "expected": [-51854, -5522]
+  },
+  {
+    "name": "Mức tăng và mức giảm cùng lúc",
+    "items": [
+      { "thanh_tien_tinh_thue": 518546, "phan_tram": 10 },
+      { "thanh_tien_tinh_thue": -110435, "phan_tram": 5 }
+    ],
+    "expected": [51855, -5522]
+  },
+  {
+    "name": "Ba mức 5%, 8%, 10%",
+    "items": [
+      { "thanh_tien_tinh_thue": 105, "phan_tram": 5 },
+      { "thanh_tien_tinh_thue": 105, "phan_tram": 8 },
+      { "thanh_tien_tinh_thue": 105, "phan_tram": 10 }
+    ],
+    "expected": [5, 8, 11]
+  },
+  {
+    "name": "Thuế suất lẻ 3,5%",
+    "items": [
+      { "thanh_tien_tinh_thue": 1000, "phan_tram": 3.5 },
+      { "thanh_tien_tinh_thue": 999, "phan_tram": 10 }
+    ],
+    "expected": [35, 100]
+  },
+  {
+    "name": "Tiền tính thuế bằng 0",
+    "items": [{ "thanh_tien_tinh_thue": 0, "phan_tram": 10 }],
+    "expected": [0]
+  },
+  {
+    "name": "Không có mức thuế",
+    "items": [],
+    "expected": []
+  }
+]

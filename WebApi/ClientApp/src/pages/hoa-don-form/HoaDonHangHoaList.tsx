@@ -37,6 +37,11 @@ import AutoResizeText from "../../component-data/auto-resize-text";
 import {
   recalcHangHoasDieuChinh,
 } from "../../helpers/dieuChinhHangHoaHelper";
+import {
+  getPhanTramThue,
+  lamTronVnd,
+  phanBoTienThueVnd,
+} from "../../helpers/tienThueHelper";
 
 interface IHoaDonHangHoaListProps {
   tienTe?: string;
@@ -177,11 +182,13 @@ export const getTongTienData = (
     };
   });
 
+  const isVnd = (tienTe ?? "VND") === "VND";
   const roundIfVND = (value: number): number => {
-    return (tienTe ?? "VND") === "VND"
+    return isVnd
       ? parseFloat(new Big(value).round(0, Big.roundHalfUp).toString())
       : value;
   };
+  const thanhTienVnd = (h: { thanh_tien: number }) => lamTronVnd(h.thanh_tien);
 
   const tongTienChietKhauTungMatHang = roundIfVND(
     hangHoas
@@ -193,7 +200,7 @@ export const getTongTienData = (
   const tongMatHangChietKhau = roundIfVND(
     hangHoas
       .filter((x) => x.hang_hoa_tinh_chat_id === eTinhChatHangHoa.CHIET_KHAU)
-      .map((x) => x.thanh_tien_khong_lam_tron)
+      .map((x) => (isVnd ? thanhTienVnd(x) : x.thanh_tien_khong_lam_tron))
       .reduce((a, b) => a + b, 0),
   );
 
@@ -228,7 +235,43 @@ export const getTongTienData = (
   // ✅ Lấy các loại thuế suất duy nhất
   // const vats = [...new Set(hangHoas.map((x) => x.thue_vat))];
 
-  const vats_detail = vats
+  const vatsVnd = vats
+    .filter((x) => x !== undefined && x !== null && x.includes("%"))
+    .map((x: any) => {
+      const tinhTheoThue = (tinhChat: eTinhChatHangHoa[]) =>
+        hangHoas
+          .filter(
+            (h) =>
+              tinhChat.includes(h.hang_hoa_tinh_chat_id as eTinhChatHangHoa) &&
+              h.thue_vat === x,
+          )
+          .map(thanhTienVnd)
+          .reduce((a, b) => a + b, 0);
+      return {
+        vat: x,
+        phan_tram: getPhanTramThue(x),
+        tien_tinh_thue:
+          tinhTheoThue([
+            eTinhChatHangHoa.HANG_HOA_DICH_VU,
+            eTinhChatHangHoa.HANG_HOA_DAC_TRUNG,
+          ]) - tinhTheoThue([eTinhChatHangHoa.CHIET_KHAU]),
+      };
+    });
+  const tienThueVnds = phanBoTienThueVnd(
+    vatsVnd.map((x) => ({
+      thanh_tien_tinh_thue: x.tien_tinh_thue,
+      phan_tram: x.phan_tram,
+    })),
+  );
+  const vats_detail_vnd = vatsVnd
+    .map((x, i) => ({
+      vat: x.vat,
+      phan_tram: x.phan_tram,
+      tong_tien_vat: tienThueVnds[i] * (isAllChietKhau ? -1 : 1) + 0,
+    }))
+    .filter((x) => x.phan_tram > 0);
+
+  const vats_detail = isVnd ? vats_detail_vnd : vats
     .filter((x) => x !== undefined && x !== null)
     .map((x: any) => {
       const phan_tram = isNaN(parseInt(x.replace("%", "")))
@@ -287,7 +330,7 @@ export const getTongTienData = (
           x.hang_hoa_tinh_chat_id === eTinhChatHangHoa.HANG_HOA_DICH_VU ||
           x.hang_hoa_tinh_chat_id === eTinhChatHangHoa.HANG_HOA_DAC_TRUNG,
       )
-      .map((x) => x.thanh_tien)
+      .map((x) => (isVnd ? thanhTienVnd(x) : x.thanh_tien))
       // .map((x) =>
       //   x.don_gia > 0 || x.so_luong > 0 ? x.don_gia * x.so_luong : x.thanh_tien
       // )

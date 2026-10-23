@@ -13,13 +13,17 @@ using Repository.Base;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
+using System.Threading;
 using WebApp;
 
 namespace Repository.HoaDon
 {
     public class HoaDonRepository : CRUDRepository<hoa_don>, IHoaDonRepository
     {
+        private static readonly SemaphoreSlim ThueSuatWriteLock = new SemaphoreSlim(1, 1);
+
         public HoaDonRepository(IMSSQLConnection dbConnection) : base(dbConnection)
         {
 
@@ -375,12 +379,9 @@ ORDER BY hd.ngay_hoa_don ASC, hd.ma_so_hoa_don ASC";
             return _dbConnection.ExecuteAsync("hoa_don_update_trang_thai", param);
         }
 
-        public Task<bool> InsertThueSuatHoaDonAsync(int id, IEnumerable<ThueSuatModel> dsThue)
+        public async Task<bool> InsertThueSuatHoaDonAsync(int id, IEnumerable<ThueSuatModel> dsThue)
         {
-            // Tên trong ngoặc DataTable này thường để cho rõ nghĩa, quan trọng là cấu trúc cột
             var table = new DataTable("dbo.thue_suat_hd_type");
-
-            // Thêm cột PHẢI ĐÚNG THỨ TỰ như trong SQL Type (TSuat -> ThTien -> TThue)
             table.Columns.Add("TSuat", typeof(string));
             table.Columns.Add("ThTien", typeof(decimal));
             table.Columns.Add("TThue", typeof(decimal));
@@ -394,13 +395,40 @@ ORDER BY hd.ngay_hoa_don ASC, hd.ma_so_hoa_don ASC";
                 );
             }
 
-            var param = new DynamicParameters();
-            param.Add("@HoaDonId", id);
-            // Truyền đúng tên Type đã định nghĩa trong SQL
-            param.Add("@ThueList", table.AsTableValuedParameter("dbo.thue_suat_hd_type"));
+            const int maxAttempts = 3;
+            for (var attempt = 1; ; attempt++)
+            {
+                await ThueSuatWriteLock.WaitAsync();
+                try
+                {
+                    var param = new DynamicParameters();
+                    param.Add("@HoaDonId", id);
+                    param.Add("@ThueList", table.AsTableValuedParameter("dbo.thue_suat_hd_type"));
+                    return await _dbConnection.ExecuteAsync("InsertThueSuatHoaDon", param);
+                }
+                catch (SqlException ex) when (IsDeadlock(ex) && attempt < maxAttempts)
+                {
+                    await Task.Delay(100 * attempt);
+                }
+                finally
+                {
+                    ThueSuatWriteLock.Release();
+                }
+            }
+        }
 
-            // Gọi theo kiểu 2 tham số như các hàm InsertsAsync khác của bạn
-            return _dbConnection.ExecuteAsync("InsertThueSuatHoaDon", param);
+        private static bool IsDeadlock(SqlException ex)
+        {
+            if (ex.Number == 1205)
+                return true;
+
+            foreach (SqlError err in ex.Errors)
+            {
+                if (err.Number == 1205)
+                    return true;
+            }
+
+            return false;
         }
 
 

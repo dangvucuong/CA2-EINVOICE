@@ -33,20 +33,31 @@ namespace Service.HoaDon
             return configured > 0 ? configured : 10;
         }
 
-        private static async Task RunImportTasksWithConcurrencyAsync(
+        private static async Task<IReadOnlyList<string>> RunImportTasksWithConcurrencyAsync(
             IEnumerable<Func<Task>> taskFactories,
             string? importType)
         {
             var factories = taskFactories.ToList();
+            var errors = new List<string>();
             if (factories.Count == 0)
-                return;
+                return errors;
 
             var maxConcurrency = ResolveImportMaxConcurrency(importType);
             if (maxConcurrency <= 1)
             {
                 foreach (var factory in factories)
-                    await factory();
-                return;
+                {
+                    try
+                    {
+                        await factory();
+                    }
+                    catch (Exception ex)
+                    {
+                        errors.Add(ex.Message);
+                    }
+                }
+
+                return errors;
             }
 
             using var semaphore = new SemaphoreSlim(maxConcurrency, maxConcurrency);
@@ -57,6 +68,13 @@ namespace Service.HoaDon
                 {
                     await factory();
                 }
+                catch (Exception ex)
+                {
+                    lock (errors)
+                    {
+                        errors.Add(ex.Message);
+                    }
+                }
                 finally
                 {
                     semaphore.Release();
@@ -64,6 +82,15 @@ namespace Service.HoaDon
             });
 
             await Task.WhenAll(tasks);
+            return errors;
+        }
+
+        private static string BuildImportErrorMessage(IReadOnlyList<string> errors)
+        {
+            var head = string.Join("\n", errors.Take(5));
+            if (errors.Count > 5)
+                head += $"\nCòn {errors.Count - 5} hóa đơn lỗi.";
+            return head;
         }
 
         public async Task<FunctionResult<string>> ImportDataAsync(HoaDonImportRequest request)
@@ -127,7 +154,9 @@ namespace Service.HoaDon
             }
 
             var importMode = CKM == "M" ? "1" : request.importType;
-            await RunImportTasksWithConcurrencyAsync(importActions, importMode);
+            var importErrors = await RunImportTasksWithConcurrencyAsync(importActions, importMode);
+            if (importErrors.Count > 0)
+                return new ErrorResult<string>(BuildImportErrorMessage(importErrors));
             return new SuccessResult<string>();
         }
         private async Task ImportHoaDonTask(HoaDonImportRequest request, HoaDonImportRow rows, DataTable dt, string donvi_ma_dv, List<dai_ly> daiLys)
@@ -257,6 +286,8 @@ namespace Service.HoaDon
             model.tong_tien_thanh_toan = tong_tien_hang + tong_tien_thue;
             model.tong_tien_phi = 0;
             var isSaved = await _serviceWrapper.HoaDon.HoaDon.SaveHoaDonAsync(model);
+            if (!isSaved.is_success)
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(isSaved.message) ? "Không lưu được hóa đơn" : isSaved.message);
             if (model.ma_dai_ly.ConvertToString() != null && isSaved.is_success)
             {
                 var hoaDonId = isSaved.data;
@@ -491,10 +522,12 @@ namespace Service.HoaDon
             }
 
             var importMode = CKM == "M" ? "1" : upload.importType;
-            await RunImportTasksWithConcurrencyAsync(importActions, importMode);
+            var importErrors = await RunImportTasksWithConcurrencyAsync(importActions, importMode);
+            if (importErrors.Count > 0)
+                return new ErrorResult<string>(BuildImportErrorMessage(importErrors));
             return new SuccessResult<string>();
         }
-        private Task ImportHoaDonHocPhiTask(HoaDonImportRequest request, DataRow firstRow, DataTable dt, string donvi_ma_dv)
+        private async Task ImportHoaDonHocPhiTask(HoaDonImportRequest request, DataRow firstRow, DataTable dt, string donvi_ma_dv)
         {
             var hangHoaFromColumIdx = 4;
             var hangHoaToColumIdx = 8;
@@ -553,7 +586,9 @@ namespace Service.HoaDon
             model.tong_tien_truong_thue = tong_tien_hang;
             model.tong_tien_thanh_toan = tong_tien_hang + tong_tien_thue;
             model.tong_tien_phi = 0;
-            return _serviceWrapper.HoaDon.HoaDon.SaveHoaDonAsync(model);
+            var isSaved = await _serviceWrapper.HoaDon.HoaDon.SaveHoaDonAsync(model);
+            if (!isSaved.is_success)
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(isSaved.message) ? "Không lưu được hóa đơn" : isSaved.message);
         }
 
         public async Task<FunctionResult<DataTable>> ReadAndValidImportDataNuocAsync(UploadRespone upload)
@@ -628,10 +663,12 @@ namespace Service.HoaDon
             }
 
             var importMode = CKM == "M" ? "1" : upload.importType;
-            await RunImportTasksWithConcurrencyAsync(importActions, importMode);
+            var importErrors = await RunImportTasksWithConcurrencyAsync(importActions, importMode);
+            if (importErrors.Count > 0)
+                return new ErrorResult<string>(BuildImportErrorMessage(importErrors));
             return new SuccessResult<string>();
         }
-        private Task ImportHoaDonNuocTask(HoaDonImportRequest request, DataRow firstRow, DataTable dt, string donvi_ma_dv)
+        private async Task ImportHoaDonNuocTask(HoaDonImportRequest request, DataRow firstRow, DataTable dt, string donvi_ma_dv)
         {
 
             var mst = firstRow[10].ConvertToString().Trim();
@@ -741,13 +778,9 @@ namespace Service.HoaDon
             model.tong_tien_thanh_toan = tong_tien_hang + tong_tien_thue;
             model.tong_tien_phi = 0;
 
-            // decimal tong_tien_thue = 0;
-            // decimal tong_tien_hang = model.hoang_hoas.Select(x => x.thanh_tien).Sum();
-            // model.tong_tien_thue = tong_tien_thue;
-            // model.tong_tien_truong_thue = tong_tien_hang;
-            // model.tong_tien_thanh_toan = tong_tien_hang + tong_tien_thue;
-            // model.tong_tien_phi = 0;
-            return _serviceWrapper.HoaDon.HoaDon.SaveHoaDonAsync(model);
+            var isSaved = await _serviceWrapper.HoaDon.HoaDon.SaveHoaDonAsync(model);
+            if (!isSaved.is_success)
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(isSaved.message) ? "Không lưu được hóa đơn" : isSaved.message);
         }
     }
 }

@@ -6,6 +6,7 @@ import { useAppSelector } from "../../hooks/useAppSelector";
 import { useHoaDonDangKyPhatHanhLoader } from "../../hooks/useHoaDonDangKyPhatHanhLoader";
 import { useLocation } from "react-router-dom";
 import { isDangKyPhatHanhMtt, isKyHieuMayTinhTien } from "../../utils/hoaDonKyHieu";
+import { isDangKyPhatHanhInCurrentYear } from "../../utils/dangKyPhatHanhFilter";
 
 interface ISelectBoxKyHieuPhatHanhProps {
   onValueChanged: (id: string) => void;
@@ -42,6 +43,9 @@ const SelectBoxKyHieuPhatHanh = (props: ISelectBoxKyHieuPhatHanhProps) => {
     hoaDonDangKyPhatHanhs
       .sort((a, b) => b.id - a.id)
       .filter((x) => {
+        if (!isDangKyPhatHanhInCurrentYear(x?.ngay_su_dung)) {
+          return false;
+        }
         if (
           x.loai_hoa_don_ct_id !== props.loai_hoa_don_ct_id ||
           x.mau_so !== props.mau_so

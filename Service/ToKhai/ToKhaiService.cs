@@ -421,6 +421,7 @@ namespace Service.ToKhai
             XmlNode TTChungNode = doc.CreateElement("", "TTChung", linkelement);
             DLTKhaiNode.AppendChild(TTChungNode);
             AddElementWithText(doc, TTChungNode, "PBan", "2.1.0");
+
             AddElementWithText(doc, TTChungNode, "MSo", MSo);
             AddElementWithText(doc, TTChungNode, "Ten", Ten);
             AddElementWithText(doc, TTChungNode, "HThuc", HThuc);

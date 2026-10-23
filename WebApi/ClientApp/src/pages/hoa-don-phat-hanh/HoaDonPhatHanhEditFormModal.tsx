@@ -39,7 +39,9 @@ const HoaDonPhatHanhEditFormModal = ({
   );
   const { hinhThucLoaiMaHoaDons } = useHinhThucLoaiMaHoaDons();
   const [kyHieuDoanhNghiep, setKyHieuDoanhNghiep] = useState(
-    hoaDonDangKyPhatHanhEditing ? hoaDonDangKyPhatHanhEditing?.so_qd : "QD"
+    hoaDonDangKyPhatHanhEditing
+      ? (hoaDonDangKyPhatHanhEditing?.so_qd ?? "").toUpperCase()
+      : "QD"
   );
   const [isChiuThue, setIsChiuThue] = useState(
     hoaDonDangKyPhatHanhEditing?.is_chiu_thue ?? false
@@ -120,12 +122,11 @@ const HoaDonPhatHanhEditFormModal = ({
       return;
     }
 
-    // check ký hiệu hợp lệ
-    // check pattern naymwf phải nằm trong các chữ sau A, B, C, D, E, G, H, K, L, M, N, P, Q, R, S, T, U, V, X, Y
-    const pattern = /^[ABCDEGHKLMNPQRSTUVXY]*$/i;
+    // Hai ký tự cuối là chữ viết do người bán tự xác định (Phụ lục I Thông tư 91/2026/TT-BTC)
+    const pattern = /^[A-Z]{2}$/;
 
     if (!pattern.test(kyHieuHoaDon.substring(4, 6))) {
-      NotifyHelper.Error(`Ký hiệu hóa đơn nằm ngoài 20 kí tự cho phép!`);
+      NotifyHelper.Error(`Hai ký tự cuối của ký hiệu phải là 2 chữ cái (A–Z)`);
       return;
     }
 
@@ -259,7 +260,7 @@ const HoaDonPhatHanhEditFormModal = ({
                       return;
                     }
 
-                    setKyHieuDoanhNghiep(e.target.value);
+                    setKyHieuDoanhNghiep(e.target.value.toUpperCase());
                     setIsChange(true);
                   }}
                   required
